@@ -1,10 +1,7 @@
-import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
-
 import '../services/model_service.dart';
 import 'result_page.dart';
 
@@ -16,263 +13,117 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final ImagePicker _picker = ImagePicker();
+  CameraController? _controller;
+  late List<CameraDescription> _cameras;
+  bool _isCameraReady = false;
   bool _isProcessing = false;
-  String? _selectedImagePath;
-  Uint8List? _selectedImageBytes;
-
+  
   @override
-  Widget build(BuildContext context) {
-    final modelService = Provider.of<ModelService>(context);
+  void initState() {
+    super.initState();
+    _initializeCamera();
+  }
+
+  Future<void> _initializeCamera() async {
+    // Capture context before async gap
+    final currentContext = context;
     
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Picture That'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline),
-            onPressed: _showInfoDialog,
-          ),
-        ],
-      ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Status card
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Model Status',
-                      style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: 16,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(modelService.status),
-                    if (modelService.error != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        modelService.error!,
-                        style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
-                        ),
-                      ),
-                    ],
-                    if (!modelService.isModelLoaded && modelService.isInitialized) ...[
-                      const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: modelService.isLoading
-                            ? null
-                            : () => _downloadModel(modelService),
-                        child: modelService.isLoading
-                            ? const SizedBox(
-                                width: 20,
-                                height: 20,
-                                child: CircularProgressIndicator(),
-                              )
-                            : const Text('Download Model (2.4GB)'),
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Note: Model download required for first use. After download, works offline.',
-                        style: TextStyle(fontSize: 12, color: Colors.grey),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Image preview
-            Expanded(
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.all(16.0),
-                  child: Column(
-                    children: [
-                      const Text(
-                        'Select Image',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Expanded(
-                        child: _selectedImageBytes != null
-                            ? Image.memory(_selectedImageBytes!)
-                            : const Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    Icons.photo_camera,
-                                    size: 80,
-                                    color: Colors.grey,
-                                  ),
-                                  SizedBox(height: 16),
-                                  Text(
-                                    'No image selected',
-                                    style: TextStyle(color: Colors.grey),
-                                  ),
-                                ],
-                              ),
-                      ),
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton.icon(
-                            onPressed: modelService.isModelLoaded && !_isProcessing
-                                ? () => _pickImage(ImageSource.camera)
-                                : null,
-                            icon: const Icon(Icons.camera_alt),
-                            label: const Text('Camera'),
-                          ),
-                          ElevatedButton.icon(
-                            onPressed: modelService.isModelLoaded && !_isProcessing
-                                ? () => _pickImage(ImageSource.gallery)
-                                : null,
-                            icon: const Icon(Icons.photo_library),
-                            label: const Text('Gallery'),
-                          ),
-                        ],
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-            ),
-            
-            const SizedBox(height: 24),
-            
-            // Analyze button
-            ElevatedButton(
-              onPressed: _selectedImageBytes != null &&
-                      modelService.isModelLoaded &&
-                      !_isProcessing
-                  ? () => _analyzeImage(modelService)
-                  : null,
-              style: ElevatedButton.styleFrom(
-                padding: const EdgeInsets.symmetric(vertical: 16),
-              ),
-              child: _isProcessing
-                  ? const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(),
-                        ),
-                        SizedBox(width: 12),
-                        Text('Analyzing...'),
-                      ],
-                    )
-                  : const Text(
-                      'Identify Endangered Species',
-                      style: TextStyle(fontSize: 16),
-                    ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-  
-  Future<void> _downloadModel(ModelService modelService) async {
-    try {
-      await modelService.downloadModel(onProgress: (progress) {
-        // Progress updates handled by ModelService notifier
-      });
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Model downloaded successfully!')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Download failed: $e')),
-      );
-    }
-  }
-  
-  Future<void> _pickImage(ImageSource source) async {
-    if (source == ImageSource.camera) {
-      final status = await Permission.camera.request();
-      if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
+    // Request camera permission
+    final status = await Permission.camera.request();
+    if (!status.isGranted) {
+      if (mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
           const SnackBar(content: Text('Camera permission required')),
         );
-        return;
       }
-    } else {
-      final status = await Permission.photos.request();
-      if (!status.isGranted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Photo library permission required')),
-        );
-        return;
-      }
+      return;
     }
     
     try {
-      final XFile? image = await _picker.pickImage(source: source);
-      if (image != null) {
-        final bytes = await image.readAsBytes();
-        setState(() {
-          _selectedImagePath = image.path;
-          _selectedImageBytes = bytes;
-        });
+      _cameras = await availableCameras();
+      if (_cameras.isEmpty) {
+        if (mounted) {
+          ScaffoldMessenger.of(currentContext).showSnackBar(
+            const SnackBar(content: Text('No cameras available')),
+          );
+        }
+        return;
       }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to pick image: $e')),
+      
+      _controller = CameraController(
+        _cameras[0],
+        ResolutionPreset.max,
+        enableAudio: false,
+        imageFormatGroup: ImageFormatGroup.jpeg,
       );
+      await _controller!.initialize();
+      setState(() {
+        _isCameraReady = true;
+      });
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          SnackBar(content: Text('Failed to initialize camera: $e')),
+        );
+      }
     }
   }
-  
-  Future<void> _analyzeImage(ModelService modelService) async {
-    if (_selectedImageBytes == null) return;
+
+  Future<void> _takePhoto() async {
+    final currentContext = context;
+    final modelService = Provider.of<ModelService>(currentContext, listen: false);
+    
+    if (_controller == null || !_controller!.value.isInitialized || _isProcessing) {
+      return;
+    }
+    
+    if (!modelService.isModelLoaded) {
+      if (mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          const SnackBar(content: Text('Please download the model first')),
+        );
+      }
+      return;
+    }
     
     setState(() {
       _isProcessing = true;
     });
     
     try {
-      // Determine image format from path or default to jpeg
-      String format = 'jpeg';
-      if (_selectedImagePath != null) {
-        final ext = _selectedImagePath!.split('.').last.toLowerCase();
-        if (ext == 'png' || ext == 'jpg' || ext == 'jpeg') {
-          format = ext == 'png' ? 'png' : 'jpeg';
-        }
-      }
+      final XFile image = await _controller!.takePicture();
+      final bytes = await image.readAsBytes();
       
-      final result = await modelService.identifySpecies(_selectedImageBytes!, format);
+      // Show loading overlay
+      showDialog(
+        context: currentContext,
+        barrierDismissible: false,
+        builder: (context) => const Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
       
-      // Navigate to result page
+      final result = await modelService.identifySpecies(bytes, 'jpeg');
+      
       if (!mounted) return;
+      Navigator.pop(currentContext); // Remove loader
       
       Navigator.push(
-        context,
+        currentContext,
         MaterialPageRoute(
           builder: (context) => ResultPage(
-            imageBytes: _selectedImageBytes!,
+            imageBytes: bytes,
             analysisResult: result,
           ),
         ),
       );
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Analysis failed: $e')),
-      );
+      if (mounted) {
+        Navigator.pop(currentContext); // Remove loader if present
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          SnackBar(content: Text('Failed to analyze image: $e')),
+        );
+      }
     } finally {
       if (mounted) {
         setState(() {
@@ -281,7 +132,31 @@ class _HomePageState extends State<HomePage> {
       }
     }
   }
-  
+
+  Future<void> _downloadModel() async {
+    final currentContext = context;
+    final modelService = Provider.of<ModelService>(currentContext, listen: false);
+    
+    if (modelService.isLoading || modelService.isModelLoaded) return;
+    
+    try {
+      await modelService.downloadModel(onProgress: (progress) {
+        // Progress updates handled by ModelService notifier
+      });
+      if (mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          const SnackBar(content: Text('Model downloaded successfully!')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          SnackBar(content: Text('Download failed: $e')),
+        );
+      }
+    }
+  }
+
   void _showInfoDialog() {
     showDialog(
       context: context,
@@ -321,6 +196,174 @@ class _HomePageState extends State<HomePage> {
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
+        ],
+      ),
+    );
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final modelService = Provider.of<ModelService>(context);
+    
+    return Scaffold(
+      backgroundColor: Colors.black,
+      appBar: AppBar(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        title: const Text(
+          'Picture That',
+          style: TextStyle(color: Colors.white),
+        ),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.info_outline, color: Colors.white),
+            onPressed: _showInfoDialog,
+          ),
+        ],
+      ),
+      body: Stack(
+        children: [
+          // Camera preview
+          if (_isCameraReady && _controller != null && _controller!.value.isInitialized)
+            SizedBox.expand(
+              child: FittedBox(
+                fit: BoxFit.cover,
+                child: SizedBox(
+                  width: _controller!.value.previewSize!.height,
+                  height: _controller!.value.previewSize!.width,
+                  child: CameraPreview(_controller!),
+                ),
+              ),
+            )
+          else
+            const Center(
+              child: CircularProgressIndicator(color: Colors.white),
+            ),
+          
+          // Model status indicator (top right)
+          Positioned(
+            top: MediaQuery.of(context).padding.top + 10,
+            right: 20,
+            child: GestureDetector(
+              onTap: modelService.isModelLoaded ? null : _downloadModel,
+              child: Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: modelService.isModelLoaded
+                      ? Colors.green
+                      : modelService.error != null
+                          ? Colors.red
+                          : modelService.isLoading
+                              ? Colors.orange
+                              : Colors.grey,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 2),
+                ),
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    if (modelService.isLoading)
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                          value: modelService.status.contains('%')
+                              ? double.tryParse(modelService.status.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0 / 100
+                              : null,
+                          strokeWidth: 2,
+                          color: Colors.white,
+                          backgroundColor: Colors.transparent,
+                        ),
+                      ),
+                    Icon(
+                      modelService.isModelLoaded
+                          ? Icons.check
+                          : modelService.error != null
+                              ? Icons.error
+                              : Icons.download,
+                      color: Colors.white,
+                      size: 16,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          
+          // Capture button at bottom
+          if (_isCameraReady)
+            Positioned(
+              bottom: 40,
+              left: 0,
+              right: 0,
+              child: Center(
+                child: FloatingActionButton(
+                  onPressed: _isProcessing || !modelService.isModelLoaded ? null : _takePhoto,
+                  backgroundColor: Colors.white,
+                  foregroundColor: Colors.black,
+                  shape: const CircleBorder(),
+                  child: _isProcessing
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(color: Colors.black),
+                        )
+                      : const Icon(Icons.camera_alt, size: 30),
+                ),
+              ),
+            ),
+          
+          // Status message overlay
+          if (modelService.status.isNotEmpty && !modelService.isModelLoaded)
+            Positioned(
+              top: MediaQuery.of(context).padding.top + 70,
+              left: 20,
+              right: 20,
+              child: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Color.fromRGBO(0, 0, 0, 0.7),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Model Status',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      modelService.status,
+                      style: const TextStyle(color: Colors.white),
+                    ),
+                    if (modelService.error != null) ...[
+                      const SizedBox(height: 4),
+                      Text(
+                        modelService.error!,
+                        style: const TextStyle(color: Colors.red),
+                      ),
+                    ],
+                    if (!modelService.isModelLoaded && !modelService.isLoading) ...[
+                      const SizedBox(height: 8),
+                      ElevatedButton(
+                        onPressed: _downloadModel,
+                        child: const Text('Download Model (2.4GB)'),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ),
         ],
       ),
     );
