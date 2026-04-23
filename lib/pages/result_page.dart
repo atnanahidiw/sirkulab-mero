@@ -1,8 +1,8 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import '../services/species_service.dart';
 
-class ResultPage extends StatelessWidget {
+class ResultPage extends StatefulWidget {
   final Uint8List imageBytes;
   final String analysisResult;
   
@@ -11,6 +11,56 @@ class ResultPage extends StatelessWidget {
     required this.imageBytes,
     required this.analysisResult,
   });
+  
+  @override
+  State<ResultPage> createState() => _ResultPageState();
+}
+
+class _ResultPageState extends State<ResultPage> {
+  Species? _species;
+  
+  @override
+  void initState() {
+    super.initState();
+    _loadSpeciesData();
+  }
+  
+  Future<void> _loadSpeciesData() async {
+    try {
+      final speciesName = _extractSpeciesName(widget.analysisResult);
+      if (speciesName.isNotEmpty) {
+        final service = SpeciesService();
+        final allSpecies = await service.loadSpecies();
+        final matched = allSpecies.firstWhere(
+          (s) => s.name.toLowerCase().contains(speciesName.toLowerCase()) ||
+                 speciesName.toLowerCase().contains(s.name.toLowerCase()),
+          orElse: () => Species(name: '', latinName: '', description: '', facts: []),
+        );
+        if (matched.name.isNotEmpty) {
+          setState(() {
+            _species = matched;
+          });
+        }
+      }
+    } catch (e) {
+      debugPrint('Error loading species data: $e');
+    }
+  }
+  
+  String _extractSpeciesName(String result) {
+    // Try to find a header (## Species Name)
+    final lines = result.split('\n');
+    for (final line in lines) {
+      if (line.startsWith('## ')) {
+        final name = line.substring(3).trim();
+        // Remove any extra markdown
+        return name.replaceAll('**', '').replaceAll('*', '').trim();
+      }
+    }
+    // If no header, maybe the first line
+    final firstLine = lines.firstWhere((line) => line.trim().isNotEmpty, orElse: () => '');
+    return firstLine.replaceAll('**', '').replaceAll('*', '').trim();
+  }
   
   @override
   Widget build(BuildContext context) {
@@ -39,11 +89,76 @@ class ResultPage extends StatelessWidget {
                 elevation: 4,
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
-                  child: Image.memory(imageBytes),
+                  child: Image.memory(widget.imageBytes),
                 ),
               ),
               
               const SizedBox(height: 24),
+              
+              // Species details (if found)
+              if (_species != null) ...[
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            const Icon(Icons.emoji_nature, color: Colors.green),
+                            const SizedBox(width: 8),
+                            Text(
+                              _species!.name,
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 20,
+                              ),
+                            ),
+                          ],
+                        ),
+                        if (_species!.latinName.isNotEmpty) ...[
+                          const SizedBox(height: 8),
+                          Text(
+                            _species!.latinName,
+                            style: TextStyle(
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        ],
+                        const SizedBox(height: 12),
+                        Text(
+                          _species!.description,
+                          style: const TextStyle(fontSize: 16),
+                        ),
+                        if (_species!.facts.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          const Text(
+                            'Interesting Facts:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 18,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ..._species!.facts.map((fact) => Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 4.0),
+                            child: Row(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const Icon(Icons.star, size: 16, color: Colors.amber),
+                                const SizedBox(width: 10),
+                                Expanded(child: Text(fact)),
+                              ],
+                            ),
+                          )),
+                        ],
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
               
               // Analysis result
               Card(
@@ -66,7 +181,7 @@ class ResultPage extends StatelessWidget {
                         ],
                       ),
                       const SizedBox(height: 16),
-                      _parseAndDisplayResult(analysisResult),
+                      _parseAndDisplayResult(widget.analysisResult),
                     ],
                   ),
                 ),
@@ -244,7 +359,7 @@ class ResultPage extends StatelessWidget {
   
   Future<void> _shareResult(BuildContext context) async {
     // Simple share implementation
-    final text = 'Endangered Species Analysis:\n\n$analysisResult';
+    final text = 'Endangered Species Analysis:\n\n${widget.analysisResult}';
     
     try {
       await Clipboard.setData(ClipboardData(text: text));
@@ -260,7 +375,7 @@ class ResultPage extends StatelessWidget {
   
   Future<void> _copyToClipboard(BuildContext context) async {
     try {
-      await Clipboard.setData(ClipboardData(text: analysisResult));
+      await Clipboard.setData(ClipboardData(text: widget.analysisResult));
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Analysis copied to clipboard')),
       );

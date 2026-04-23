@@ -1,9 +1,7 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:path_provider/path_provider.dart';
 import 'species_service.dart';
 
 class ModelService extends ChangeNotifier {
@@ -14,8 +12,8 @@ class ModelService extends ChangeNotifier {
   String? _error;
   InferenceModel? _model;
   
-  // Model configuration - Gemma 4 4B Instruct (quantized)
-  final String modelUrl = 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it-int4.litertlm';
+  // Model configuration - Gemma 4 2B Instruct (quantized)
+  final String modelUrl = 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm';
   final ModelType modelType = ModelType.gemmaIt;
   final int maxTokens = 1024;
   

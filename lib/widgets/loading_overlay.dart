@@ -20,7 +20,7 @@ class LoadingOverlay extends StatelessWidget {
         if (isLoading)
           ModalBarrier(
             dismissible: false,
-            color: Colors.black.withOpacity(0.5),
+            color: Color.fromRGBO(0, 0, 0, 0.5),
           ),
         if (isLoading)
           Center(
