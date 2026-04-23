@@ -5,6 +5,7 @@
 .pub/
 build/
 .fvm/
+.flutter-plugins-dependencies
 
 # Android
 android/.gradle
