@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -22,6 +23,7 @@ class _HomePageState extends State<HomePage> {
   void initState() {
     super.initState();
     _initializeCamera();
+    _ensureModelReady();
   }
 
   Future<void> _initializeCamera() async {
@@ -66,6 +68,18 @@ class _HomePageState extends State<HomePage> {
           SnackBar(content: Text('Failed to initialize camera: $e')),
         );
       }
+    }
+  }
+
+  Future<void> _ensureModelReady() async {
+    // Wait a bit for camera to initialize, then check model
+    await Future.delayed(const Duration(milliseconds: 500));
+    if (!mounted) return;
+    
+    final modelService = Provider.of<ModelService>(context, listen: false);
+    // If model is not loaded and not currently loading/initialized, log status
+    if (!modelService.isModelLoaded && !modelService.isLoading && !modelService.isInitialized) {
+      debugPrint('Ensuring model ready: isInitialized=${modelService.isInitialized}, isLoading=${modelService.isLoading}, isModelLoaded=${modelService.isModelLoaded}');
     }
   }
 
@@ -355,6 +369,9 @@ class _HomePageState extends State<HomePage> {
                     ],
                     if (!modelService.isModelLoaded && !modelService.isLoading) ...[
                       const SizedBox(height: 8),
+                      // We removed the manual start download action by making it start automatically 
+                      // in ModelService._initialize(), but keeping the button as a manual override to redownload
+                      // if an error occurs.
                       ElevatedButton(
                         onPressed: _downloadModel,
                         child: const Text('Download Model (2.4GB)'),

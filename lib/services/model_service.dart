@@ -1,7 +1,12 @@
 import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:image/image.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:share_plus/share_plus.dart';
 import 'species_service.dart';
 
 class ModelService extends ChangeNotifier {
@@ -34,9 +39,6 @@ class ModelService extends ChangeNotifier {
   
   Future<void> _initialize() async {
     try {
-      _status = 'Checking for local model...';
-      notifyListeners();
-      
       // Load species database
       try {
         final speciesList = await _speciesService.loadSpecies();
@@ -46,18 +48,21 @@ class ModelService extends ChangeNotifier {
         debugPrint('Failed to load species data: $e');
       }
       
-      // 1. Cek apakah model sudah terinstall via FlutterGemma
-      final isInstalled = await FlutterGemma.isModelInstalled(modelUrl);
-      if (isInstalled) {
-        _status = 'Existing model found. Loading...';
-        notifyListeners();
+      // Try to load model if already installed (regardless of source)
+      _status = 'Checking for installed model...';
+      notifyListeners();
+      try {
         await _loadModel();
+        _status = 'Model ready';
         _isInitialized = true;
         return;
+      } catch (e) {
+        debugPrint('Model not installed or failed to load: $e');
+        // Fall through to check for local model or download
       }
-
-      // 2. Cek manual di folder Download (untuk AI Edge Gallery/Manual Download)
-      _status = 'Scanning Download folder...';
+      
+      // 1. Check for local model file
+      _status = 'Scanning for local model...';
       notifyListeners();
       final localModelPath = await _checkForLocalModel();
       if (localModelPath != null) {
@@ -70,12 +75,14 @@ class ModelService extends ChangeNotifier {
           return;
         } catch (e) {
           debugPrint('Local install failed: $e');
+          // Fall through to download
         }
       }
       
-      _status = 'Model not found. Ready to download.';
+      // 2. No local model found, start download
+      _status = 'Downloading model...';
       notifyListeners();
-      _isInitialized = true;
+      await downloadModel();
     } catch (e) {
       _error = 'Initialization failed: $e';
       _status = 'Error: $e';
@@ -85,16 +92,52 @@ class ModelService extends ChangeNotifier {
 
   Future<String?> _checkForLocalModel() async {
     try {
-      // Common path for Android downloads
-      final directory = Directory('/storage/emulated/0/Download');
-      if (await directory.exists()) {
-        final files = directory.listSync();
-        for (var file in files) {
-          if (file is File && file.path.endsWith('.litertlm')) {
-            if (file.path.toLowerCase().contains('gemma')) {
-              return file.path;
+      // Check multiple possible locations for local model
+      final List<String> searchPaths = [];
+      
+      // 1. Downloads directory via path_provider (works across Android versions)
+      try {
+        final downloadsDir = await getDownloadsDirectory();
+        if (downloadsDir != null) {
+          searchPaths.add(downloadsDir.path);
+        }
+      } catch (e) {
+        debugPrint('Could not get downloads directory: $e');
+      }
+      
+      // 2. Common Android download path (fallback)
+      searchPaths.add('/storage/emulated/0/Download');
+      
+      // 3. AI Edge Gallery paths
+      searchPaths.add('/Android/media/com.google.ai.gallery/files/');
+      searchPaths.add('/storage/emulated/0/Android/media/com.google.ai.gallery/files/');
+      
+      // 4. App-specific documents directory
+      try {
+        final appDocDir = await getApplicationDocumentsDirectory();
+        searchPaths.add(appDocDir.path);
+      } catch (e) {
+        debugPrint('Could not get app documents directory: $e');
+      }
+      
+      // Search all paths for .litertlm files
+      for (final basePath in searchPaths) {
+        try {
+          final directory = Directory(basePath);
+          if (await directory.exists()) {
+            final files = directory.listSync(recursive: false); // Don't search recursively for performance
+            for (var file in files) {
+              if (file is File && 
+                  file.path.endsWith('.litertlm') && 
+                  file.path.toLowerCase().contains('gemma')) {
+                debugPrint('Found local model at: ${file.path}');
+                return file.path;
+              }
             }
           }
+        } catch (e) {
+          debugPrint('Error searching path $basePath: $e');
+          continue;
         }
       }
     } catch (e) {

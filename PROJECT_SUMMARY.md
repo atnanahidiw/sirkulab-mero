@@ -1,7 +1,7 @@
 # Picture That - Project Summary
 
 ## Overview
-A Flutter application that uses **Gemma 4 E2B** AI model running **locally on device** to identify endangered species from images. The app minimizes internet usage by downloading the model once (~2.4GB) and then working completely offline.
+A Flutter application that uses **Gemma 4 E2B** AI model running **locally on device** to identify Indonesia endangered species from images. The app minimizes internet usage by downloading the model once (~2.4GB) and then working completely offline.
 
 ## Key Features
 
@@ -15,12 +15,11 @@ A Flutter application that uses **Gemma 4 E2B** AI model running **locally on de
 - Gemma 4 E2B model with vision capabilities
 - Analyzes images for endangered species identification
 - Provides conservation status and information
-- Works with both camera photos and gallery images
+- Works with camera photos
 
 ### 3. **Minimal Internet Usage**
 - Only downloads model once (2.4GB)
 - All inference happens locally
-- Optional HuggingFace token for gated models
 - Smart download with retry logic
 
 ### 4. **Cross-Platform Support**
