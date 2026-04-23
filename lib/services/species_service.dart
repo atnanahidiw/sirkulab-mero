@@ -1,0 +1,43 @@
+import 'dart:convert';
+import 'dart:io';
+import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
+class Species {
+  final String name;
+  final String latinName;
+  final String description;
+  final List<String> facts;
+
+  Species({required this.name, required this.latinName, required this.description, required this.facts});
+
+  factory Species.fromJson(Map<String, dynamic> json) {
+    return Species(
+      name: json['name'],
+      latinName: json['latinName'] ?? '',
+      description: json['description'],
+      facts: List<String>.from(json['facts']),
+    );
+  }
+}
+
+class SpeciesService {
+  static const String _dataPath = 'assets/data/species_data.json';
+
+  Future<List<Species>> loadSpecies() async {
+    try {
+      final String response = await rootBundle.loadString(_dataPath);
+      final data = json.decode(response);
+      return (data as List).map((json) => Species.fromJson(json)).toList();
+    } catch (e) {
+      print('Error loading species data: $e');
+      return [];
+    }
+  }
+
+  Species? findSpecies(String name) {
+    // This would be called after the LLM identifies the species name
+    // In a real app, this would be a local database or the JSON file
+    return null; // Implementation handled in the screen for this demo
+  }
+}

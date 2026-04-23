@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
+import 'species_service.dart';
 
 class ModelService extends ChangeNotifier {
   bool _isInitialized = false;
@@ -17,6 +18,10 @@ class ModelService extends ChangeNotifier {
   final String modelUrl = 'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it-int4.litertlm';
   final ModelType modelType = ModelType.gemmaIt;
   final int maxTokens = 1024;
+  
+  // Species database
+  final SpeciesService _speciesService = SpeciesService();
+  List<Species> _speciesList = [];
   
   bool get isInitialized => _isInitialized;
   bool get isLoading => _isLoading;
@@ -33,6 +38,15 @@ class ModelService extends ChangeNotifier {
     try {
       _status = 'Checking for local model...';
       notifyListeners();
+      
+      // Load species database
+      try {
+        final speciesList = await _speciesService.loadSpecies();
+        _speciesList = speciesList;
+        debugPrint('Loaded ${_speciesList.length} species');
+      } catch (e) {
+        debugPrint('Failed to load species data: $e');
+      }
       
       // 1. Cek apakah model sudah terinstall via FlutterGemma
       final isInstalled = await FlutterGemma.isModelInstalled(modelUrl);
@@ -159,30 +173,27 @@ class ModelService extends ChangeNotifier {
       _status = 'Analyzing image...';
       notifyListeners();
       
+      // Prepare species list for prompt
+      final speciesNames = _speciesList.map((s) => s.name).toList();
+      final speciesListString = speciesNames.isNotEmpty ? speciesNames.join(', ') : 'endangered Indonesian species';
+      
       // Create session with Vision enabled for multimodal analysis
       final session = await _model!.createSession(
         enableVisionModality: true,
         systemInstruction: '''
-        You are an expert wildlife biologist and conservationist specializing in endangered species identification.
-        Your task is to analyze images and identify if they contain endangered species.
-        
-        For each image:
-        1. Identify the species if possible (common name and scientific name)
-        2. Determine if it's endangered, threatened, or of least concern
-        3. Provide conservation status (IUCN Red List category if known)
-        4. Share interesting facts about the species
-        5. Suggest conservation actions if endangered
-        
-        Be concise but informative. If the image doesn't contain an animal or plant, say so.
-        If you're unsure, admit uncertainty but provide best guess with confidence level.
-        
-        Format your response with clear sections.
-        ''',
+You are an expert wildlife biologist specializing in endangered Indonesian species identification.
+Your task is to analyze images and identify if they contain endangered species from the following list:
+$speciesListString.
+
+If the species is in the list, respond with ONLY the exact common name as shown in the list.
+If the species is not in the list or you are unsure, respond with "Not recognized".
+Do not add any additional text, explanations, or formatting.
+''',
       );
       
       // Use Message.withImage to provide both image and text prompt
       await session.addQueryChunk(Message.withImage(
-        text: 'Analyze this image for endangered species. Identify the species, conservation status, and provide relevant information.',
+        text: 'Identify the endangered Indonesian species in this image.',
         imageBytes: imageBytes,
         isUser: true,
       ));
@@ -190,13 +201,45 @@ class ModelService extends ChangeNotifier {
       _status = 'Generating analysis...';
       notifyListeners();
       
-      // Correct API for 0.13.6: getResponse()
+      // Get response
       final response = await session.getResponse();
+      final cleanedResponse = response.trim();
       
       _status = 'Analysis complete';
       notifyListeners();
       
-      return response;
+      // Try to match the response with known species
+      Species? matchedSpecies;
+      for (final species in _speciesList) {
+        if (cleanedResponse.toLowerCase().contains(species.name.toLowerCase())) {
+          matchedSpecies = species;
+          break;
+        }
+      }
+      
+      // If we found a match, format a detailed response
+      if (matchedSpecies != null) {
+        return '''
+## ${matchedSpecies.name}
+*Scientific name:* ${matchedSpecies.latinName}
+
+${matchedSpecies.description}
+
+**Interesting facts:**
+${matchedSpecies.facts.map((fact) => '• $fact').join('\n')}
+
+*This species is endangered and protected in Indonesian National Parks.*
+''';
+      }
+      
+      // If not recognized but response is not "Not recognized", maybe the AI gave some info
+      if (!cleanedResponse.toLowerCase().contains('not recognized')) {
+        // Return raw response (maybe the AI identified something else)
+        return '## Analysis Result\n$cleanedResponse\n\n*Note: This species is not in our endangered Indonesian species database.*';
+      }
+      
+      // Default fallback
+      return '## Species Not Recognized\nUnable to identify an endangered Indonesian species from the image.\n\nPlease ensure the image contains a clear view of an animal or plant from Indonesian National Parks.';
     } catch (e) {
       _error = 'Identification failed: $e';
       _status = 'Error: $e';

@@ -35,6 +35,7 @@ flutter:
   uses-material-design: true
   assets:
     - assets/images/
+    - assets/data/species_data.json
     - .env
 
   # For iOS, need to set minimum version
