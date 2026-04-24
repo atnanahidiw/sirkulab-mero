@@ -1,4 +1,3 @@
-import 'dart:io';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
@@ -19,7 +18,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late List<CameraDescription> _cameras;
   bool _isCameraReady = false;
   bool _isProcessing = false;
-  
+
   @override
   void initState() {
     super.initState();
@@ -31,29 +30,29 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _initializeCamera() async {
     // Capture context before async gap
     final currentContext = context;
-    
+
     // Request camera permission
     final status = await Permission.camera.request();
     if (!status.isGranted) {
-      if (mounted) {
+      if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
           const SnackBar(content: Text('Camera permission required')),
         );
       }
       return;
     }
-    
+
     try {
       _cameras = await availableCameras();
       if (_cameras.isEmpty) {
-        if (mounted) {
+        if (currentContext.mounted) {
           ScaffoldMessenger.of(currentContext).showSnackBar(
             const SnackBar(content: Text('No cameras available')),
           );
         }
         return;
       }
-      
+
       _controller = CameraController(
         _cameras[0],
         ResolutionPreset.medium,
@@ -65,7 +64,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _isCameraReady = true;
       });
     } catch (e) {
-      if (mounted) {
+      if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
           SnackBar(content: Text('Failed to initialize camera: $e')),
         );
@@ -73,39 +72,30 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _ensureModelReady() async {
-    // Don't block UI - just trigger model loading if needed
-    // The model service handles loading asynchronously
-    final modelService = Provider.of<ModelService>(context, listen: false);
-    
-    if (!modelService.isModelLoaded && !modelService.isLoading && !modelService.isInitialized) {
-      debugPrint('Model not ready, triggering background download...');
-      modelService.downloadModel();
-    }
-    // UI continues normally - model service will update status via notifyListeners
-  }
-
   Future<void> _takePhoto() async {
     final currentContext = context;
-    final modelService = Provider.of<ModelService>(currentContext, listen: false);
-    
-    if (_controller == null || !_controller!.value.isInitialized || _isProcessing) {
+    final modelService =
+        Provider.of<ModelService>(currentContext, listen: false);
+
+    if (_controller == null ||
+        !_controller!.value.isInitialized ||
+        _isProcessing) {
       return;
     }
-    
+
     if (!modelService.isModelLoaded) {
-      if (mounted) {
+      if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
           const SnackBar(content: Text('Please download the model first')),
         );
       }
       return;
     }
-    
+
     setState(() {
       _isProcessing = true;
     });
-    
+
     try {
       // Take picture with error handling
       XFile image;
@@ -113,26 +103,28 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         image = await _controller!.takePicture();
       } catch (cameraError) {
         debugPrint('Camera error: $cameraError');
-        if (mounted) {
+        if (currentContext.mounted) {
           ScaffoldMessenger.of(currentContext).showSnackBar(
             SnackBar(content: Text('Camera error: $cameraError')),
           );
         }
         return;
       }
-      
+
       Uint8List bytes;
       try {
         bytes = await image.readAsBytes();
       } catch (readError) {
         debugPrint('Read error: $readError');
-        if (mounted) {
+        if (currentContext.mounted) {
           ScaffoldMessenger.of(currentContext).showSnackBar(
             SnackBar(content: Text('Failed to read image: $readError')),
           );
         }
         return;
       }
+
+      if (!currentContext.mounted) return;
       
       // Show loading overlay
       showDialog(
@@ -142,12 +134,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           child: CircularProgressIndicator(color: Colors.white),
         ),
       );
-      
+
       final result = await modelService.identifySpecies(bytes, 'jpeg');
-      
-      if (!mounted) return;
+
+      if (!currentContext.mounted) return;
       Navigator.pop(currentContext); // Remove loader
-      
+
       Navigator.push(
         currentContext,
         MaterialPageRoute(
@@ -158,7 +150,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         ),
       );
     } catch (e) {
-      if (mounted) {
+      if (currentContext.mounted) {
         Navigator.pop(currentContext); // Remove loader if present
         ScaffoldMessenger.of(currentContext).showSnackBar(
           SnackBar(content: Text('Failed to analyze image: $e')),
@@ -175,21 +167,22 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
   Future<void> _downloadModel() async {
     final currentContext = context;
-    final modelService = Provider.of<ModelService>(currentContext, listen: false);
-    
+    final modelService =
+        Provider.of<ModelService>(currentContext, listen: false);
+
     if (modelService.isLoading || modelService.isModelLoaded) return;
-    
+
     try {
       await modelService.downloadModel(onProgress: (progress) {
         // Progress updates handled by ModelService notifier
       });
-      if (mounted) {
+      if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
           const SnackBar(content: Text('Model downloaded successfully!')),
         );
       }
     } catch (e) {
-      if (mounted) {
+      if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
           SnackBar(content: Text('Download failed: $e')),
         );
@@ -247,14 +240,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _controller?.dispose();
     super.dispose();
   }
-  
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     final CameraController? cameraController = _controller;
     if (cameraController == null || !cameraController.value.isInitialized) {
       return;
     }
-    
+
     if (state == AppLifecycleState.inactive) {
       cameraController.dispose();
     } else if (state == AppLifecycleState.resumed) {
@@ -265,7 +258,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   Widget build(BuildContext context) {
     final modelService = Provider.of<ModelService>(context);
-    
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -285,7 +278,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       body: Stack(
         children: [
           // Camera preview
-          if (_isCameraReady && _controller != null && _controller!.value.isInitialized)
+          if (_isCameraReady &&
+              _controller != null &&
+              _controller!.value.isInitialized)
             SizedBox.expand(
               child: FittedBox(
                 fit: BoxFit.cover,
@@ -300,7 +295,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             const Center(
               child: CircularProgressIndicator(color: Colors.white),
             ),
-          
+
           // Model status indicator (top right)
           Positioned(
             top: MediaQuery.of(context).padding.top + 10,
@@ -329,7 +324,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         height: 20,
                         child: CircularProgressIndicator(
                           value: modelService.status.contains('%')
-                              ? double.tryParse(modelService.status.replaceAll(RegExp(r'[^0-9.]'), '')) ?? 0.0 / 100
+                              ? double.tryParse(modelService.status
+                                      .replaceAll(RegExp(r'[^0-9.]'), '')) ??
+                                  0.0 / 100
                               : null,
                           strokeWidth: 2,
                           color: Colors.white,
@@ -350,7 +347,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               ),
             ),
           ),
-          
+
           // Capture button at bottom
           if (_isCameraReady)
             Positioned(
@@ -359,7 +356,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
               right: 0,
               child: Center(
                 child: FloatingActionButton(
-                  onPressed: _isProcessing || !modelService.isModelLoaded ? null : _takePhoto,
+                  onPressed: _isProcessing || !modelService.isModelLoaded
+                      ? null
+                      : _takePhoto,
                   backgroundColor: Colors.white,
                   foregroundColor: Colors.black,
                   shape: const CircleBorder(),
@@ -373,7 +372,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 ),
               ),
             ),
-          
+
           // Status message overlay
           if (modelService.status.isNotEmpty && !modelService.isModelLoaded)
             Positioned(
@@ -408,9 +407,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                         style: const TextStyle(color: Colors.red),
                       ),
                     ],
-                    if (!modelService.isModelLoaded && !modelService.isLoading) ...[
+                    if (!modelService.isModelLoaded &&
+                        !modelService.isLoading) ...[
                       const SizedBox(height: 8),
-                      // We removed the manual start download action by making it start automatically 
+                      // We removed the manual start download action by making it start automatically
                       // in ModelService._initialize(), but keeping the button as a manual override to redownload
                       // if an error occurs.
                       ElevatedButton(

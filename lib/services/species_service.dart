@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
 class Species {
@@ -7,7 +8,11 @@ class Species {
   final String description;
   final List<String> facts;
 
-  Species({required this.name, required this.latinName, required this.description, required this.facts});
+  Species(
+      {required this.name,
+      required this.latinName,
+      required this.description,
+      required this.facts});
 
   factory Species.fromJson(Map<String, dynamic> json) {
     return Species(
@@ -28,7 +33,7 @@ class SpeciesService {
       final data = json.decode(response);
       return (data as List).map((json) => Species.fromJson(json)).toList();
     } catch (e) {
-      print('Error loading species data: $e');
+      debugPrint('Error loading species data: $e');
       return [];
     }
   }

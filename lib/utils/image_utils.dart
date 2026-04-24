@@ -1,5 +1,6 @@
 import 'dart:typed_data';
 import 'dart:ui' as ui;
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:image/image.dart' as img;
 
@@ -15,38 +16,38 @@ class ImageUtils {
       // Decode image
       final image = img.decodeImage(imageBytes);
       if (image == null) return imageBytes;
-      
+
       // Calculate new dimensions while maintaining aspect ratio
       final originalWidth = image.width;
       final originalHeight = image.height;
-      
+
       if (originalWidth <= maxWidth && originalHeight <= maxHeight) {
         // No compression needed
         return imageBytes;
       }
-      
+
       double widthRatio = originalWidth / maxWidth;
       double heightRatio = originalHeight / maxHeight;
       double ratio = widthRatio > heightRatio ? widthRatio : heightRatio;
-      
+
       int newWidth = (originalWidth / ratio).round();
       int newHeight = (originalHeight / ratio).round();
-      
+
       // Resize image
       final resized = img.copyResize(
         image,
         width: newWidth,
         height: newHeight,
       );
-      
+
       // Encode as JPEG with quality
       return img.encodeJpg(resized, quality: quality);
     } catch (e) {
-      print('Image compression failed: $e');
+      debugPrint('Image compression failed: $e');
       return imageBytes;
     }
   }
-  
+
   /// Convert image to format suitable for model input
   static Future<Uint8List> prepareImageForModel(
     Uint8List imageBytes, {
@@ -57,7 +58,7 @@ class ImageUtils {
     // or apply preprocessing required by the model
     return compressImage(imageBytes);
   }
-  
+
   /// Get image dimensions
   static Future<ui.Size> getImageDimensions(Uint8List imageBytes) async {
     try {
@@ -71,7 +72,7 @@ class ImageUtils {
       return const ui.Size(0, 0);
     }
   }
-  
+
   /// Create thumbnail for preview
   static Future<Uint8List> createThumbnail(
     Uint8List imageBytes, {
@@ -80,12 +81,12 @@ class ImageUtils {
     try {
       final image = img.decodeImage(imageBytes);
       if (image == null) return imageBytes;
-      
+
       // Create square thumbnail (cover effect)
       int minDim = image.width < image.height ? image.width : image.height;
       int xOffset = (image.width - minDim) ~/ 2;
       int yOffset = (image.height - minDim) ~/ 2;
-      
+
       final cropped = img.copyCrop(
         image,
         x: xOffset,
@@ -93,25 +94,29 @@ class ImageUtils {
         width: minDim,
         height: minDim,
       );
-      
+
       final thumbnail = img.copyResize(
         cropped,
         width: size,
         height: size,
       );
-      
+
       return img.encodeJpg(thumbnail, quality: 80);
     } catch (e) {
       return imageBytes;
     }
   }
-  
+
   /// Check if image format is supported
   static bool isSupportedFormat(String path) {
     final ext = path.split('.').last.toLowerCase();
-    return ext == 'jpg' || ext == 'jpeg' || ext == 'png' || ext == 'bmp' || ext == 'gif';
+    return ext == 'jpg' ||
+        ext == 'jpeg' ||
+        ext == 'png' ||
+        ext == 'bmp' ||
+        ext == 'gif';
   }
-  
+
   /// Get MIME type from file extension
   static String getMimeType(String path) {
     final ext = path.split('.').last.toLowerCase();
@@ -129,7 +134,7 @@ class ImageUtils {
         return 'image/jpeg';
     }
   }
-  
+
   /// Get file extension from MIME type
   static String getExtensionFromMimeType(String mimeType) {
     switch (mimeType) {

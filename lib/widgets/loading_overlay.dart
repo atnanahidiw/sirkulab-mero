@@ -4,14 +4,14 @@ class LoadingOverlay extends StatelessWidget {
   final bool isLoading;
   final String message;
   final Widget child;
-  
+
   const LoadingOverlay({
     super.key,
     required this.isLoading,
     this.message = 'Loading...',
     required this.child,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -50,13 +50,13 @@ class LoadingOverlay extends StatelessWidget {
 class ProgressIndicatorWithLabel extends StatelessWidget {
   final double progress;
   final String label;
-  
+
   const ProgressIndicatorWithLabel({
     super.key,
     required this.progress,
     required this.label,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -85,13 +85,13 @@ class ProgressIndicatorWithLabel extends StatelessWidget {
 class ErrorDisplay extends StatelessWidget {
   final String error;
   final VoidCallback? onRetry;
-  
+
   const ErrorDisplay({
     super.key,
     required this.error,
     this.onRetry,
   });
-  
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -109,8 +109,8 @@ class ErrorDisplay extends StatelessWidget {
             Text(
               'Error',
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                color: Colors.red,
-              ),
+                    color: Colors.red,
+                  ),
             ),
             const SizedBox(height: 8),
             Text(

@@ -5,15 +5,22 @@ import 'package:permission_handler/permission_handler.dart';
 
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
-import '../app_constants.dart';
 
 class SettingsPage extends StatelessWidget {
+  static const Map<String, String> _conservationResources = {
+    'IUCN Red List': 'https://www.iucnredlist.org',
+    'World Wildlife Fund': 'https://www.worldwildlife.org',
+    'Conservation International': 'https://www.conservation.org',
+    'CITES': 'https://cites.org',
+    'ARKive': 'https://www.arkive.org',
+  };
+
   const SettingsPage({super.key});
 
   @override
   Widget build(BuildContext context) {
     final modelService = Provider.of<ModelService>(context);
-    
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
@@ -24,7 +31,8 @@ class SettingsPage extends StatelessWidget {
           _buildSectionHeader('AI Model'),
           _buildListTile(
             title: 'Model Information',
-            subtitle: '${AppConstants.modelName} (${AppConstants.modelSizeGB}GB)',
+            subtitle:
+                'Gemma 4 E2B (2.4GB)',
             icon: Icons.model_training,
             onTap: () => _showModelInfo(context, modelService),
           ),
@@ -34,7 +42,7 @@ class SettingsPage extends StatelessWidget {
             icon: Icons.storage,
             onTap: () => _manageModel(context, modelService),
           ),
-          
+
           // Permissions
           _buildSectionHeader('Permissions'),
           FutureBuilder<Map<String, bool>>(
@@ -43,7 +51,7 @@ class SettingsPage extends StatelessWidget {
               if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               }
-              
+
               final permissions = snapshot.data!;
               return Column(
                 children: [
@@ -66,47 +74,47 @@ class SettingsPage extends StatelessWidget {
               );
             },
           ),
-          
+
           // App Information
           _buildSectionHeader('Information'),
           _buildListTile(
             title: 'About',
-            subtitle: '${AppConstants.appName} v${AppConstants.appVersion}',
+            subtitle: 'Picture That v1.0.0',
             icon: Icons.info,
             onTap: () => _showAboutDialog(context),
           ),
           _buildListTile(
             title: 'Privacy Policy',
             icon: Icons.privacy_tip,
-            onTap: () => _launchUrl(AppConstants.privacyPolicyUrl),
+            onTap: () => _launchUrl('https://example.com/privacy'),
           ),
           _buildListTile(
             title: 'Terms of Service',
             icon: Icons.description,
-            onTap: () => _launchUrl(AppConstants.termsOfServiceUrl),
+            onTap: () => _launchUrl('https://example.com/terms'),
           ),
           _buildListTile(
             title: 'GitHub Repository',
             icon: Icons.code,
-            onTap: () => _launchUrl(AppConstants.githubRepoUrl),
+            onTap: () => _launchUrl('https://github.com/example/picture-that'),
           ),
-          
+
           // Conservation Resources
           _buildSectionHeader('Conservation Resources'),
-          ...AppConstants.conservationResources.entries.map((entry) {
+          ..._conservationResources.entries.map((entry) {
             return _buildListTile(
               title: entry.key,
               icon: Icons.open_in_new,
               onTap: () => _launchUrl(entry.value),
             );
-          }).toList(),
-          
+          }),
+
           const SizedBox(height: 32),
         ],
       ),
     );
   }
-  
+
   Widget _buildSectionHeader(String title) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
@@ -120,7 +128,7 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
-  
+
   Widget _buildListTile({
     required String title,
     String? subtitle,
@@ -135,7 +143,7 @@ class SettingsPage extends StatelessWidget {
       onTap: onTap,
     );
   }
-  
+
   Widget _buildPermissionTile(
     String permission,
     bool isGranted, {
@@ -152,7 +160,7 @@ class SettingsPage extends StatelessWidget {
       onTap: onTap,
     );
   }
-  
+
   void _showModelInfo(BuildContext context, ModelService modelService) {
     showDialog(
       context: context,
@@ -195,7 +203,7 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
-  
+
   void _manageModel(BuildContext context, ModelService modelService) {
     showDialog(
       context: context,
@@ -245,16 +253,20 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
-  
-  Future<void> _managePermission(BuildContext context, String permission) async {
+
+  Future<void> _managePermission(
+      BuildContext context, String permission) async {
     final permissionType = permission == 'camera'
         ? Permission.camera
         : permission == 'photos'
             ? Permission.photos
             : Permission.storage;
-    
-    final isPermanentlyDenied = await PermissionService.isPermissionPermanentlyDenied(permissionType);
-    
+
+    final isPermanentlyDenied =
+        await PermissionService.isPermissionPermanentlyDenied(permissionType);
+
+    if (!context.mounted) return;
+
     if (isPermanentlyDenied) {
       showDialog(
         context: context,
@@ -281,7 +293,9 @@ class SettingsPage extends StatelessWidget {
       );
     } else {
       final status = await permissionType.request();
-      
+
+      if (!context.mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -293,7 +307,7 @@ class SettingsPage extends StatelessWidget {
       );
     }
   }
-  
+
   void _showAboutDialog(BuildContext context) {
     showDialog(
       context: context,
@@ -309,7 +323,7 @@ class SettingsPage extends StatelessWidget {
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              Text('Version: ${AppConstants.appVersion}'),
+              Text('Version: 1.0.0'),
               const SizedBox(height: 16),
               const Text(
                 'This app uses Gemma 4 AI model to identify endangered species from images.',
@@ -335,7 +349,7 @@ class SettingsPage extends StatelessWidget {
       ),
     );
   }
-  
+
   Future<void> _launchUrl(String url) async {
     try {
       final uri = Uri.parse(url);

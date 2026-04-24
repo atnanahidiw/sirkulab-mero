@@ -8,17 +8,17 @@ import 'services/model_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  
+
   // Load environment variables
   await dotenv.load(fileName: '.env');
-  
+
   // Initialize FlutterGemma
   await FlutterGemma.initialize(
     // webStorageMode: WebStorageMode.cacheApi, // Optional for web
     huggingFaceToken: dotenv.env['HUGGINGFACE_TOKEN'],
     maxDownloadRetries: 10,
   );
-  
+
   runApp(
     MultiProvider(
       providers: [
