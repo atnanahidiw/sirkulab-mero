@@ -38,6 +38,9 @@ class ModelService extends ChangeNotifier {
   }
   
   Future<void> _initialize() async {
+    // Small delay to let UI initialize first
+    await Future.delayed(const Duration(milliseconds: 100));
+    
     try {
       // Load species database
       try {
@@ -48,30 +51,45 @@ class ModelService extends ChangeNotifier {
         debugPrint('Failed to load species data: $e');
       }
       
-      // Try to load model if already installed (regardless of source)
-      _status = 'Checking for installed model...';
+      // Step 1: Check if model is already installed and active
+      _status = 'Checking for existing model...';
       notifyListeners();
+      
       try {
-        await _loadModel();
-        _status = 'Model ready';
-        _isInitialized = true;
-        return;
+        final existingModel = await FlutterGemma.getActiveModel(
+          maxTokens: maxTokens,
+          preferredBackend: PreferredBackend.gpu,
+        );
+        if (existingModel != null) {
+          _model = existingModel;
+          _isModelLoaded = true;
+          _isInitialized = true;
+          _status = 'Model ready';
+          debugPrint('Found existing active model');
+          notifyListeners();
+          return;
+        }
       } catch (e) {
-        debugPrint('Model not installed or failed to load: $e');
-        // Fall through to check for local model or download
+        debugPrint('No existing model found: $e');
       }
       
-      // 1. Check for local model file
+      // Step 2: Check for local model file
       _status = 'Scanning for local model...';
       notifyListeners();
       final localModelPath = await _checkForLocalModel();
       if (localModelPath != null) {
-        _status = 'Local model found! Installing...';
+        _status = 'Installing local model...';
         notifyListeners();
         try {
           await FlutterGemma.installModel(modelType: modelType).fromFile(localModelPath).install();
-          await _loadModel();
+          _model = await FlutterGemma.getActiveModel(
+            maxTokens: maxTokens,
+            preferredBackend: PreferredBackend.gpu,
+          );
+          _isModelLoaded = true;
           _isInitialized = true;
+          _status = 'Model ready';
+          notifyListeners();
           return;
         } catch (e) {
           debugPrint('Local install failed: $e');
@@ -79,23 +97,27 @@ class ModelService extends ChangeNotifier {
         }
       }
       
-      // 2. No local model found, start download
+      // Step 3: Download model from network
       _status = 'Downloading model...';
       notifyListeners();
       await downloadModel();
+      
+      _isInitialized = true;
+      _status = 'Model ready';
+      notifyListeners();
     } catch (e) {
       _error = 'Initialization failed: $e';
       _status = 'Error: $e';
       notifyListeners();
+      debugPrint('Init error: $e');
     }
   }
 
   Future<String?> _checkForLocalModel() async {
     try {
-      // Check multiple possible locations for local model
       final List<String> searchPaths = [];
       
-      // 1. Downloads directory via path_provider (works across Android versions)
+      // 1. Downloads directory
       try {
         final downloadsDir = await getDownloadsDirectory();
         if (downloadsDir != null) {
@@ -105,7 +127,7 @@ class ModelService extends ChangeNotifier {
         debugPrint('Could not get downloads directory: $e');
       }
       
-      // 2. Common Android download path (fallback)
+      // 2. Common Android download path
       searchPaths.add('/storage/emulated/0/Download');
       
       // 3. AI Edge Gallery paths
@@ -120,12 +142,11 @@ class ModelService extends ChangeNotifier {
         debugPrint('Could not get app documents directory: $e');
       }
       
-      // Search all paths for .litertlm files
       for (final basePath in searchPaths) {
         try {
           final directory = Directory(basePath);
           if (await directory.exists()) {
-            final files = directory.listSync(recursive: false); // Don't search recursively for performance
+            final files = directory.listSync(recursive: false);
             for (var file in files) {
               if (file is File && 
                   file.path.endsWith('.litertlm') && 
@@ -161,7 +182,6 @@ class ModelService extends ChangeNotifier {
         modelUrl,
         token: null, 
       ).withProgress((progress) {
-        // Correct API for 0.13.6: progress is int (0-100)
         _status = 'Downloading: $progress%';
         if (onProgress != null) {
           onProgress(progress / 100);
@@ -169,10 +189,23 @@ class ModelService extends ChangeNotifier {
         notifyListeners();
       }).install();
       
-      _status = 'Model downloaded successfully. Loading...';
+      _status = 'Model downloaded. Loading...';
       notifyListeners();
       
-      await _loadModel();
+      // Get the active model after installation
+      _model = await FlutterGemma.getActiveModel(
+        maxTokens: maxTokens,
+        preferredBackend: PreferredBackend.gpu,
+      );
+      
+      if (_model == null) {
+        throw Exception('Model installation failed - no active model');
+      }
+      
+      _isModelLoaded = true;
+      _isLoading = false;
+      _status = 'Model ready';
+      notifyListeners();
     } catch (e) {
       _error = 'Download failed: $e';
       _status = 'Error: $e';
@@ -182,43 +215,27 @@ class ModelService extends ChangeNotifier {
     }
   }
   
-  Future<void> _loadModel() async {
-    try {
-      _status = 'Loading model...';
-      notifyListeners();
-      
-      _model = await FlutterGemma.getActiveModel(
-        maxTokens: maxTokens,
-        preferredBackend: PreferredBackend.gpu,
-      );
-      
-      _isModelLoaded = true;
-      _isLoading = false;
-      _status = 'Model ready';
-      notifyListeners();
-    } catch (e) {
-      _error = 'Failed to load model: $e';
-      _status = 'Error: $e';
-      _isLoading = false;
-      notifyListeners();
-      rethrow;
-    }
+  /// Pass image through without compression - let the model handle it
+  Uint8List _compressImage(Uint8List imageBytes) {
+    debugPrint('Image size: ${imageBytes.length} bytes - passing directly to model');
+    return imageBytes;
   }
   
   Future<String> identifySpecies(Uint8List imageBytes, String imageFormat) async {
     if (_model == null) {
-      throw Exception('Model not loaded');
+      throw Exception('Model not loaded. Please wait for model to download.');
     }
     
     try {
       _status = 'Analyzing image...';
       notifyListeners();
       
-      // Prepare species list for prompt
+      // Compress image before processing
+      final compressedBytes = _compressImage(imageBytes);
+      
       final speciesNames = _speciesList.map((s) => s.name).toList();
       final speciesListString = speciesNames.isNotEmpty ? speciesNames.join(', ') : 'endangered Indonesian species';
       
-      // Create session with Vision enabled for multimodal analysis
       final session = await _model!.createSession(
         enableVisionModality: true,
         systemInstruction: '''
@@ -232,24 +249,21 @@ Do not add any additional text, explanations, or formatting.
 ''',
       );
       
-      // Use Message.withImage to provide both image and text prompt
       await session.addQueryChunk(Message.withImage(
         text: 'Identify the endangered Indonesian species in this image.',
-        imageBytes: imageBytes,
+        imageBytes: compressedBytes,
         isUser: true,
       ));
       
       _status = 'Generating analysis...';
       notifyListeners();
       
-      // Get response
       final response = await session.getResponse();
       final cleanedResponse = response.trim();
       
       _status = 'Analysis complete';
       notifyListeners();
       
-      // Try to match the response with known species
       Species? matchedSpecies;
       for (final species in _speciesList) {
         if (cleanedResponse.toLowerCase().contains(species.name.toLowerCase())) {
@@ -258,7 +272,6 @@ Do not add any additional text, explanations, or formatting.
         }
       }
       
-      // If we found a match, format a detailed response
       if (matchedSpecies != null) {
         return '''
 ## ${matchedSpecies.name}
@@ -273,13 +286,10 @@ ${matchedSpecies.facts.map((fact) => '• $fact').join('\n')}
 ''';
       }
       
-      // If not recognized but response is not "Not recognized", maybe the AI gave some info
       if (!cleanedResponse.toLowerCase().contains('not recognized')) {
-        // Return raw response (maybe the AI identified something else)
         return '## Analysis Result\n$cleanedResponse\n\n*Note: This species is not in our endangered Indonesian species database.*';
       }
       
-      // Default fallback
       return '## Species Not Recognized\nUnable to identify an endangered Indonesian species from the image.\n\nPlease ensure the image contains a clear view of an animal or plant from Indonesian National Parks.';
     } catch (e) {
       _error = 'Identification failed: $e';

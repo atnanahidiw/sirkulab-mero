@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -13,7 +14,7 @@ class HomePage extends StatefulWidget {
   State<HomePage> createState() => _HomePageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   CameraController? _controller;
   late List<CameraDescription> _cameras;
   bool _isCameraReady = false;
@@ -22,8 +23,9 @@ class _HomePageState extends State<HomePage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
-    _ensureModelReady();
+    // ModelService auto-initializes itself - no need to call it here
   }
 
   Future<void> _initializeCamera() async {
@@ -72,15 +74,15 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _ensureModelReady() async {
-    // Wait a bit for camera to initialize, then check model
-    await Future.delayed(const Duration(milliseconds: 500));
-    if (!mounted) return;
-    
+    // Don't block UI - just trigger model loading if needed
+    // The model service handles loading asynchronously
     final modelService = Provider.of<ModelService>(context, listen: false);
-    // If model is not loaded and not currently loading/initialized, log status
+    
     if (!modelService.isModelLoaded && !modelService.isLoading && !modelService.isInitialized) {
-      debugPrint('Ensuring model ready: isInitialized=${modelService.isInitialized}, isLoading=${modelService.isLoading}, isModelLoaded=${modelService.isModelLoaded}');
+      debugPrint('Model not ready, triggering background download...');
+      modelService.downloadModel();
     }
+    // UI continues normally - model service will update status via notifyListeners
   }
 
   Future<void> _takePhoto() async {
@@ -105,8 +107,32 @@ class _HomePageState extends State<HomePage> {
     });
     
     try {
-      final XFile image = await _controller!.takePicture();
-      final bytes = await image.readAsBytes();
+      // Take picture with error handling
+      XFile image;
+      try {
+        image = await _controller!.takePicture();
+      } catch (cameraError) {
+        debugPrint('Camera error: $cameraError');
+        if (mounted) {
+          ScaffoldMessenger.of(currentContext).showSnackBar(
+            SnackBar(content: Text('Camera error: $cameraError')),
+          );
+        }
+        return;
+      }
+      
+      Uint8List bytes;
+      try {
+        bytes = await image.readAsBytes();
+      } catch (readError) {
+        debugPrint('Read error: $readError');
+        if (mounted) {
+          ScaffoldMessenger.of(currentContext).showSnackBar(
+            SnackBar(content: Text('Failed to read image: $readError')),
+          );
+        }
+        return;
+      }
       
       // Show loading overlay
       showDialog(
@@ -217,8 +243,23 @@ class _HomePageState extends State<HomePage> {
 
   @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _controller?.dispose();
     super.dispose();
+  }
+  
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    final CameraController? cameraController = _controller;
+    if (cameraController == null || !cameraController.value.isInitialized) {
+      return;
+    }
+    
+    if (state == AppLifecycleState.inactive) {
+      cameraController.dispose();
+    } else if (state == AppLifecycleState.resumed) {
+      _initializeCamera();
+    }
   }
 
   @override
