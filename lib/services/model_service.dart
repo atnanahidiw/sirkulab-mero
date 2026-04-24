@@ -3,7 +3,8 @@ import 'dart:typed_data';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:image/image.dart';
+import 'package:http/http.dart' as http;
+import 'package:image/image.dart' as img;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:share_plus/share_plus.dart';
@@ -146,7 +147,7 @@ class ModelService extends ChangeNotifier {
         try {
           final directory = Directory(basePath);
           if (await directory.exists()) {
-            final files = directory.listSync(recursive: false);
+            final files = await directory.list(recursive: false).toList();
             for (var file in files) {
               if (file is File && 
                   file.path.endsWith('.litertlm') && 
@@ -167,32 +168,127 @@ class ModelService extends ChangeNotifier {
     return null;
   }
   
+  Future<String> _getDownloadDestination() async {
+    String dirPath = '';
+    if (Platform.isAndroid) {
+      // Request storage permission for Android 9 and below
+      final status = await Permission.storage.request();
+      if (status.isGranted) {
+        dirPath = '/storage/emulated/0/Download';
+      } else {
+        // Fallback to app-specific directory if permission denied or unavailable
+        final extDirs = await getExternalStorageDirectories(type: StorageDirectory.downloads);
+        if (extDirs != null && extDirs.isNotEmpty) {
+          dirPath = extDirs.first.path;
+        } else {
+          dirPath = (await getApplicationDocumentsDirectory()).path;
+        }
+      }
+    } else {
+      try {
+        final downloadsDir = await getDownloadsDirectory();
+        if (downloadsDir != null) {
+          dirPath = downloadsDir.path;
+        } else {
+          dirPath = (await getApplicationDocumentsDirectory()).path;
+        }
+      } catch (e) {
+        dirPath = (await getApplicationDocumentsDirectory()).path;
+      }
+    }
+    
+    // Ensure directory exists
+    final dir = Directory(dirPath);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+    
+    return '$dirPath/gemma-4-E2B-it.litertlm';
+  }
+
+  Future<void> _moveModelToPersistentStorage() async {
+    try {
+      final destPath = await _getDownloadDestination();
+      
+      final List<String> searchPaths = [];
+      try { searchPaths.add((await getApplicationDocumentsDirectory()).path); } catch (_) {}
+      try { searchPaths.add((await getApplicationSupportDirectory()).path); } catch (_) {}
+      try { 
+        final extDir = await getExternalStorageDirectory(); 
+        if (extDir != null) searchPaths.add(extDir.path); 
+      } catch (_) {}
+
+      for (final basePath in searchPaths) {
+        final directory = Directory(basePath);
+        if (await directory.exists()) {
+          final files = await directory.list(recursive: true).toList();
+          for (var file in files) {
+            if (file is File && file.path.endsWith('.litertlm') && file.path != destPath) {
+              debugPrint('Moving model from ${file.path} to $destPath');
+              
+              if (!await File(destPath).exists()) {
+                await file.copy(destPath);
+              }
+              
+              // Unload from App Data memory to free up 2.4GB of space
+              await file.delete();
+              debugPrint('Deleted original model from App Data');
+              
+              // Tell the plugin to use the persistent file from now on
+              await FlutterGemma.installModel(modelType: modelType).fromFile(destPath).install();
+              return;
+            }
+          }
+        }
+      }
+    } catch (e) {
+      debugPrint('Error moving model: $e');
+    }
+  }
+
   Future<void> downloadModel({void Function(double)? onProgress}) async {
     if (_isLoading) return;
     
     _isLoading = true;
     _error = null;
-    _status = 'Downloading model...';
+    _status = 'Starting download...';
     notifyListeners();
     
     try {
+      int lastUpdateProgress = -1;
+      DateTime lastUpdateTime = DateTime.now();
+      
       await FlutterGemma.installModel(
         modelType: modelType,
       ).fromNetwork(
         modelUrl,
         token: null, 
       ).withProgress((progress) {
-        _status = 'Downloading: $progress%';
-        if (onProgress != null) {
-          onProgress(progress / 100);
+        final now = DateTime.now();
+        // Throttle updates: only notify if progress changed by a full integer percent 
+        // or if 200ms have passed since the last update. Flooding notifyListeners causes ANR.
+        if (progress.toInt() != lastUpdateProgress || now.difference(lastUpdateTime).inMilliseconds > 200) {
+          lastUpdateProgress = progress.toInt();
+          lastUpdateTime = now;
+          
+          _status = 'Downloading: ${progress.toInt()}%';
+          if (onProgress != null) {
+            onProgress(progress / 100);
+          }
+          notifyListeners();
         }
-        notifyListeners();
       }).install();
       
-      _status = 'Model downloaded. Loading...';
+      _status = 'Model downloaded. Moving to persistent storage...';
       notifyListeners();
       
-      // Get the active model after installation
+      // Move the downloaded model out of App Data to persistent storage
+      await _moveModelToPersistentStorage();
+      
+      _status = 'Loading model...';
+      notifyListeners();
+      
+      // Get the active model after installation and moving
       _model = await FlutterGemma.getActiveModel(
         maxTokens: maxTokens,
         preferredBackend: PreferredBackend.gpu,
@@ -206,6 +302,7 @@ class ModelService extends ChangeNotifier {
       _isLoading = false;
       _status = 'Model ready';
       notifyListeners();
+
     } catch (e) {
       _error = 'Download failed: $e';
       _status = 'Error: $e';
@@ -215,10 +312,39 @@ class ModelService extends ChangeNotifier {
     }
   }
   
-  /// Pass image through without compression - let the model handle it
-  Uint8List _compressImage(Uint8List imageBytes) {
-    debugPrint('Image size: ${imageBytes.length} bytes - passing directly to model');
-    return imageBytes;
+  static Uint8List _compressImageIsolate(Uint8List imageBytes) {
+    try {
+      final img.Image? originalImage = img.decodeImage(imageBytes);
+      if (originalImage == null) {
+        return imageBytes;
+      }
+      
+      int? targetWidth;
+      int? targetHeight;
+      if (originalImage.width > originalImage.height) {
+        targetWidth = 800;
+      } else {
+        targetHeight = 800;
+      }
+      
+      final img.Image resizedImage = img.copyResize(
+        originalImage,
+        width: targetWidth,
+        height: targetHeight,
+      );
+      
+      return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
+    } catch (e) {
+      return imageBytes;
+    }
+  }
+
+  /// Compress and resize image to prevent OOM errors and avoid blocking UI
+  Future<Uint8List> _compressImage(Uint8List imageBytes) async {
+    debugPrint('Original image size: ${imageBytes.length} bytes');
+    final compressedBytes = await compute(_compressImageIsolate, imageBytes);
+    debugPrint('Compressed image size: ${compressedBytes.length} bytes');
+    return compressedBytes;
   }
   
   Future<String> identifySpecies(Uint8List imageBytes, String imageFormat) async {
@@ -231,7 +357,7 @@ class ModelService extends ChangeNotifier {
       notifyListeners();
       
       // Compress image before processing
-      final compressedBytes = _compressImage(imageBytes);
+      final compressedBytes = await _compressImage(imageBytes);
       
       final speciesNames = _speciesList.map((s) => s.name).toList();
       final speciesListString = speciesNames.isNotEmpty ? speciesNames.join(', ') : 'endangered Indonesian species';
