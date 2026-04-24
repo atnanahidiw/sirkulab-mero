@@ -10,6 +10,7 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  background_downloader: ^9.5.4
   flutter_gemma: ^0.13.6
   camera: ^0.12.0+1
   image_picker: ^1.0.0
@@ -23,6 +24,7 @@ dependencies:
   url_launcher: ^6.2.0
   image: ^4.2.0
   share_plus: ^13.1.0
+  flutter_local_notifications: ^17.2.2
   flutter_localizations:
     sdk: flutter
   intl: ^0.20.2
@@ -43,4 +45,4 @@ flutter:
   
   # For Android, need OpenGL support for GPU
   # Add to android/app/src/main/AndroidManifest.xml:
-  # <uses-native-library android:name="libOpenCL.so" android:required="false"/>  share_plus: ^8.0.2
+  # <uses-native-library android:name="libOpenCL.so" android:required="false"/>

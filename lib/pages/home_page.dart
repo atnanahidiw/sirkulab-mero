@@ -176,15 +176,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       await modelService.downloadModel(onProgress: (progress) {
         // Progress updates handled by ModelService notifier
       });
-      if (currentContext.mounted) {
-        ScaffoldMessenger.of(currentContext).showSnackBar(
-          const SnackBar(content: Text('Model downloaded successfully!')),
-        );
-      }
     } catch (e) {
       if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(content: Text('Download failed: $e')),
+          SnackBar(content: Text('Download could not start: $e')),
         );
       }
     }
