@@ -11,6 +11,16 @@ import 'package:path_provider/path_provider.dart';
 import 'model_boot_state.dart';
 import 'species_service.dart';
 
+@visibleForTesting
+bool isCancellationErrorDescription(String? description) {
+  if (description == null || description.isEmpty) {
+    return false;
+  }
+
+  final normalized = description.toLowerCase();
+  return normalized.contains('cancel');
+}
+
 abstract class ModelDownloadBackend {
   Stream<TaskUpdate> get updates;
 
@@ -57,7 +67,7 @@ class BackgroundModelDownloadBackend implements ModelDownloadBackend {
     await FileDownloader().configure(
       androidConfig: const [
         (Config.useCacheDir, Config.never),
-        (Config.runInForegroundIfFileLargerThan, 500),
+        (Config.runInForegroundIfFileLargerThan, 1),
       ],
     );
 
@@ -68,7 +78,7 @@ class BackgroundModelDownloadBackend implements ModelDownloadBackend {
       ),
       paused: const TaskNotification(
         'Download paused',
-        'Picture That will resume automatically.',
+        'Picture That will continue automatically.',
       ),
       complete: const TaskNotification(
         'Model ready',
@@ -346,9 +356,7 @@ class ModelService extends ChangeNotifier {
             isInitialized: false,
             isLoading: true,
             isModelLoaded: false,
-            status: phase == ModelBootPhase.resuming
-                ? 'Resumed download: $percent%'
-                : 'Downloading: $percent%',
+            status: 'Downloading: $percent%',
             phase: phase,
             downloadProgress: progress.clamp(0.0, 1.0).toDouble(),
             error: null,
@@ -367,9 +375,7 @@ class ModelService extends ChangeNotifier {
                 isInitialized: false,
                 isLoading: true,
                 isModelLoaded: false,
-                status: _state.phase == ModelBootPhase.resuming
-                    ? 'Resuming model download...'
-                    : 'Starting model download...',
+                status: 'Downloading model...',
                 phase: _state.phase == ModelBootPhase.resuming
                     ? ModelBootPhase.resuming
                     : ModelBootPhase.starting,
@@ -386,9 +392,7 @@ class ModelService extends ChangeNotifier {
                 isInitialized: false,
                 isLoading: true,
                 isModelLoaded: false,
-                status: _state.phase == ModelBootPhase.resuming
-                    ? 'Resumed model download...'
-                    : 'Downloading model...',
+                status: 'Downloading model...',
                 phase: _state.phase == ModelBootPhase.resuming
                     ? ModelBootPhase.resuming
                     : ModelBootPhase.downloading,
@@ -443,6 +447,22 @@ class ModelService extends ChangeNotifier {
           case TaskStatus.failed:
             final message = exception?.description ??
                 'Background download failed${responseStatusCode == null ? '' : ' (HTTP $responseStatusCode)'}';
+            if (isCancellationErrorDescription(message)) {
+              _commitState(
+                _state.copyWith(
+                  isInitialized: false,
+                  isLoading: false,
+                  isModelLoaded: false,
+                  status: 'Download canceled',
+                  phase: ModelBootPhase.canceled,
+                  error: 'Download canceled',
+                  downloadProgress: null,
+                  downloadTaskId: null,
+                  downloadFilePath: null,
+                ),
+              );
+              break;
+            }
             await _markError(message, phase: ModelBootPhase.failed);
             break;
 
@@ -644,7 +664,7 @@ class ModelService extends ChangeNotifier {
             isModelLoaded: false,
             status: taskStatus == TaskStatus.waitingToRetry
                 ? 'Waiting to retry model download...'
-                : 'Resuming model download...',
+                : 'Downloading model...',
             phase: ModelBootPhase.resuming,
             downloadTaskId: task.taskId,
             downloadFilePath: filePath,
@@ -663,8 +683,26 @@ class ModelService extends ChangeNotifier {
         break;
       case TaskStatus.failed:
       case TaskStatus.notFound:
+        final failureMessage =
+            record?.exception?.description ?? 'Background download failed.';
+        if (isCancellationErrorDescription(failureMessage)) {
+          _commitState(
+            _state.copyWith(
+              isInitialized: true,
+              isLoading: false,
+              isModelLoaded: false,
+              status: 'Download canceled',
+              phase: ModelBootPhase.canceled,
+              error: 'Download canceled',
+              downloadTaskId: null,
+              downloadFilePath: filePath,
+              downloadProgress: null,
+            ),
+          );
+          return;
+        }
         await _markError(
-          record?.exception?.description ?? 'Background download failed.',
+          failureMessage,
           phase: ModelBootPhase.failed,
         );
         return;
@@ -727,7 +765,7 @@ class ModelService extends ChangeNotifier {
             isModelLoaded: false,
             status: record.status == TaskStatus.waitingToRetry
                 ? 'Waiting to retry model download...'
-                : 'Resuming model download...',
+                : 'Downloading model...',
             phase: ModelBootPhase.resuming,
             downloadTaskId: record.taskId,
             downloadFilePath: filePath,
@@ -744,8 +782,26 @@ class ModelService extends ChangeNotifier {
         break;
       case TaskStatus.failed:
       case TaskStatus.notFound:
+        final failureMessage =
+            record.exception?.description ?? 'Background download failed.';
+        if (isCancellationErrorDescription(failureMessage)) {
+          _commitState(
+            _state.copyWith(
+              isInitialized: true,
+              isLoading: false,
+              isModelLoaded: false,
+              status: 'Download canceled',
+              phase: ModelBootPhase.canceled,
+              error: 'Download canceled',
+              downloadTaskId: null,
+              downloadFilePath: filePath,
+              downloadProgress: null,
+            ),
+          );
+          return;
+        }
         await _markError(
-          record.exception?.description ?? 'Background download failed.',
+          failureMessage,
           phase: ModelBootPhase.failed,
         );
         return;
@@ -894,7 +950,7 @@ class ModelService extends ChangeNotifier {
           isInitialized: false,
           isLoading: true,
           isModelLoaded: false,
-          status: 'Resuming model download...',
+          status: 'Downloading model...',
           phase: ModelBootPhase.resuming,
         ),
       );
@@ -919,9 +975,7 @@ class ModelService extends ChangeNotifier {
           isLoading: true,
           isModelLoaded: false,
           error: null,
-          status: resumed
-              ? 'Resuming model download...'
-              : 'Starting model download...',
+          status: 'Downloading model...',
           phase: resumed ? ModelBootPhase.resuming : ModelBootPhase.starting,
           downloadTaskId: task.taskId,
           downloadFilePath: filePath,

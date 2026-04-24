@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 
 import '../services/model_boot_state.dart';
 
+// Minimal splash layout inspired by quex-flutter splash
+
 class ModelBootSplash extends StatelessWidget {
   final String status;
   final String? error;
@@ -25,308 +27,229 @@ class ModelBootSplash extends StatelessWidget {
   String _phaseLabel() {
     return switch (phase) {
       ModelBootPhase.idle => 'Preparing',
-      ModelBootPhase.checking => 'Checking model',
+      ModelBootPhase.checking => 'Checking',
       ModelBootPhase.starting => 'Starting download',
       ModelBootPhase.downloading => 'Downloading',
-      ModelBootPhase.resuming => 'Resuming download',
+      ModelBootPhase.resuming => 'Resuming',
       ModelBootPhase.paused => 'Paused',
-      ModelBootPhase.canceled => 'Download canceled',
-      ModelBootPhase.installing => 'Installing locally',
-      ModelBootPhase.failed => 'Download failed',
+      ModelBootPhase.canceled => 'Canceled',
+      ModelBootPhase.installing => 'Installing',
+      ModelBootPhase.failed => 'Needs attention',
       ModelBootPhase.ready => 'Ready',
       ModelBootPhase.analyzing => 'Working',
     };
   }
 
-  bool get _showProgress => isLoading && error == null;
+  String _phaseSubtitle() {
+    return switch (phase) {
+      ModelBootPhase.idle => 'Checking the model setup.',
+      ModelBootPhase.checking =>
+        'Looking for an existing model before we download anything.',
+      ModelBootPhase.starting => 'Getting the download ready.',
+      ModelBootPhase.downloading =>
+        'Downloading the model in the background.',
+      ModelBootPhase.resuming => '',
+      ModelBootPhase.paused => 'The download is paused. You can resume it.',
+      ModelBootPhase.canceled =>
+        'The download was canceled. Start it again when you are ready.',
+      ModelBootPhase.installing => 'Finishing local setup.',
+      ModelBootPhase.failed => 'The download failed. You can try again here.',
+      ModelBootPhase.ready => 'The model is ready and the app will open next.',
+      ModelBootPhase.analyzing => 'Processing an image with the local model.',
+    };
+  }
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final percent = progress == null
-        ? null
-        : (progress!.clamp(0.0, 1.0) * 100).round();
-    final statusLabel = percent == null || status.contains('%')
-        ? status
-        : '$status • $percent%';
-    final errorTitle = phase == ModelBootPhase.canceled
-        ? 'Download canceled'
-        : 'Model setup failed';
-    final subtitle = switch (phase) {
-      ModelBootPhase.starting =>
-        'The model is being queued in the background downloader.',
-      ModelBootPhase.downloading =>
-        'The model is downloading in the background and can survive app suspension.',
-      ModelBootPhase.resuming =>
-        'The downloader recovered an existing task and is continuing from where it left off.',
-      ModelBootPhase.paused =>
-        'The transfer paused. You can retry or resume it.',
-      ModelBootPhase.canceled =>
-        'The download was canceled. You can start it again.',
-      ModelBootPhase.installing =>
-        'The file finished downloading. FlutterGemma is installing it locally now.',
-      ModelBootPhase.failed =>
-        'The download did not finish. You can retry from here.',
-      ModelBootPhase.checking =>
-        'Checking for an existing model before starting a download.',
-      ModelBootPhase.ready =>
-        'The model is ready and the app will open once the gate clears.',
-      ModelBootPhase.analyzing =>
-        'Processing an image with the local model.',
-      ModelBootPhase.idle =>
-        'Preparing the local model environment.',
-    };
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final percent =
+        progress == null ? null : (progress!.clamp(0.0, 1.0) * 100).round();
 
     return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              colorScheme.primary.withValues(alpha: 0.95),
-              const Color(0xFF08140F),
-              const Color(0xFF020403),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    color: Colors.white.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(28),
-                    border: Border.all(
-                      color: Colors.white.withValues(alpha: 0.12),
+      backgroundColor: colorScheme.surface,
+      body: SafeArea(
+        child: Stack(
+          children: [
+            // Center: Brand mark and title
+            Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  _BrandMark(colorScheme: colorScheme),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Picture That',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.displaySmall?.copyWith(
+                      color: colorScheme.onSurface,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: -0.6,
                     ),
                   ),
-                  child: Padding(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 24,
-                      vertical: 28,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Icon(
-                          Icons.eco_outlined,
-                          color: Colors.white,
-                          size: 42,
-                        ),
-                        const SizedBox(height: 18),
-                        Text(
-                          'Picture That',
-                          style: Theme.of(context)
-                              .textTheme
-                              .headlineMedium
-                              ?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.w700,
-                              ),
-                        ),
-                        const SizedBox(height: 8),
-                        Text(
-                          subtitle,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium
-                              ?.copyWith(
-                                color: Colors.white.withValues(alpha: 0.78),
-                              ),
-                        ),
-                        const SizedBox(height: 28),
-                        if (error != null) ...[
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.red.withValues(alpha: 0.12),
-                              borderRadius: BorderRadius.circular(18),
-                              border: Border.all(
-                                color: Colors.red.withValues(alpha: 0.35),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.error_outline,
-                                      color: Colors.redAccent,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      errorTitle,
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 10),
-                                Text(
-                                  error!,
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodyMedium
-                                      ?.copyWith(
-                                        color: Colors.white.withValues(alpha: 0.85),
-                                      ),
-                                ),
-                                if (onRetry != null) ...[
-                                  const SizedBox(height: 16),
-                                  FilledButton.icon(
-                                    onPressed: onRetry,
-                                    icon: const Icon(Icons.refresh),
-                                    label: Text(
-                                      phase == ModelBootPhase.paused
-                                          ? 'Resume'
-                                          : 'Retry',
-                                    ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                        ] else ...[
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(16),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withValues(alpha: 0.06),
-                              borderRadius: BorderRadius.circular(20),
-                              border: Border.all(
-                                color: Colors.white.withValues(alpha: 0.08),
-                              ),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Row(
-                                  children: [
-                                    const Icon(
-                                      Icons.downloading_outlined,
-                                      color: Colors.white,
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Text(
-                                      _phaseLabel(),
-                                      style: Theme.of(context)
-                                          .textTheme
-                                          .titleMedium
-                                          ?.copyWith(
-                                            color: Colors.white,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                    ),
-                                  ],
-                                ),
-                                const SizedBox(height: 12),
-                                if (_showProgress && progress == null) ...[
-                                  const Center(
-                                    child: SizedBox(
-                                      width: 36,
-                                      height: 36,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 3,
-                                        color: Colors.white,
-                                      ),
-                                    ),
-                                  ),
-                                ] else ...[
-                                  ClipRRect(
-                                    borderRadius: BorderRadius.circular(999),
-                                    child: LinearProgressIndicator(
-                                      minHeight: 10,
-                                      value: progress,
-                                      backgroundColor:
-                                          Colors.white.withValues(alpha: 0.12),
-                                      valueColor: AlwaysStoppedAnimation<Color>(
-                                        colorScheme.secondaryContainer,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(height: 10),
-                                  Text(
-                                    statusLabel,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodyMedium
-                                        ?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w500,
-                                        ),
-                                  ),
-                                ],
-                              ],
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Text(
-                            'This step happens once. After setup, the app works offline.',
-                            style: Theme.of(context)
-                                .textTheme
-                                .bodySmall
-                                ?.copyWith(
-                                  color: Colors.white.withValues(alpha: 0.68),
-                                ),
-                          ),
-                          if (onCancel != null && phase != ModelBootPhase.ready) ...[
-                            const SizedBox(height: 16),
-                            OutlinedButton.icon(
-                              onPressed: onCancel,
-                              icon: const Icon(Icons.cancel_outlined),
-                              label: const Text('Cancel download'),
-                            ),
-                          ],
-                          if (phase == ModelBootPhase.paused && onRetry != null) ...[
-                            const SizedBox(height: 12),
-                            FilledButton.icon(
-                              onPressed: onRetry,
-                              icon: const Icon(Icons.play_arrow),
-                              label: const Text('Resume'),
-                            ),
-                          ],
-                          if (phase == ModelBootPhase.canceled && onRetry != null) ...[
-                            const SizedBox(height: 12),
-                            FilledButton.icon(
-                              onPressed: onRetry,
-                              icon: const Icon(Icons.refresh),
-                              label: const Text('Retry'),
-                            ),
-                          ],
-                          if (phase == ModelBootPhase.installing) ...[
-                            const SizedBox(height: 8),
-                            Text(
-                              'Installing the downloaded model may take a moment.',
-                              style: Theme.of(context)
-                                  .textTheme
-                                  .bodySmall
-                                  ?.copyWith(
-                                    color: Colors.white.withValues(alpha: 0.68),
-                                  ),
-                            ),
-                          ],
-                        ],
-                      ],
+                  const SizedBox(height: 10),
+                  Text(
+                    'Identify endangered species',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.titleMedium?.copyWith(
+                      color: colorScheme.primary,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                ),
+                  // Balance padding for visual centering
+                  const SizedBox(height: 88),
+                ],
               ),
             ),
-          ),
+            // Bottom: State indicator
+            Positioned(
+              bottom: 48,
+              left: 32,
+              right: 32,
+              child: AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) {
+                  return ScaleTransition(
+                    scale: animation,
+                    child: FadeTransition(
+                      opacity: animation,
+                      child: child,
+                    ),
+                  );
+                },
+                child: _buildStateIndicator(context, colorScheme, percent),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
+
+  Widget _buildStateIndicator(BuildContext context, ColorScheme scheme, int? percent) {
+    // Ready state
+    if (phase == ModelBootPhase.ready) {
+      return Center(
+        key: const ValueKey('ready'),
+        child: Text(
+          'Ready!',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                color: scheme.primary,
+                fontWeight: FontWeight.w700,
+              ),
+        ),
+      );
+    }
+
+    // Error/failed state
+    if (error != null) {
+      final errorLabel = phase == ModelBootPhase.canceled
+          ? 'Download canceled'
+          : 'Model setup failed';
+      return Center(
+        key: const ValueKey('error'),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(
+              errorLabel,
+              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: scheme.onSurfaceVariant,
+                  ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+            if (onRetry != null)
+              TextButton.icon(
+                onPressed: onRetry,
+                icon: const Icon(Icons.refresh, size: 18),
+                label: Text(phase == ModelBootPhase.paused ? 'Resume' : 'Retry'),
+                style: TextButton.styleFrom(
+                  foregroundColor: scheme.primary,
+                ),
+              ),
+          ],
+        ),
+      );
+    }
+
+    // Active downloading state
+    final progressValue = progress ?? 0.0;
+    final displayPercent = percent ?? (progressValue * 100).round();
+    return Center(
+      key: const ValueKey('downloading'),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Rounded pill progress bar
+          Container(
+            height: 8,
+            width: 200,
+            decoration: BoxDecoration(
+              color: scheme.surfaceContainerHighest,
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(999),
+              child: FractionallySizedBox(
+                alignment: Alignment.centerLeft,
+                widthFactor: progressValue.clamp(0.0, 1.0),
+                child: Container(
+                  height: 8,
+                  color: scheme.primary,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          Text(
+            '${_phaseLabel()}… $displayPercent%',
+            style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                  color: scheme.onSurfaceVariant,
+                  fontWeight: FontWeight.w600,
+                ),
+          ),
+        ],
+      ),
+    );
+  }
 }
+
+class _BrandMark extends StatelessWidget {
+  final ColorScheme colorScheme;
+
+  const _BrandMark({required this.colorScheme});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 96,
+      height: 96,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        gradient: RadialGradient(
+          colors: [
+            colorScheme.primaryContainer.withValues(alpha: 0.92),
+            colorScheme.primary.withValues(alpha: 0.18),
+          ],
+        ),
+        border: Border.all(
+          color: colorScheme.primary.withValues(alpha: 0.18),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: colorScheme.primary.withValues(alpha: 0.12),
+            blurRadius: 28,
+            offset: const Offset(0, 14),
+          ),
+        ],
+      ),
+      child: Icon(
+        Icons.eco_outlined,
+        size: 44,
+        color: colorScheme.primary,
+      ),
+    );
+  }
+}
+
