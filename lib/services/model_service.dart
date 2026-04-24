@@ -35,6 +35,15 @@ class ModelService extends ChangeNotifier {
     _initialize();
   }
 
+  Future<InferenceModel> _getActiveVisionModel() {
+    return FlutterGemma.getActiveModel(
+      maxTokens: maxTokens,
+      preferredBackend: PreferredBackend.gpu,
+      supportImage: true,
+      maxNumImages: 1,
+    );
+  }
+
   Future<void> _initialize() async {
     // Small delay to let UI initialize first
     await Future.delayed(const Duration(milliseconds: 100));
@@ -54,10 +63,7 @@ class ModelService extends ChangeNotifier {
       notifyListeners();
 
       try {
-        final existingModel = await FlutterGemma.getActiveModel(
-          maxTokens: maxTokens,
-          preferredBackend: PreferredBackend.gpu,
-        );
+        final existingModel = await _getActiveVisionModel();
         _model = existingModel;
         _isModelLoaded = true;
         _isInitialized = true;
@@ -65,7 +71,7 @@ class ModelService extends ChangeNotifier {
         debugPrint('Found existing active model');
         notifyListeners();
         return;
-            } catch (e) {
+      } catch (e) {
         debugPrint('No existing model found: $e');
       }
 
@@ -80,10 +86,7 @@ class ModelService extends ChangeNotifier {
           await FlutterGemma.installModel(modelType: modelType)
               .fromFile(localModelPath)
               .install();
-          _model = await FlutterGemma.getActiveModel(
-            maxTokens: maxTokens,
-            preferredBackend: PreferredBackend.gpu,
-          );
+          _model = await _getActiveVisionModel();
           _isModelLoaded = true;
           _isInitialized = true;
           _status = 'Model ready';
@@ -299,10 +302,7 @@ class ModelService extends ChangeNotifier {
       notifyListeners();
 
       // Get the active model after installation and moving
-      _model = await FlutterGemma.getActiveModel(
-        maxTokens: maxTokens,
-        preferredBackend: PreferredBackend.gpu,
-      );
+      _model = await _getActiveVisionModel();
 
       if (_model == null) {
         throw Exception('Model installation failed - no active model');
