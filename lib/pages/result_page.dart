@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../services/species_service.dart';
 
 class ResultPage extends StatefulWidget {
@@ -51,6 +52,20 @@ class _ResultPageState extends State<ResultPage> {
 
   String _extractSpeciesName(String result) {
     return result.replaceAll('**', '').replaceAll('*', '').trim();
+  }
+
+
+
+  /// Launch URL in browser
+  Future<void> _launchUrl(String url) async {
+    try {
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri);
+      }
+    } catch (e) {
+      debugPrint('Failed to launch URL: $e');
+    }
   }
 
   @override
@@ -113,24 +128,65 @@ class _ResultPageState extends State<ResultPage> {
                 if (_species!.populationEstimate != null) ...[
                   const SizedBox(height: 8),
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                     decoration: BoxDecoration(
-                      color: Colors.red[50],
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.red[200]!),
+                      color: Colors.amber[50],
+                      borderRadius: BorderRadius.circular(16),
+                      border: Border.all(color: Colors.amber[300]!),
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.warning_amber, size: 16, color: Colors.red[700]),
-                        const SizedBox(width: 6),
+                        Icon(Icons.warning_amber, size: 16, color: Colors.amber[800]),
+                        const SizedBox(width: 8),
                         Text(
-                          '~${_species!.populationEstimate} remaining',
+                          "Remaining population:",
                           style: TextStyle(
-                            fontSize: 14,
+                            fontSize: 12,
                             fontWeight: FontWeight.w600,
-                            color: Colors.red[700],
+                            color: Colors.amber[700],
                           ),
+                        ),
+                        const SizedBox(height: 6),
+                        Row(
+                          children: [
+                            Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                '~${_species!.populationEstimate}',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.amber[800],
+                                ),
+                              ),
+                              if (_species!.sourceUri != null) ...[
+                                const SizedBox(height: 4),
+                                InkWell(
+                                  onTap: () => _launchUrl(_species!.sourceUri!),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(Icons.link, size: 12, color: Colors.amber[600]),
+                                      const SizedBox(width: 4),
+                                      Text(
+                                        'Source',
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          color: Colors.amber[600],
+                                          decoration: TextDecoration.underline,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                        ),
+                          ],
                         ),
                       ],
                     ),

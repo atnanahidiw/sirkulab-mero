@@ -8,7 +8,8 @@
       "Their stripes are unique to each individual, like a human fingerprint.",
       "They are the only surviving tiger species in Indonesia after the extinction of the Balinese and Javan tigers."
     ],
-    "population_estimate": "~618 individuals"
+    "population_estimate": "~600 mature individuals (critically endangered with stable breeding in Leuser ecosystem)",
+    "source_uri": "https://www.ifaw.org/animals/sumatran-tigers"
   },
   {
     "name": "Sumatran Rhino",
@@ -19,7 +20,8 @@
       "They spend a large portion of their day wallowing in mud holes to keep cool and protect their skin.",
       "They are highly solitary animals and communicate primarily through scent and sound."
     ],
-    "population_estimate": "~5 individuals"
+    "population_estimate": "~34-47 individuals (critically endangered - IUCN 2024 estimate)",
+    "source_uri": "https://rhinos.org/wp-content/uploads/2024/10/SOTR_091624.pdf"
   },
   {
     "name": "Javan Rhino",
@@ -30,7 +32,8 @@
       "They are extremely shy and elusive, making them difficult for researchers to track.",
       "They primarily feed on shoots, twigs, and young leaves of forest plants."
     ],
-    "population_estimate": "50-97 individuals"
+    "population_estimate": "~76-87 individuals (new calf recorded April 2024 in Ujung Kulon)",
+    "source_uri": "https://news.mongabay.com/2024/04/new-calf-same-threats-javan-rhinos-continue-to-reproduce-despite-perils/"
   },
   {
     "name": "Sumatran Orangutan",
@@ -41,7 +44,8 @@
       "They build a new nest to sleep in every single night high in the canopy.",
       "Their diet consists mainly of fruit (about 60%), but they also eat bark and soil."
     ],
-    "population_estimate": "~15,000 individuals"
+    "population_estimate": "~13,000 individuals (stable but threatened by habitat loss)",
+    "source_uri": "https://sumatranorangutan.org/orangutans/"
   },
   {
     "name": "Komodo Dragon",
@@ -52,7 +56,8 @@
       "Females are capable of parthenogenesis, meaning they can produce offspring without a male.",
       "They can swallow prey like mid-sized piglets whole."
     ],
-    "population_estimate": "~3,000-3,500 individuals"
+    "population_estimate": "~3,300 individuals (UGM 2024 survey - urgent conservation needed)",
+    "source_uri": "https://ugm.ac.id/en/news/with-only-3000-left-ugm-professor-warns-komodo-dragon-conservation-requires-serious-attention/"
   },
   {
     "name": "Anoa",
@@ -63,7 +68,8 @@
       "They are very territorial and can be aggressive if threatened.",
       "They prefer dense forests and are often found near water sources."
     ],
-    "population_estimate": "Fewer than 5,000 individuals"
+    "population_estimate": "Fewer than 5,000 individuals (endangered due to hunting and habitat loss)",
+    "source_uri": "https://indonesia.wcs.org/"
   },
   {
     "name": "Babirusa",
@@ -74,7 +80,8 @@
       "They are excellent swimmers and often wallow in mud to stay cool.",
       "Unlike most pigs, they have a very specialized diet of fruits and leaves."
     ],
-    "population_estimate": "~10,000 individuals"
+    "population_estimate": "~10,000 individuals (threatened by habitat degradation)",
+    "source_uri": "https://www.fauna-flora.org/species/babirusa/"
   },
   {
     "name": "Tarsier",
@@ -85,7 +92,8 @@
       "They are the only primates capable of rotating their heads 180 degrees in either direction.",
       "They are purely carnivorous, eating mainly insects and small lizards."
     ],
-    "population_estimate": "Data limited/uncertain"
+    "population_estimate": "Data limited/uncertain (cryptic species with difficult monitoring)",
+    "source_uri": "https://www.iucnredlist.org/species/10203/22331262"
   },
   {
     "name": "Maleo",
@@ -96,7 +104,8 @@
       "Chicks are fully developed and can fly almost immediately after hatching.",
       "They have a distinct black plumage and a bony casque on their head."
     ],
-    "population_estimate": "8,000-14,000 adults"
+    "population_estimate": "8,000-14,000 adults (declining due to habitat loss)",
+    "source_uri": "https://datazone.birdlife.org/species/factsheet/maleo-macrocephalon-maleo"
   },
   {
     "name": "Cendrawasih",
@@ -107,7 +116,8 @@
       "Male birds perform complex courtship dances to attract females.",
       "Many species have evolved incredibly specialized feathers that look like wires, ribbons, or fans."
     ],
-    "population_estimate": "188 individuals"
+    "population_estimate": "41 species in Indonesia, 37 in Papua (stable population trend)",
+    "source_uri": "https://www.indonesia.travel/gb/en/destination/maluku-papua/papua/jayapura---cendrawasih-the-bird-of-paradise/"
   },
   {
     "name": "Rafflesia arnoldii",
@@ -118,7 +128,8 @@
       "The flower can grow up to 1 meter in diameter and weigh up to 11 kilograms.",
       "It lives as a parasite inside the vines of the genus Tetrastigma."
     ],
-    "population_estimate": "Very rare - exact population not quantified"
+    "population_estimate": "Very rare - exact population not quantified (found in 5 Southeast Asian countries)",
+    "source_uri": "https://www.rafflesiaindonesia.org/2024/10/blog-post.html"
   },
   {
     "name": "Titan Arum",
@@ -129,7 +140,8 @@
       "The bloom is very rare and only lasts for a short period (usually 24-48 hours).",
       "It uses its foul odor to attract pollinators like beetles and flies."
     ],
-    "population_estimate": "Very rare in wild - exact population not quantified"
+    "population_estimate": "Very rare in wild - exact population not quantified (cultivated in botanical gardens)",
+    "source_uri": "https://www.bgci.org/garden.php?id=3131"
   },
   {
     "name": "Timor Deer",
@@ -140,7 +152,8 @@
       "They are highly agile and can navigate the rugged terrain of the islands.",
       "They are endemic to the Lesser Sunda Islands region."
     ],
-    "population_estimate": "Fewer than 3,500 individuals"
+    "population_estimate": "Fewer than 3,500 individuals (endangered due to hunting)",
+    "source_uri": "https://www.iucnredlist.org/species/42592/22123519"
   },
   {
     "name": "Asian Water Buffalo",
@@ -151,7 +164,8 @@
       "They are essential prey for the larger Komodo dragons.",
       "They are known for their large, curved horns used for defense."
     ],
-    "population_estimate": "Less than 4,000 individuals (wild)"
+    "population_estimate": "Less than 4,000 individuals (wild population - critically endangered)",
+    "source_uri": "https://www.iucnredlist.org/species/10103/18028974"
   },
   {
     "name": "Blue Pit Viper",
@@ -162,7 +176,8 @@
       "Their bright blue color is a rare trait among pit vipers.",
       "They are endemic to the Lesser Sunda Islands region."
     ],
-    "population_estimate": "Population data not specifically quantified"
+    "population_estimate": "Population data not specifically quantified",
+    "source_uri": "https://reptile-database.reptarium.cz/species?genus=Atractaspis&species=indica"
   },
   {
     "name": "Orange-footed Scrubfowl",
@@ -173,7 +188,8 @@
       "They use their beaks to carefully regulate the mound's temperature.",
       "They are predominantly ground-dwelling and avoid flying unless necessary."
     ],
-    "population_estimate": "100,000-1,000,000 individuals"
+    "population_estimate": "100,000-1,000,000 individuals",
+    "source_uri": "https://www.birdlife.org/datazone/speciesfactsheet.php?id=22686822"
   },
   {
     "name": "Crab-eating Macaque",
@@ -184,7 +200,8 @@
       "They have a highly developed social structure with dominant alpha males.",
       "They are one of the most adaptable primate species in Southeast Asia."
     ],
-    "population_estimate": "Data variable - market surveys show 10,000-20,000 taken annually"
+    "population_estimate": "Data variable - market surveys show 10,000-20,000 taken annually (common but threatened)",
+    "source_uri": "https://www.iucnredlist.org/species/39949/123777798"
   },
   {
     "name": "Komodo Rat",
@@ -195,7 +212,8 @@
       "They are nocturnal and avoid human contact.",
       "They are considered a rare find for wildlife researchers."
     ],
-    "population_estimate": "Extremely rare - exact population not quantified"
+    "population_estimate": "Extremely rare - exact population not quantified",
+    "source_uri": "https://www.iucnredlist.org/species/20755/22363790"
   },
   {
     "name": "Green Turtle",
@@ -206,7 +224,8 @@
       "They migrate thousands of miles across oceans to return to their birth beaches.",
       "They are listed as endangered due to habitat loss and pollution."
     ],
-    "population_estimate": "15,000-20,000 clutches per year (stable/increasing)"
+    "population_estimate": "~15,000 clutches per year (conservation success in Indonesia)",
+    "source_uri": "https://www.turtle-foundation.org/en/program-indonesia/"
   },
   {
     "name": "Hawksbill Turtle",
@@ -217,7 +236,8 @@
       "Their shells are highly prized for ornamental carving.",
       "They are essential for maintaining the biodiversity of coral reefs."
     ],
-    "population_estimate": "Critically endangered - genetic studies ongoing in Java Sea"
+    "population_estimate": "Critically endangered - genetic studies ongoing in Java Sea",
+    "source_uri": "https://www.turtle-foundation.org/en/program-indonesia/"
   },
   {
     "name": "Olive Ridley",
@@ -228,7 +248,8 @@
       "They have a more rounded shell compared to other sea turtles.",
       "They are highly migratory and travel across the Indian and Pacific Oceans."
     ],
-    "population_estimate": "Sporadic arribadas reported in Indonesia"
+    "population_estimate": "Sporadic arribadas reported in Indonesia (nesting behavior varies)",
+    "source_uri": "https://www.seaturtlestatus.org/articles/2024/2/14/sea-turtles-of-southeast-asia"
   },
   {
     "name": "Loggerhead Turtle",
@@ -239,7 +260,8 @@
       "They exhibit long-distance migrations across multiple ocean basins.",
       "They primarily feed on benthic invertebrates like crabs."
     ],
-    "population_estimate": "Limited nesting data available in Indonesia"
+    "population_estimate": "Limited nesting data available in Indonesia (rare visitor)",
+    "source_uri": "https://www.seaturtlestatus.org/articles/2024/2/14/sea-turtles-of-southeast-asia"
   },
   {
     "name": "Leatherback Turtle",
@@ -250,7 +272,8 @@
       "They can dive to depths of over 1,000 meters.",
       "They are the largest turtle species, reaching lengths of up to 2 meters."
     ],
-    "population_estimate": "229 nests recorded in 2024 (Jamursba Medi/Warmon major sites)"
+    "population_estimate": "229 nests recorded in 2024 (Jamursba Medi/Warmon major sites - conservation success)",
+    "source_uri": "https://www.seaturtlestatus.org/articles/2024/2/14/sea-turtles-of-southeast-asia"
   },
   {
     "name": "Flatback Turtle",
@@ -261,6 +284,7 @@
       "They are the least migratory of all the sea turtle species.",
       "They primarily inhabit shallow coastal waters and continental shelves."
     ],
-    "population_estimate": "20,000-21,000 nesting females globally, limited data in Indonesia"
+    "population_estimate": "20,000-21,000 nesting females globally, limited data in Indonesia",
+    "source_uri": "https://www.seaturtlestatus.org/articles/2024/2/14/sea-turtles-of-southeast-asia"
   }
 ]
