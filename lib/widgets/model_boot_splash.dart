@@ -4,12 +4,16 @@ import '../services/model_boot_state.dart';
 
 // Minimal splash layout inspired by quex-flutter splash
 
+typedef DownloadCallback = void Function({String? customUrl});
+
 class ModelBootSplash extends StatelessWidget {
   final String status;
   final String? error;
   final double? progress;
   final bool isLoading;
   final ModelBootPhase phase;
+  final String? modelSize;
+  final DownloadCallback? onConfirmDownload;
   final VoidCallback? onRetry;
   final VoidCallback? onCancel;
 
@@ -20,6 +24,8 @@ class ModelBootSplash extends StatelessWidget {
     required this.progress,
     required this.isLoading,
     required this.phase,
+    this.modelSize,
+    this.onConfirmDownload,
     this.onRetry,
     this.onCancel,
   });
@@ -28,6 +34,7 @@ class ModelBootSplash extends StatelessWidget {
     return switch (phase) {
       ModelBootPhase.idle => 'Preparing',
       ModelBootPhase.checking => 'Checking',
+      ModelBootPhase.needsDownload => 'Download Required',
       ModelBootPhase.starting => 'Starting download',
       ModelBootPhase.downloading => 'Downloading',
       ModelBootPhase.resuming => 'Resuming',
@@ -45,6 +52,8 @@ class ModelBootSplash extends StatelessWidget {
       ModelBootPhase.idle => 'Checking the model setup.',
       ModelBootPhase.checking =>
         'Looking for an existing model before we download anything.',
+      ModelBootPhase.needsDownload =>
+        'A machine learning model is needed to identify species.',
       ModelBootPhase.starting => 'Getting the download ready.',
       ModelBootPhase.downloading =>
         'Downloading the model in the background.',
@@ -71,55 +80,66 @@ class ModelBootSplash extends StatelessWidget {
       body: SafeArea(
         child: Stack(
           children: [
-            // Center: Brand mark and title
-            Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  _BrandMark(colorScheme: colorScheme),
-                  const SizedBox(height: 24),
-                  Text(
-                    'Picture That',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.displaySmall?.copyWith(
-                      color: colorScheme.onSurface,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: -0.6,
+            // Center: Brand mark and title (hidden when showing download dialog)
+            if (phase != ModelBootPhase.needsDownload)
+              Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _BrandMark(colorScheme: colorScheme),
+                    const SizedBox(height: 24),
+                    Text(
+                      'Picture That',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.displaySmall?.copyWith(
+                        color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.6,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 10),
-                  Text(
-                    'Identify endangered species',
-                    textAlign: TextAlign.center,
-                    style: theme.textTheme.titleMedium?.copyWith(
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w700,
+                    const SizedBox(height: 10),
+                    Text(
+                      'Identify endangered species',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.titleMedium?.copyWith(
+                        color: colorScheme.primary,
+                        fontWeight: FontWeight.w700,
+                      ),
                     ),
-                  ),
-                  // Balance padding for visual centering
-                  const SizedBox(height: 88),
-                ],
+                    // Balance padding for visual centering
+                    const SizedBox(height: 88),
+                  ],
+                ),
               ),
-            ),
-            // Bottom: State indicator
-            Positioned(
-              bottom: 48,
-              left: 32,
-              right: 32,
-              child: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 300),
-                transitionBuilder: (child, animation) {
-                  return ScaleTransition(
-                    scale: animation,
-                    child: FadeTransition(
-                      opacity: animation,
-                      child: child,
-                    ),
-                  );
-                },
-                child: _buildStateIndicator(context, colorScheme, percent),
+            // Center: Download confirmation dialog
+            if (phase == ModelBootPhase.needsDownload)
+              Center(
+                child: _DownloadConfirmationCard(
+                  modelSize: modelSize,
+                  onDownload: onConfirmDownload ?? ({String? customUrl}) {},
+                  onCancel: onCancel,
+                ),
               ),
-            ),
+            // Bottom: State indicator (hidden when showing download dialog)
+            if (phase != ModelBootPhase.needsDownload)
+              Positioned(
+                bottom: 48,
+                left: 32,
+                right: 32,
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 300),
+                  transitionBuilder: (child, animation) {
+                    return ScaleTransition(
+                      scale: animation,
+                      child: FadeTransition(
+                        opacity: animation,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: _buildStateIndicator(context, colorScheme, percent),
+                ),
+              ),
           ],
         ),
       ),
@@ -253,3 +273,154 @@ class _BrandMark extends StatelessWidget {
   }
 }
 
+class _DownloadConfirmationCard extends StatefulWidget {
+  final String? modelSize;
+  final DownloadCallback onDownload;
+  final VoidCallback? onCancel;
+
+  const _DownloadConfirmationCard({
+    this.modelSize,
+    required this.onDownload,
+    this.onCancel,
+  });
+
+  @override
+  State<_DownloadConfirmationCard> createState() =>
+      _DownloadConfirmationCardState();
+}
+
+class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
+  bool _showAdvanced = false;
+  final _urlController = TextEditingController();
+
+  @override
+  void dispose() {
+    _urlController.dispose();
+    super.dispose();
+  }
+
+  void _handleDownload() {
+    final customUrl = _urlController.text.trim();
+    widget.onDownload(
+      customUrl: customUrl.isNotEmpty ? customUrl : null,
+    );
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+
+    return Card(
+      margin: const EdgeInsets.symmetric(horizontal: 16),
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 400),
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.cloud_download_outlined,
+                size: 48,
+                color: colorScheme.primary,
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Download Required',
+                style: theme.textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Column(
+                children: [
+                  Text(
+                    'To identify species, the model',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  Text(
+                    'needs to be downloaded${widget.modelSize != null ? ' (${widget.modelSize})' : ''}.',
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 12),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: colorScheme.surfaceContainerHighest,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.wifi_outlined,
+                      size: 20,
+                      color: colorScheme.primary,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
+                        'Connect to WiFi before downloading to save mobile data.',
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              TextButton(
+                onPressed: () => setState(() => _showAdvanced = !_showAdvanced),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(_showAdvanced ? 'Hide Advanced' : 'Advanced'),
+                    Icon(
+                      _showAdvanced
+                        ? Icons.expand_less
+                        : Icons.expand_more,
+                    ),
+                  ],
+                ),
+              ),
+              if (_showAdvanced) ...[
+                const SizedBox(height: 12),
+                TextField(
+                  controller: _urlController,
+                  decoration: const InputDecoration(
+                    labelText: 'Custom Model URL',
+                    hintText: 'https://...',
+                    border: OutlineInputBorder(),
+                  ),
+                  keyboardType: TextInputType.url,
+                ),
+                const SizedBox(height: 16),
+              ],
+              FilledButton.icon(
+                onPressed: _handleDownload,
+                icon: const Icon(Icons.download),
+                label: const Text('Download Model'),
+              ),
+              if (widget.onCancel != null) ...[
+                const SizedBox(height: 8),
+                TextButton(
+                  onPressed: widget.onCancel,
+                  child: const Text('Cancel'),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

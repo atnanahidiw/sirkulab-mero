@@ -203,6 +203,9 @@ class ModelService extends ChangeNotifier {
   InferenceModel? _model;
   StreamSubscription<TaskUpdate>? _downloadUpdatesSubscription;
 
+  // Pending model size for display in confirmation dialog
+  String? _pendingModelSize;
+
   // Model configuration - Gemma 4 2B Instruct (quantized)
   final String modelUrl =
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm';
@@ -251,6 +254,8 @@ class ModelService extends ChangeNotifier {
 
   InferenceModel? get model => _model;
 
+  String? get pendingModelSize => _pendingModelSize;
+
   Future<InferenceModel> _getActiveVisionModel() {
     return _runtime.getActiveModel(maxTokens: maxTokens);
   }
@@ -274,6 +279,42 @@ class ModelService extends ChangeNotifier {
     }
   }
 
+  /// Fetches the model size from the server using HTTP HEAD request.
+  /// Returns human-readable size string (e.g., "1.8 GB") or null if unavailable.
+  Future<String?> fetchModelSize([String? url]) async {
+    try {
+      final targetUrl = url ?? modelUrl;
+      final client = HttpClient();
+      final request = await client.headUrl(Uri.parse(targetUrl));
+      final response = await request.close();
+
+      if (response.statusCode == 200) {
+        final contentLength = response.headers.contentLength;
+        if (contentLength != null && contentLength > 0) {
+          return _formatBytes(contentLength);
+        }
+      }
+      return null;
+    } catch (e) {
+      debugPrint('Failed to fetch model size: $e');
+      return null;
+    }
+  }
+
+  /// Formats bytes to human-readable string (MB or GB)
+  String _formatBytes(int bytes) {
+    const mb = 1024 * 1024;
+    const gb = 1024 * 1024 * 1024;
+
+    if (bytes >= gb) {
+      final gbValue = bytes / gb;
+      return '${gbValue.toStringAsFixed(1)} GB';
+    } else {
+      final mbValue = bytes / mb;
+      return '${mbValue.toStringAsFixed(0)} MB';
+    }
+  }
+
   Future<String> _resolveDownloadFilePath() async {
     final supportDir = await getApplicationSupportDirectory();
     return p.join(
@@ -284,7 +325,7 @@ class ModelService extends ChangeNotifier {
     );
   }
 
-  Future<DownloadTask> _buildDownloadTask() async {
+  Future<DownloadTask> _buildDownloadTask({String? customUrl}) async {
     final supportDir = await getApplicationSupportDirectory();
     final modelDir = Directory(p.join(
       supportDir.path,
@@ -299,7 +340,7 @@ class ModelService extends ChangeNotifier {
 
     return DownloadTask(
       taskId: _downloadTaskId,
-      url: modelUrl,
+      url: customUrl ?? modelUrl,
       group: _downloadGroup,
       headers: const {
         'Connection': 'keep-alive',
@@ -557,6 +598,12 @@ class ModelService extends ChangeNotifier {
     }
   }
 
+  /// Exposed for testing purposes only.
+  @visibleForTesting
+  Future<void> bootstrapForTest({bool loadPersistedState = true}) async {
+    return _bootstrap(loadPersistedState: loadPersistedState);
+  }
+
   Future<void> _reconcileStartupState() async {
     final activeModel = await _tryActivateExistingModel();
     if (activeModel) {
@@ -617,7 +664,18 @@ class ModelService extends ChangeNotifier {
       return;
     }
 
-    await _startModelDownload(resumed: _state.phase == ModelBootPhase.paused);
+    // Don't auto-download - show confirmation dialog first
+    // Fetch model size for display
+    _pendingModelSize = await fetchModelSize();
+    _commitState(
+      _state.copyWith(
+        isInitialized: true,
+        isLoading: false,
+        isModelLoaded: false,
+        status: 'Model download required',
+        phase: ModelBootPhase.needsDownload,
+      ),
+    );
   }
 
   Future<bool> _tryActivateExistingModel() async {
@@ -910,6 +968,24 @@ class ModelService extends ChangeNotifier {
     await downloadModel();
   }
 
+  Future<void> confirmDownload({String? customUrl}) async {
+    if (_state.phase != ModelBootPhase.needsDownload &&
+        _state.phase != ModelBootPhase.canceled) {
+      return;
+    }
+
+    // If custom URL provided, try to fetch its size for display/logging
+    if (customUrl != null && customUrl.isNotEmpty) {
+      _pendingModelSize = await fetchModelSize(customUrl);
+      notifyListeners();
+    }
+
+    await _startModelDownload(
+      resumed: false,
+      customUrl: customUrl,
+    );
+  }
+
   Future<void> cancelDownload() async {
     final taskId = _state.downloadTaskId;
     if (taskId != null) {
@@ -960,14 +1036,17 @@ class ModelService extends ChangeNotifier {
     await _startModelDownload(resumed: true);
   }
 
-  Future<void> _startModelDownload({required bool resumed}) async {
+  Future<void> _startModelDownload({
+    required bool resumed,
+    String? customUrl,
+  }) async {
     if (_isDownloading || _state.isModelLoaded) {
       return;
     }
 
     _isDownloading = true;
     try {
-      final task = await _buildDownloadTask();
+      final task = await _buildDownloadTask(customUrl: customUrl);
       final filePath = await task.filePath();
       _commitState(
         _state.copyWith(
