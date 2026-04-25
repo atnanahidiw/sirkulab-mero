@@ -7,12 +7,14 @@ class Species {
   final String latinName;
   final String description;
   final List<String> facts;
+  final String? populationEstimate;
 
   Species(
       {required this.name,
       required this.latinName,
       required this.description,
-      required this.facts});
+      required this.facts,
+      this.populationEstimate});
 
   factory Species.fromJson(Map<String, dynamic> json) {
     return Species(
@@ -20,6 +22,7 @@ class Species {
       latinName: json['latinName'] ?? '',
       description: json['description'],
       facts: List<String>.from(json['facts']),
+      populationEstimate: json['population_estimate'],
     );
   }
 }

@@ -110,6 +110,32 @@ class _ResultPageState extends State<ResultPage> {
                       color: Colors.grey[600],
                     ),
                   ),
+                if (_species!.populationEstimate != null) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(
+                      color: Colors.red[50],
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(color: Colors.red[200]!),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.warning_amber, size: 16, color: Colors.red[700]),
+                        const SizedBox(width: 6),
+                        Text(
+                          '~${_species!.populationEstimate} remaining',
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.red[700],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
                 const SizedBox(height: 20),
                 Text(
                   _species!.description,
