@@ -956,16 +956,14 @@ class ModelService extends ChangeNotifier {
     _commitState(
       _state.copyWith(
         isInitialized: false,
-        isLoading: true,
+        isLoading: false,
         isModelLoaded: false,
         error: null,
-        status: 'Retrying model setup...',
-        phase: ModelBootPhase.starting,
+        status: 'Model download required',
+        phase: ModelBootPhase.needsDownload,
         downloadProgress: null,
       ),
     );
-
-    await downloadModel();
   }
 
   Future<void> confirmDownload({String? customUrl}) async {
