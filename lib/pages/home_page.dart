@@ -4,6 +4,7 @@ import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../services/model_service.dart';
+import '../services/permission_service.dart';
 import 'result_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -30,17 +31,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   Future<void> _initializeCamera() async {
     // Capture context before async gap
     final currentContext = context;
-
-    // Request camera permission
-    final status = await Permission.camera.request();
-    if (!status.isGranted) {
-      if (currentContext.mounted) {
-        ScaffoldMessenger.of(currentContext).showSnackBar(
-          const SnackBar(content: Text('Camera permission required')),
-        );
-      }
-      return;
-    }
 
     try {
       _cameras = await availableCameras();
@@ -72,10 +62,87 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
+  Future<bool> _checkAndRequestCameraPermission() async {
+    // Check if already granted
+    final hasPermission = await PermissionService.hasCameraPermission();
+    if (hasPermission) return true;
+
+    // Check if permanently denied
+    final isPermanentlyDenied =
+        await PermissionService.isPermissionPermanentlyDenied(Permission.camera);
+
+    if (!mounted) return false;
+
+    if (isPermanentlyDenied) {
+      // Show settings dialog
+      final shouldOpenSettings = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Camera Permission Required'),
+          content: Text(
+            '${PermissionService.getPermissionRationale('camera')}\n\n'
+            'This permission has been permanently denied. Please enable it in app settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldOpenSettings == true) {
+        await PermissionService.openPermissionSettings();
+      }
+      return false;
+    }
+
+    // Show rationale dialog before requesting
+    final shouldRequest = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Camera Access'),
+        content: Text(PermissionService.getPermissionRationale('camera')),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Not Now'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: const Text('Allow'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldRequest != true) return false;
+
+    // Request permission
+    final result = await PermissionService.requestCameraPermission();
+    return result.isGranted;
+  }
+
   Future<void> _takePhoto() async {
     final currentContext = context;
     final modelService =
         Provider.of<ModelService>(currentContext, listen: false);
+
+    // Check and request camera permission with rationale
+    final hasCameraPermission = await _checkAndRequestCameraPermission();
+    if (!hasCameraPermission) {
+      if (currentContext.mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          const SnackBar(content: Text('Camera permission is required to take photos')),
+        );
+      }
+      return;
+    }
 
     if (_controller == null ||
         !_controller!.value.isInitialized ||

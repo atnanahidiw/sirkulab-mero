@@ -28,6 +28,10 @@ class StartupGate extends StatelessWidget {
           progress: modelService.downloadProgress,
           isLoading: modelService.isLoading,
           phase: modelService.phase,
+          modelSize: modelService.pendingModelSize,
+          onConfirmDownload: modelService.phase == ModelBootPhase.needsDownload
+              ? ({String? customUrl}) => modelService.confirmDownload(customUrl: customUrl)
+              : null,
           onRetry: switch (modelService.phase) {
             ModelBootPhase.paused => () => modelService.resumeDownload(),
             ModelBootPhase.canceled => () => modelService.retryInitialization(),
@@ -37,7 +41,8 @@ class StartupGate extends StatelessWidget {
           },
           onCancel: modelService.phase == ModelBootPhase.ready ||
                   modelService.phase == ModelBootPhase.idle ||
-                  modelService.phase == ModelBootPhase.canceled
+                  modelService.phase == ModelBootPhase.canceled ||
+                  modelService.phase == ModelBootPhase.needsDownload
               ? null
               : () => modelService.cancelDownload(),
         );

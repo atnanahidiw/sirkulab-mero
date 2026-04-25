@@ -1,5 +1,7 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 class ModelDownloadNotificationService {
   static const int _notificationId = 4242;
@@ -28,6 +30,71 @@ class ModelDownloadNotificationService {
     await androidImplementation?.requestNotificationsPermission();
 
     _initialized = true;
+  }
+
+  /// Request notification permission with UI handling - call this from UI layer before download
+  static Future<bool> requestPermission(BuildContext context) async {
+    if (defaultTargetPlatform != TargetPlatform.android) return true;
+
+    final status = await Permission.notification.status;
+
+    if (status.isGranted) return true;
+
+    if (!status.isPermanentlyDenied) {
+      final shouldRequest = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Download Notifications'),
+          content: const Text(
+            'Notifications are used to show the AI model download progress in the background. '
+            'You can disable this later in settings.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Skip'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Allow'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldRequest == true) {
+        final result = await Permission.notification.request();
+        return result.isGranted;
+      }
+    } else {
+      // Permanently denied - open settings
+      final shouldOpenSettings = await showDialog<bool>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Notification Permission Required'),
+          content: const Text(
+            'Notification permission has been disabled. '
+            'Enable it in settings to see download progress.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Skip'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.pop(context, true),
+              child: const Text('Open Settings'),
+            ),
+          ],
+        ),
+      );
+
+      if (shouldOpenSettings == true) {
+        await openAppSettings();
+      }
+    }
+
+    return false;
   }
 
   Future<void> showProgress({

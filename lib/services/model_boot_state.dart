@@ -7,6 +7,7 @@ import 'package:path_provider/path_provider.dart';
 enum ModelBootPhase {
   idle,
   checking,
+  needsDownload,
   starting,
   downloading,
   resuming,
