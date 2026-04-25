@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../services/model_boot_state.dart';
+import '../services/model_download_notification_service.dart';
 
 // Minimal splash layout inspired by quex-flutter splash
 
@@ -299,7 +300,12 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
     super.dispose();
   }
 
-  void _handleDownload() {
+  Future<void> _handleDownload() async {
+    // Request notification permission (optional - can skip)
+    if (mounted) {
+      await ModelDownloadNotificationService.requestPermission(context);
+    }
+
     final customUrl = _urlController.text.trim();
     widget.onDownload(
       customUrl: customUrl.isNotEmpty ? customUrl : null,

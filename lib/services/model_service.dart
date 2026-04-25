@@ -282,9 +282,10 @@ class ModelService extends ChangeNotifier {
   /// Fetches the model size from the server using HTTP HEAD request.
   /// Returns human-readable size string (e.g., "1.8 GB") or null if unavailable.
   Future<String?> fetchModelSize([String? url]) async {
+    HttpClient? client;
     try {
       final targetUrl = url ?? modelUrl;
-      final client = HttpClient();
+      client = HttpClient();
       final request = await client.headUrl(Uri.parse(targetUrl));
       final response = await request.close();
 
@@ -298,6 +299,8 @@ class ModelService extends ChangeNotifier {
     } catch (e) {
       debugPrint('Failed to fetch model size: $e');
       return null;
+    } finally {
+      client?.close();
     }
   }
 

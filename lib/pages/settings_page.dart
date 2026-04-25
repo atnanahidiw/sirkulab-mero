@@ -45,32 +45,17 @@ class SettingsPage extends StatelessWidget {
 
           // Permissions
           _buildSectionHeader('Permissions'),
-          FutureBuilder<Map<String, bool>>(
-            future: PermissionService.checkAllPermissions(),
+          FutureBuilder<bool>(
+            future: PermissionService.hasCameraPermission(),
             builder: (context, snapshot) {
               if (!snapshot.hasData) {
                 return const Center(child: CircularProgressIndicator());
               }
 
-              final permissions = snapshot.data!;
-              return Column(
-                children: [
-                  _buildPermissionTile(
-                    'Camera',
-                    permissions['camera'] ?? false,
-                    onTap: () => _managePermission(context, 'camera'),
-                  ),
-                  _buildPermissionTile(
-                    'Photo Library',
-                    permissions['photos'] ?? false,
-                    onTap: () => _managePermission(context, 'photos'),
-                  ),
-                  _buildPermissionTile(
-                    'Storage',
-                    permissions['storage'] ?? false,
-                    onTap: () => _managePermission(context, 'storage'),
-                  ),
-                ],
+              return _buildPermissionTile(
+                'Camera',
+                snapshot.data!,
+                onTap: () => _manageCameraPermission(context),
               );
             },
           ),
@@ -254,16 +239,9 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Future<void> _managePermission(
-      BuildContext context, String permission) async {
-    final permissionType = permission == 'camera'
-        ? Permission.camera
-        : permission == 'photos'
-            ? Permission.photos
-            : Permission.storage;
-
+  Future<void> _manageCameraPermission(BuildContext context) async {
     final isPermanentlyDenied =
-        await PermissionService.isPermissionPermanentlyDenied(permissionType);
+        await PermissionService.isPermissionPermanentlyDenied(Permission.camera);
 
     if (!context.mounted) return;
 
@@ -271,9 +249,9 @@ class SettingsPage extends StatelessWidget {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Permission Required'),
+          title: const Text('Camera Permission Required'),
           content: Text(
-            '${PermissionService.getPermissionRationale(permission)}\n\n'
+            '${PermissionService.getPermissionRationale('camera')}\n\n'
             'This permission has been permanently denied. Please enable it in app settings.',
           ),
           actions: [
@@ -292,7 +270,7 @@ class SettingsPage extends StatelessWidget {
         ),
       );
     } else {
-      final status = await permissionType.request();
+      final status = await Permission.camera.request();
 
       if (!context.mounted) return;
 
@@ -300,8 +278,8 @@ class SettingsPage extends StatelessWidget {
         SnackBar(
           content: Text(
             status.isGranted
-                ? '$permission permission granted'
-                : '$permission permission denied',
+                ? 'Camera permission granted'
+                : 'Camera permission denied',
           ),
         ),
       );
