@@ -3,13 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:background_downloader/background_downloader.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
-import 'package:image/image.dart' as img;
-import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 
 import 'model_boot_state.dart';
 import 'species_service.dart';
+import '../utils/image_utils.dart';
 
 @visibleForTesting
 bool isCancellationErrorDescription(String? description) {
@@ -186,8 +186,6 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 class ModelService extends ChangeNotifier {
   static const String _downloadGroup = 'picture_that_model_downloads';
   static const String _downloadTaskId = 'picture_that_gemma_model';
-  static const String _downloadDirectory = 'models';
-  static const String _downloadFileName = 'gemma-4-E2B-it.litertlm';
 
   final ModelDownloadBackend _downloader;
   final ModelRuntime _runtime;
@@ -243,6 +241,7 @@ class ModelService extends ChangeNotifier {
   String? get error => _state.error;
 
   double? get downloadProgress => _state.downloadProgress;
+
 
   ModelBootPhase get phase => _state.phase;
 
@@ -318,27 +317,18 @@ class ModelService extends ChangeNotifier {
     }
   }
 
-  Future<String> _resolveDownloadFilePath() async {
-    final supportDir = await getApplicationSupportDirectory();
-    return p.join(
-      supportDir.path,
-      'picture_that',
-      _downloadDirectory,
-      _downloadFileName,
-    );
-  }
 
   Future<DownloadTask> _buildDownloadTask({String? customUrl}) async {
-    final supportDir = await getApplicationSupportDirectory();
-    final modelDir = Directory(p.join(
-      supportDir.path,
-      'picture_that',
-      _downloadDirectory,
-    ));
-    await modelDir.create(recursive: true);
+    final persistentPath = await _getDownloadDestination();
+    
+    // Ensure the persistent directory exists
+    final persistentDir = Directory(persistentPath).parent;
+    if (!await persistentDir.exists()) {
+      await persistentDir.create(recursive: true);
+    }
 
     final (baseDirectory, directory, filename) = await Task.split(
-      filePath: p.join(modelDir.path, _downloadFileName),
+      filePath: persistentPath,
     );
 
     return DownloadTask(
@@ -362,7 +352,7 @@ class ModelService extends ChangeNotifier {
   }
 
   Future<bool> _isDownloadedModelPresent([String? filePath]) async {
-    final resolvedPath = filePath ?? await _resolveDownloadFilePath();
+    final resolvedPath = filePath ?? await _getDownloadDestination();
     return File(resolvedPath).exists();
   }
 
@@ -613,7 +603,7 @@ class ModelService extends ChangeNotifier {
       return;
     }
 
-    final filePath = _state.downloadFilePath ?? await _resolveDownloadFilePath();
+    final filePath = _state.downloadFilePath ?? await _getDownloadDestination();
     final fileExists = await _isDownloadedModelPresent(filePath);
     if (fileExists) {
       await _installDownloadedModel(filePath);
@@ -1084,7 +1074,7 @@ class ModelService extends ChangeNotifier {
 
     await _ensureDownloaderReady();
 
-    final filePath = await _resolveDownloadFilePath();
+    final filePath = await _getDownloadDestination();
     if (await _isDownloadedModelPresent(filePath)) {
       await _installDownloadedModel(filePath);
       return;
@@ -1158,41 +1148,6 @@ class ModelService extends ChangeNotifier {
     return null;
   }
 
-  static Uint8List _compressImageIsolate(Uint8List imageBytes) {
-    try {
-      final img.Image? originalImage = img.decodeImage(imageBytes);
-      if (originalImage == null) {
-        return imageBytes;
-      }
-
-      int? targetWidth;
-      int? targetHeight;
-      if (originalImage.width > originalImage.height) {
-        targetWidth = 800;
-      } else {
-        targetHeight = 800;
-      }
-
-      final img.Image resizedImage = img.copyResize(
-        originalImage,
-        width: targetWidth,
-        height: targetHeight,
-      );
-
-      return Uint8List.fromList(img.encodeJpg(resizedImage, quality: 85));
-    } catch (e) {
-      return imageBytes;
-    }
-  }
-
-  /// Compress and resize image to prevent OOM errors and avoid blocking UI
-  Future<Uint8List> _compressImage(Uint8List imageBytes) async {
-    debugPrint('Original image size: ${imageBytes.length} bytes');
-    final compressedBytes = await compute(_compressImageIsolate, imageBytes);
-    debugPrint('Compressed image size: ${compressedBytes.length} bytes');
-    return compressedBytes;
-  }
-
   Future<String> identifySpecies(
     Uint8List imageBytes,
     String imageFormat,
@@ -1210,7 +1165,7 @@ class ModelService extends ChangeNotifier {
       );
 
       // Compress image before processing
-      final compressedBytes = await _compressImage(imageBytes);
+      final compressedBytes = await ImageUtils.compressImage(imageBytes, maxWidth: 800, maxHeight: 800, quality: 85);
 
       final speciesNames = _speciesList.map((s) => s.name).toList();
       final speciesListString = speciesNames.isNotEmpty
@@ -1276,6 +1231,74 @@ Do not add any additional text, explanations, or formatting.
       rethrow;
     }
   }
+
+  /// Request storage permission for Android
+  Future<bool> _requestStoragePermission() async {
+    if (!Platform.isAndroid) return true;
+    
+    // Keep asking until permission is granted or user cancels
+    while (true) {
+      // Check if we already have permission
+      if (await Permission.manageExternalStorage.isGranted) return true;
+      if (await Permission.storage.isGranted) return true;
+      
+      // Request permissions with explanation
+      final status = await Permission.storage.request();
+      if (status.isGranted) return true;
+      
+      final manageStatus = await Permission.manageExternalStorage.request();
+      if (manageStatus.isGranted) return true;
+      
+      // If permanently denied, open settings and loop back
+      if (status.isPermanentlyDenied || manageStatus.isPermanentlyDenied) {
+        await openAppSettings();
+        // Wait a bit for user to interact with settings
+        await Future.delayed(const Duration(seconds: 2));
+        continue;
+      }
+      
+      // If user denied (not permanently), wait and ask again
+      if (status.isDenied || manageStatus.isDenied) {
+        // Wait 2 seconds before asking again
+        await Future.delayed(const Duration(seconds: 2));
+        continue;
+      }
+      
+      // If anything else, break and return false
+      break;
+    }
+    
+    return false;
+  }
+
+  /// Get the destination path for persistent model storage
+  Future<String> _getDownloadDestination() async {
+    String dirPath;
+    if (Platform.isAndroid) {
+      final isGranted = await _requestStoragePermission();
+      if (!isGranted) {
+        throw Exception(
+            'Storage permission denied. The model MUST be saved to public storage to persist across reinstalls. Please grant permission.');
+      }
+      dirPath = '/storage/emulated/0/Download';
+    } else {
+      try {
+        final downloadsDir = await getDownloadsDirectory();
+        dirPath = downloadsDir?.path ?? (await getApplicationDocumentsDirectory()).path;
+      } catch (e) {
+        dirPath = (await getApplicationDocumentsDirectory()).path;
+      }
+    }
+
+    // Ensure directory exists
+    final dir = Directory(dirPath);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    return '$dirPath/.gemma-4-E2B-it.litertlm';
+  }
+
 
   Future<void> clearModel() async {
     if (_model != null) {
