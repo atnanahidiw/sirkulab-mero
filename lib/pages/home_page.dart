@@ -5,7 +5,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
-import 'result_page.dart';
+import 'analyzing_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -193,27 +193,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (!currentContext.mounted) return;
       
-      // Show loading overlay
-      showDialog(
-        context: currentContext,
-        barrierDismissible: false,
-        builder: (context) => const Center(
-          child: CircularProgressIndicator(color: Colors.white),
-        ),
-      );
-
-      final result = await modelService.identifySpecies(bytes, 'jpeg');
-
-      if (!currentContext.mounted) return;
-      Navigator.pop(currentContext); // Remove loader
-
+      // Navigate to analyzing page
       Navigator.push(
         currentContext,
         MaterialPageRoute(
-          builder: (context) => ResultPage(
-            imageBytes: bytes,
-            analysisResult: result,
-          ),
+          builder: (context) => AnalyzingPage(rawImageBytes: bytes),
         ),
       );
     } catch (e) {
