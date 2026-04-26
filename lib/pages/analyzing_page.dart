@@ -101,6 +101,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
       if (!mounted) return;
 
       // Navigate to result page, replacing this page in the stack
+      await Future.delayed(const Duration(milliseconds: 100)); // Small delay to ensure stability
       Navigator.pushReplacement(
         context,
         PageRouteBuilder(
@@ -111,7 +112,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
           transitionsBuilder: (context, animation, secondaryAnimation, child) {
             return FadeTransition(opacity: animation, child: child);
           },
-          transitionDuration: const Duration(milliseconds: 500),
+          transitionDuration: const Duration(milliseconds: 300), // Faster transition
         ),
       );
     } catch (e) {

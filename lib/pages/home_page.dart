@@ -33,6 +33,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final currentContext = context;
 
     try {
+      // Dispose existing controller if already initialized
+      if (_controller != null && _controller!.value.isInitialized) {
+        await _controller!.dispose();
+        _controller = null;
+      }
+
+      // Small delay to prevent race conditions
+      await Future.delayed(const Duration(milliseconds: 100));
+
       _cameras = await availableCameras();
       if (_cameras.isEmpty) {
         if (currentContext.mounted) {
@@ -54,11 +63,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         _isCameraReady = true;
       });
     } catch (e) {
+      debugPrint('Camera initialization error: $e');
       if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
           SnackBar(content: Text('Failed to initialize camera: $e')),
         );
       }
+      setState(() {
+        _isCameraReady = false;
+      });
     }
   }
 
@@ -193,13 +206,20 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (!currentContext.mounted) return;
       
-      // Navigate to analyzing page
+    // Navigate to analyzing page
       Navigator.push(
         currentContext,
         MaterialPageRoute(
           builder: (context) => AnalyzingPage(rawImageBytes: bytes),
         ),
-      );
+      ).then((_) {
+        // When returning from analyzing page, reinitialize camera
+        Future.delayed(const Duration(milliseconds: 200), () {
+          if (mounted) {
+            _initializeCamera();
+          }
+        });
+      });
     } catch (e) {
       if (currentContext.mounted) {
         Navigator.pop(currentContext); // Remove loader if present
@@ -280,11 +300,84 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     );
   }
 
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    _controller?.dispose();
-    super.dispose();
+  // Widget to handle camera error state
+  Widget _buildCameraErrorState() {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error_outline, color: Colors.white, size: 64),
+          SizedBox(height: 16),
+          Text(
+            'Camera Error',
+            style: TextStyle(color: Colors.white, fontSize: 18),
+          ),
+          SizedBox(height: 8),
+          Text(
+            'Unable to initialize camera',
+            style: TextStyle(color: Colors.white70),
+          ),
+          SizedBox(height: 16),
+          ElevatedButton(
+            onPressed: _initializeCamera,
+            child: Text('Retry'),
+          ),
+        ],
+      ),
+    );
+  }
+  Widget _buildCameraPreview() {
+    if (_isCameraReady && 
+        _controller != null && 
+        _controller!.value.isInitialized) {
+      try {
+        return SizedBox.expand(
+          child: FittedBox(
+            fit: BoxFit.cover,
+            child: SizedBox(
+              width: _controller!.value.previewSize!.height,
+              height: _controller!.value.previewSize!.width,
+              child: CameraPreview(_controller!),
+            ),
+          ),
+        );
+      } catch (e) {
+        debugPrint('Camera preview error: $e');
+        // Return placeholder if camera preview fails
+        return Container(
+          color: Colors.black,
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.camera_alt, color: Colors.white, size: 64),
+                SizedBox(height: 16),
+                Text(
+                  'Camera Preview Error',
+                  style: TextStyle(color: Colors.white, fontSize: 18),
+                ),
+              ],
+            ),
+          ),
+        );
+      }
+    } else {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircularProgressIndicator(color: Colors.white),
+            SizedBox(height: 16),
+            Text(
+              _isCameraReady 
+                  ? 'Initializing camera...'
+                  : 'Loading camera...',
+              style: TextStyle(color: Colors.white),
+            ),
+          ],
+        ),
+      );
+    }
   }
 
   @override
@@ -294,11 +387,44 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return;
     }
 
-    if (state == AppLifecycleState.inactive) {
-      cameraController.dispose();
-    } else if (state == AppLifecycleState.resumed) {
-      _initializeCamera();
+    switch (state) {
+      case AppLifecycleState.inactive:
+        // Pause camera when app is inactive
+        cameraController.dispose();
+        setState(() {
+          _isCameraReady = false;
+        });
+        break;
+      case AppLifecycleState.resumed:
+        // Resume camera when app is active again
+        _initializeCamera();
+        break;
+      case AppLifecycleState.paused:
+        // Camera can stay active when paused for brief periods
+        break;
+      case AppLifecycleState.detached:
+        // Clean up when app is detached
+        cameraController.dispose();
+        setState(() {
+          _isCameraReady = false;
+        });
+        break;
+      case AppLifecycleState.hidden:
+        // Handle hidden state if needed
+        break;
     }
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    
+    // Dispose camera controller and cancel any pending operations
+    _controller?.dispose();
+    _controller = null;
+    _isCameraReady = false;
+    
+    super.dispose();
   }
 
   @override
@@ -324,23 +450,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       body: Stack(
         children: [
           // Camera preview
-          if (_isCameraReady &&
-              _controller != null &&
-              _controller!.value.isInitialized)
-            SizedBox.expand(
-              child: FittedBox(
-                fit: BoxFit.cover,
-                child: SizedBox(
-                  width: _controller!.value.previewSize!.height,
-                  height: _controller!.value.previewSize!.width,
-                  child: CameraPreview(_controller!),
-                ),
-              ),
-            )
+          if (_isCameraReady)
+            _buildCameraPreview()
           else
-            const Center(
-              child: CircularProgressIndicator(color: Colors.white),
-            ),
+            _buildCameraErrorState(),
 
           // Model status indicator (top right)
           Positioned(
