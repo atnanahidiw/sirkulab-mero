@@ -177,9 +177,20 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 
   @override
   Future<void> installFromFile(String filePath) async {
-    await FlutterGemma.installModel(modelType: modelType)
-        .fromFile(filePath)
-        .install();
+    try {
+      // Add timeout to prevent hanging
+      await Future.any([
+        FlutterGemma.installModel(modelType: modelType)
+            .fromFile(filePath)
+            .install(),
+        Future.delayed(const Duration(minutes: 5), () {
+          throw TimeoutException('Model installation timed out after 5 minutes');
+        }),
+      ]);
+    } catch (e) {
+      debugPrint('Model installation failed: $e');
+      rethrow;
+    }
   }
 }
 
@@ -346,7 +357,7 @@ class ModelService extends ChangeNotifier {
       requiresWiFi: false,
       allowPause: true,
       priority: 0,
-      retries: 0,
+      retries: 3, // Allow retries for rural/uncertain connections
       updates: Updates.statusAndProgress,
     );
   }
@@ -368,9 +379,19 @@ class ModelService extends ChangeNotifier {
       ),
     );
 
-    await _runtime.installFromFile(filePath);
-    _model = await _getActiveVisionModel();
-    await _markReady(status: 'Model ready');
+    try {
+      // Install with timeout to prevent hanging
+      await _runtime.installFromFile(filePath);
+      _model = await _getActiveVisionModel();
+      await _markReady(status: 'Model ready');
+    } catch (e) {
+      debugPrint('Model installation failed: $e');
+      await _markError(
+        'Failed to install model: $e',
+        phase: ModelBootPhase.failed,
+      );
+      rethrow;
+    }
   }
 
   Future<void> _handleDownloadUpdate(TaskUpdate update) async {
@@ -889,9 +910,19 @@ class ModelService extends ChangeNotifier {
       ),
     );
 
-    await _runtime.installFromFile(filePath);
-    _model = await _getActiveVisionModel();
-    await _markReady(status: 'Model ready');
+    try {
+      // Install with timeout to prevent hanging
+      await _runtime.installFromFile(filePath);
+      _model = await _getActiveVisionModel();
+      await _markReady(status: 'Model ready');
+    } catch (e) {
+      debugPrint('Existing model installation failed: $e');
+      await _markError(
+        'Failed to install existing model: $e',
+        phase: ModelBootPhase.failed,
+      );
+      rethrow;
+    }
   }
 
   Future<void> _loadSpeciesData() async {
@@ -1073,12 +1104,23 @@ class ModelService extends ChangeNotifier {
     }
 
     await _ensureDownloaderReady();
-
-    final filePath = await _getDownloadDestination();
-    if (await _isDownloadedModelPresent(filePath)) {
-      await _installDownloadedModel(filePath);
+    
+    // First check if model exists at the expected location
+    final expectedFilePath = await _getDownloadDestination();
+    if (await _isDownloadedModelPresent(expectedFilePath)) {
+      await _installDownloadedModel(expectedFilePath);
       return;
     }
+    
+    // If not found at expected location, search all other possible locations
+    final foundModelPath = await _checkForLocalModel();
+    if (foundModelPath != null) {
+      await _commitLocalModel(foundModelPath);
+      return;
+    }
+    
+    // No existing model found - clean up thoroughly and start download
+    await clearModel();
 
     final activeTask = await _downloader.taskForId(_downloadTaskId);
     if (activeTask != null) {
@@ -1094,13 +1136,15 @@ class ModelService extends ChangeNotifier {
 
   Future<String?> _checkForLocalModel() async {
     try {
+      debugPrint('Searching for existing model files...');
       final List<String> searchPaths = [];
-
+      
       // 1. Downloads directory
       try {
         final downloadsDir = await getDownloadsDirectory();
         if (downloadsDir != null) {
           searchPaths.add(downloadsDir.path);
+          debugPrint('Added downloads directory: ${downloadsDir.path}');
         }
       } catch (e) {
         debugPrint('Could not get downloads directory: $e');
@@ -1108,40 +1152,51 @@ class ModelService extends ChangeNotifier {
 
       // 2. Common Android download path
       searchPaths.add('/storage/emulated/0/Download');
+      debugPrint('Added Android download path');
 
       // 3. AI Edge Gallery paths
       searchPaths.add('/Android/media/com.google.ai.gallery/files/');
-      searchPaths.add(
-        '/storage/emulated/0/Android/media/com.google.ai.gallery/files/',
-      );
+      searchPaths.add('/storage/emulated/0/Android/media/com.google.ai.gallery/files/');
+      debugPrint('Added AI Edge Gallery paths');
 
       // 4. App-specific documents directory
       try {
         final appDocDir = await getApplicationDocumentsDirectory();
         searchPaths.add(appDocDir.path);
+        debugPrint('Added app documents directory: ${appDocDir.path}');
       } catch (e) {
         debugPrint('Could not get app documents directory: $e');
       }
+      
+      debugPrint('Searching ${searchPaths.length} locations for model files...');
 
+      int filesChecked = 0;
       for (final basePath in searchPaths) {
         try {
           final directory = Directory(basePath);
           if (await directory.exists()) {
+            debugPrint('Searching directory: $basePath');
             final files = await directory.list(recursive: false).toList();
             for (final file in files) {
-              if (file is File &&
-                  file.path.endsWith('.litertlm') &&
-                  file.path.toLowerCase().contains('gemma')) {
-                debugPrint('Found local model at: ${file.path}');
-                return file.path;
+              filesChecked++;
+              if (file is File) {
+                final fileName = file.path.toLowerCase();
+                if (fileName.endsWith('.litertlm') && fileName.contains('gemma')) {
+                  debugPrint('✓ Found model file: ${file.path}');
+                  return file.path;
+                }
               }
             }
+            debugPrint('✗ No model files found in: $basePath');
+          } else {
+            debugPrint('Directory does not exist: $basePath');
           }
         } catch (e) {
           debugPrint('Error searching path $basePath: $e');
           continue;
         }
       }
+      debugPrint('Model search complete. Checked $filesChecked files across ${searchPaths.length} locations.');
     } catch (e) {
       debugPrint('Error checking local model: $e');
     }
