@@ -1175,18 +1175,25 @@ class ModelService extends ChangeNotifier {
       final session = await _model!.createSession(
         enableVisionModality: true,
         systemInstruction: '''
-You are an expert wildlife biologist specializing in endangered Indonesian species identification.
-Your task is to analyze images and identify if they contain endangered species from the following list:
+You are an expert wildlife biologist specializing in Indonesian wildlife identification.
+Your task is to analyze images and identify ANY animal or plant species visible in the image.
+
+First, identify the species using COMMON ENGLISH NAME only (e.g., "Tiger" instead of "Panthera tigris"). Then determine if it is in the following endangered list:
 $speciesListString.
 
-If the species is in the list, respond with ONLY the exact common name as shown in the list.
-If the species is not in the list or you are unsure, respond with "Not recognized".
-Do not add any additional text, explanations, or formatting.
+Respond in this exact format:
+[COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
+
+Where ENDANGERED_STATUS is either "endangered" (if in the list above) or "not listed" (if not in the list or unsure).
+
+Do not add any additional text or explanations outside this format.
+
+IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant", "Orchid") not Latin/scientific names.
 ''',
       );
 
       await session.addQueryChunk(Message.withImage(
-        text: 'Identify the endangered Indonesian species in this image.',
+        text: 'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.',
         imageBytes: compressedBytes,
         isUser: true,
       ));
@@ -1208,6 +1215,34 @@ Do not add any additional text, explanations, or formatting.
         ),
       );
 
+      // Parse response format: [COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
+      final parts = cleanedResponse.split('|').map((p) => p.trim()).toList();
+      
+      if (parts.length >= 3) {
+        final commonName = parts[0];
+        final latinName = parts[1];
+        final status = parts[2].toLowerCase();
+
+        // Check if it's in the endangered list
+        Species? matchedSpecies;
+        for (final species in _speciesList) {
+          if (commonName.toLowerCase().contains(species.name.toLowerCase()) ||
+              species.name.toLowerCase().contains(commonName.toLowerCase())) {
+            matchedSpecies = species;
+            break;
+          }
+        }
+
+        if (matchedSpecies != null && status.contains('endangered')) {
+          // Found endangered species in list
+          return matchedSpecies.name;
+        } else {
+          // Not in endangered list - return special format
+          return 'NOT_LISTED|$commonName|$latinName';
+        }
+      }
+
+      // Fallback: check if response contains any species from list
       Species? matchedSpecies;
       for (final species in _speciesList) {
         if (cleanedResponse.toLowerCase().contains(species.name.toLowerCase())) {

@@ -51,10 +51,28 @@ class _ResultPageState extends State<ResultPage> {
   }
 
   String _extractSpeciesName(String result) {
+    // Check for NOT_LISTED format: NOT_LISTED|[common name]|[latin name]
+    if (result.startsWith('NOT_LISTED|')) {
+      return result; // Return the whole thing for special handling
+    }
     return result.replaceAll('**', '').replaceAll('*', '').trim();
   }
 
+  // Check if result is NOT_LISTED format
+  bool get _isNotListed => widget.analysisResult.startsWith('NOT_LISTED|');
 
+  // Extract details from NOT_LISTED format
+  String? get _notListedName {
+    if (!_isNotListed) return null;
+    final parts = widget.analysisResult.split('|');
+    return parts.length >= 2 ? parts[1] : null;
+  }
+
+  String? get _notListedLatinName {
+    if (!_isNotListed) return null;
+    final parts = widget.analysisResult.split('|');
+    return parts.length >= 3 ? parts[2] : null;
+  }
 
   /// Launch URL in browser
   Future<void> _launchUrl(String url) async {
@@ -101,7 +119,7 @@ class _ResultPageState extends State<ResultPage> {
 
               const SizedBox(height: 24),
 
-              if (_species == null) ...[
+              if (_species == null && !_isNotListed) ...[
                 const Center(
                   child: Padding(
                     padding: EdgeInsets.all(32.0),
@@ -109,6 +127,46 @@ class _ResultPageState extends State<ResultPage> {
                       "Species not recognized",
                       style: TextStyle(fontSize: 18, color: Colors.grey),
                     ),
+                  ),
+                ),
+              ] else if (_isNotListed) ...[
+                // Display non-endangered species
+                Text(
+                  _notListedName ?? 'Unknown',
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
+                ),
+                if (_notListedLatinName != null && _notListedLatinName!.isNotEmpty)
+                  Text(
+                    _notListedLatinName!,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey[600],
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  decoration: BoxDecoration(
+                    color: Colors.green[50],
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: Colors.green[300]!),
+                  ),
+                  child: Row(
+                    children: [
+                      Icon(Icons.check_circle, size: 20, color: Colors.green[700]),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          "Not listed as endangered species",
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                            color: Colors.green[700],
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ] else ...[
@@ -237,9 +295,14 @@ class _ResultPageState extends State<ResultPage> {
   }
 
   Future<void> _shareResult(BuildContext context) async {
-    final text = _species != null 
-      ? 'Endangered Species Analysis: ${_species!.name}\n\n${_species!.description}'
-      : 'Endangered Species Analysis:\n\n${widget.analysisResult}';
+    String text;
+    if (_species != null) {
+      text = 'Endangered Species: ${_species!.name}\n\n${_species!.description}';
+    } else if (_isNotListed) {
+      text = 'Species: ${_notListedName}\nLatin: ${_notListedLatinName}\n\nNot listed as endangered species';
+    } else {
+      text = 'Analysis Result:\n\n${widget.analysisResult}';
+    }
 
     try {
       await Clipboard.setData(ClipboardData(text: text));
@@ -256,9 +319,14 @@ class _ResultPageState extends State<ResultPage> {
   }
 
   Future<void> _copyToClipboard(BuildContext context) async {
-    final text = _species != null 
-      ? '${_species!.name}\n${_species!.latinName}\n\n${_species!.description}'
-      : widget.analysisResult;
+    String text;
+    if (_species != null) {
+      text = '${_species!.name}\n${_species!.latinName}\n\n${_species!.description}';
+    } else if (_isNotListed) {
+      text = '${_notListedName}\n${_notListedLatinName}\n\nNot listed as endangered species';
+    } else {
+      text = widget.analysisResult;
+    }
 
     try {
       await Clipboard.setData(ClipboardData(text: text));
