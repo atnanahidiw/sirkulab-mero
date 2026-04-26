@@ -39,7 +39,7 @@ class PictureThatApp extends StatelessWidget {
     return ChangeNotifierProvider<ModelService>.value(
       value: modelService,
       child: MaterialApp(
-        title: 'Picture That - Endangered Species Identifier',
+        title: 'Picture That - Gotta Snap Them All!',
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
             seedColor: Colors.green,

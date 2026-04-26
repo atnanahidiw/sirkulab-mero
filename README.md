@@ -1,4 +1,6 @@
-# Picture That - Endangered Species Identifier
+# Picture That - Gotta Snap Them All!
+
+> Don’t let them fade unseen..
 
 A Flutter application that uses Gemma 4 AI model running locally on device to identify endangered species from images. Works offline after initial model download.
 

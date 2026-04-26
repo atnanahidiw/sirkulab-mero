@@ -100,11 +100,27 @@ class ModelBootSplash extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Identify endangered species',
+                      'Gotta Snap Them All!',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.titleMedium?.copyWith(
+                      style: theme.textTheme.headlineSmall?.copyWith(
                         color: colorScheme.primary,
-                        fontWeight: FontWeight.w700,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    AnimatedOpacity(
+                      duration: const Duration(seconds: 2),
+                      curve: Curves.easeInOut,
+                      opacity: 0.7,
+                      child: Text(
+                        'Don\'t let them fade unseen..',
+                        textAlign: TextAlign.center,
+                        style: theme.textTheme.bodyMedium?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                          height: 1.4,
+                        ),
                       ),
                     ),
                     // Balance padding for visual centering

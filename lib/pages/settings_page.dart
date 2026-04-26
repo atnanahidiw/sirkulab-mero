@@ -297,7 +297,7 @@ class SettingsPage extends StatelessWidget {
             mainAxisSize: MainAxisSize.min,
             children: [
               const Text(
-                'Endangered Species Identifier',
+                'Gotta Snap Them All!',
                 style: TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
