@@ -213,7 +213,7 @@ class _ResultPageState extends State<ResultPage> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                '~${_species!.populationEstimate}',
+                                '${_species!.populationEstimate}',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.w700,
