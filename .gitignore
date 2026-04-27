@@ -6,6 +6,7 @@
 build/
 .fvm/
 .flutter-plugins-dependencies
+**/flutter/ephemeral/
 
 # Android
 android/.gradle

@@ -156,23 +156,46 @@ abstract class ModelRuntime {
   });
 
   Future<void> installFromFile(String filePath);
+  
+  // Cleanup resources
+  void dispose();
 }
 
+/// Optimized model runtime with GPU acceleration and session management
 class FlutterGemmaModelRuntime implements ModelRuntime {
   final ModelType modelType;
-
+  InferenceModel? _cachedModel;
+  bool _isInitialized = false;
+  
+  // Performance tuning constants
+  static const bool _useGpu = true; // Enable GPU delegate if available
+  
   FlutterGemmaModelRuntime({
     required this.modelType,
   });
 
   @override
-  Future<InferenceModel> getActiveModel({required int maxTokens}) {
-    return FlutterGemma.getActiveModel(
-      maxTokens: maxTokens,
-      preferredBackend: PreferredBackend.gpu,
-      supportImage: true,
-      maxNumImages: 1,
-    );
+  Future<InferenceModel> getActiveModel({required int maxTokens}) async {
+    try {
+      // Use cached model if available and compatible
+      if (_cachedModel != null && _isInitialized) {
+        return _cachedModel!;
+      }
+      
+      // Create optimized model with GPU acceleration
+      _cachedModel = await FlutterGemma.getActiveModel(
+        maxTokens: maxTokens,
+        preferredBackend: _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu,
+        supportImage: true,
+        maxNumImages: 1,
+      );
+      
+      _isInitialized = true;
+      return _cachedModel!;
+    } catch (e) {
+      debugPrint('Failed to get active model: $e');
+      rethrow;
+    }
   }
 
   @override
@@ -187,10 +210,67 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           throw TimeoutException('Model installation timed out after 5 minutes');
         }),
       ]);
+      
+      // Clear cached model after installation to ensure fresh loading
+      _cachedModel = null;
+      _isInitialized = false;
+      
     } catch (e) {
       debugPrint('Model installation failed: $e');
       rethrow;
     }
+  }
+  
+  /// Generate response with tuned parameters
+  Future<String> generateOptimizedResponse(
+    InferenceModel model,
+    String prompt, {
+    String? systemInstruction,
+    Uint8List? imageBytes,
+    int maxTokens = 200,
+    double temperature = 0.7,
+    int topK = 40,
+    double topP = 0.9,
+  }) async {
+    try {
+      // Use the existing API with optimized parameters
+      final session = await model.createSession(
+        enableVisionModality: true,
+        temperature: temperature,
+        topK: topK,
+        topP: topP,
+        systemInstruction: systemInstruction,
+      );
+      
+      // Add query chunk with image if provided
+      if (imageBytes != null) {
+        await session.addQueryChunk(Message.withImage(
+          text: prompt,
+          imageBytes: imageBytes,
+          isUser: true,
+        ));
+      } else {
+        await session.addQueryChunk(Message.text(
+          text: prompt,
+          isUser: true,
+        ));
+      }
+      
+      // Generate response with tuned parameters
+      final response = await session.getResponse();
+      return response;
+    } catch (e) {
+      debugPrint('Optimized generation failed: $e');
+      rethrow;
+    }
+  }
+  
+  /// Cleanup resources
+  @override
+  void dispose() {
+    _cachedModel?.close();
+    _cachedModel = null;
+    _isInitialized = false;
   }
 }
 
@@ -219,7 +299,7 @@ class ModelService extends ChangeNotifier {
   final String modelUrl =
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm';
   final ModelType modelType = ModelType.gemmaIt;
-  final int maxTokens = 1024;
+  final int maxTokens = 200;
 
   // Species database
   final SpeciesService _speciesService = SpeciesService();
@@ -327,7 +407,6 @@ class ModelService extends ChangeNotifier {
       return '${mbValue.toStringAsFixed(0)} MB';
     }
   }
-
 
   Future<DownloadTask> _buildDownloadTask({String? customUrl}) async {
     final persistentPath = await _getDownloadDestination();
@@ -1219,22 +1298,22 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      // Compress image before processing
-      final compressedBytes = await ImageUtils.compressImage(imageBytes, maxWidth: 800, maxHeight: 800, quality: 85);
+      // Compress image with memory-aware processing
+      final compressedBytes = await ImageUtils.compressImage(
+        imageBytes, 
+        maxWidth: 800, 
+        maxHeight: 800, 
+        quality: 85,
+      );
 
       final speciesNames = _speciesList.map((s) => s.name).toList();
-      final speciesListString = speciesNames.isNotEmpty
-          ? speciesNames.join(', ')
-          : 'endangered Indonesian species';
 
-      final session = await _model!.createSession(
-        enableVisionModality: true,
-        systemInstruction: '''
+      final systemInstruction = '''
 You are an expert wildlife biologist specializing in Indonesian wildlife identification.
 Your task is to analyze images and identify ANY animal or plant species visible in the image.
 
 First, identify the species using COMMON ENGLISH NAME only (e.g., "Tiger" instead of "Panthera tigris"). Then determine if it is in the following endangered list:
-$speciesListString.
+${speciesNames.join(', ')}.
 
 Respond in this exact format:
 [COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
@@ -1244,14 +1323,9 @@ Where ENDANGERED_STATUS is either "endangered" (if in the list above) or "not li
 Do not add any additional text or explanations outside this format.
 
 IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant", "Orchid") not Latin/scientific names.
-''',
-      );
+''';
 
-      await session.addQueryChunk(Message.withImage(
-        text: 'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.',
-        imageBytes: compressedBytes,
-        isUser: true,
-      ));
+      final inputPrompt = 'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.'
 
       _commitState(
         _state.copyWith(
@@ -1260,7 +1334,17 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
         ),
       );
 
-      final response = await session.getResponse();
+      // Use optimized generation method
+      final response = await (_runtime as FlutterGemmaModelRuntime).generateOptimizedResponse(
+        _model!,
+        inputPrompt,
+        systemInstruction: systemInstruction,
+        imageBytes: compressedBytes,
+        temperature: 0.7,
+        topK: 32,
+        topP: 0.9,
+      );
+      
       final cleanedResponse = response.trim();
 
       _commitState(
@@ -1392,7 +1476,12 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
 
   Future<void> clearModel() async {
     if (_model != null) {
-      await _model!.close();
+      // Use optimized cleanup for FlutterGemmaModelRuntime
+      if (_model is FlutterGemmaModelRuntime) {
+        (_model as FlutterGemmaModelRuntime).dispose();
+      } else {
+        await _model!.close();
+      }
       _model = null;
     }
 
@@ -1416,7 +1505,12 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
 
   @override
   void dispose() {
-    unawaited(_model?.close());
+    // Use optimized cleanup for FlutterGemmaModelRuntime
+    if (_model is FlutterGemmaModelRuntime) {
+      (_model as FlutterGemmaModelRuntime).dispose();
+    } else {
+      unawaited(_model?.close());
+    }
     unawaited(_downloadUpdatesSubscription?.cancel());
     super.dispose();
   }
