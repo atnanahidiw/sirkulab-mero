@@ -31,15 +31,8 @@ class _ResultPageState extends State<ResultPage> {
       final speciesName = _extractSpeciesName(widget.analysisResult);
       if (speciesName.isNotEmpty) {
         final service = SpeciesService();
-        final allSpecies = await service.loadSpecies();
-        final matched = allSpecies.firstWhere(
-          (s) =>
-              s.name.toLowerCase().contains(speciesName.toLowerCase()) ||
-              speciesName.toLowerCase().contains(s.name.toLowerCase()),
-          orElse: () =>
-              Species(name: '', latinName: '', description: '', facts: []),
-        );
-        if (matched.name.isNotEmpty) {
+        final matched = await service.findSpeciesByLatinName(speciesName);
+        if (matched?.latinName.isNotEmpty == true) {
           setState(() {
             _species = matched;
           });
@@ -222,6 +215,14 @@ class _ResultPageState extends State<ResultPage> {
                               ),
                               if (_species!.sourceUri != null) ...[
                                 const SizedBox(height: 4),
+                                Text(
+                                  '(',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.amber[600],
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
                                 InkWell(
                                   onTap: () => _launchUrl(_species!.sourceUri!),
                                   child: Row(
@@ -230,7 +231,7 @@ class _ResultPageState extends State<ResultPage> {
                                       Icon(Icons.link, size: 12, color: Colors.amber[600]),
                                       const SizedBox(width: 4),
                                       Text(
-                                        'Source',
+                                        'source',
                                         style: TextStyle(
                                           fontSize: 12,
                                           color: Colors.amber[600],
@@ -240,6 +241,14 @@ class _ResultPageState extends State<ResultPage> {
                                     ],
                                   ),
                                 ),
+                                Text(
+                                  ')',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: Colors.amber[600],
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),                                
                               ],
                             ],
                           ),

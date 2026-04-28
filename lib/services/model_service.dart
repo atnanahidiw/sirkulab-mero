@@ -156,7 +156,7 @@ abstract class ModelRuntime {
   });
 
   Future<void> installFromFile(String filePath);
-  
+
   // Cleanup resources
   void dispose();
 }
@@ -166,10 +166,10 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
   final ModelType modelType;
   InferenceModel? _cachedModel;
   bool _isInitialized = false;
-  
+
   // Performance tuning constants
   static const bool _useGpu = true; // Enable GPU delegate if available
-  
+
   FlutterGemmaModelRuntime({
     required this.modelType,
   });
@@ -181,7 +181,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       if (_cachedModel != null && _isInitialized) {
         return _cachedModel!;
       }
-      
+
       // Create optimized model with GPU acceleration
       _cachedModel = await FlutterGemma.getActiveModel(
         maxTokens: maxTokens,
@@ -189,7 +189,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         supportImage: true,
         maxNumImages: 1,
       );
-      
+
       _isInitialized = true;
       return _cachedModel!;
     } catch (e) {
@@ -210,17 +210,16 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           throw TimeoutException('Model installation timed out after 5 minutes');
         }),
       ]);
-      
+
       // Clear cached model after installation to ensure fresh loading
       _cachedModel = null;
       _isInitialized = false;
-      
     } catch (e) {
       debugPrint('Model installation failed: $e');
       rethrow;
     }
   }
-  
+
   /// Generate response with tuned parameters
   Future<String> generateOptimizedResponse(
     InferenceModel model,
@@ -241,7 +240,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         topP: topP,
         systemInstruction: systemInstruction,
       );
-      
+
       // Add query chunk with image if provided
       if (imageBytes != null) {
         await session.addQueryChunk(Message.withImage(
@@ -255,7 +254,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           isUser: true,
         ));
       }
-      
+
       // Generate response with tuned parameters
       final response = await session.getResponse();
       return response;
@@ -264,7 +263,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       rethrow;
     }
   }
-  
+
   /// Cleanup resources
   @override
   void dispose() {
@@ -332,7 +331,6 @@ class ModelService extends ChangeNotifier {
   String? get error => _state.error;
 
   double? get downloadProgress => _state.downloadProgress;
-
 
   ModelBootPhase get phase => _state.phase;
 
@@ -410,7 +408,7 @@ class ModelService extends ChangeNotifier {
 
   Future<DownloadTask> _buildDownloadTask({String? customUrl}) async {
     final persistentPath = await _getDownloadDestination();
-    
+
     // Ensure the persistent directory exists
     final persistentDir = Directory(persistentPath).parent;
     if (!await persistentDir.exists()) {
@@ -500,7 +498,11 @@ class ModelService extends ChangeNotifier {
         );
         break;
 
-      case TaskStatusUpdate(:final status, :final exception, :final responseStatusCode):
+      case TaskStatusUpdate(
+          :final status,
+          :final exception,
+          :final responseStatusCode
+        ):
         final taskPath = await update.task.filePath();
         switch (status) {
           case TaskStatus.enqueued:
@@ -1183,21 +1185,21 @@ class ModelService extends ChangeNotifier {
     }
 
     await _ensureDownloaderReady();
-    
+
     // First check if model exists at the expected location
     final expectedFilePath = await _getDownloadDestination();
     if (await _isDownloadedModelPresent(expectedFilePath)) {
       await _installDownloadedModel(expectedFilePath);
       return;
     }
-    
+
     // If not found at expected location, search all other possible locations
     final foundModelPath = await _checkForLocalModel();
     if (foundModelPath != null) {
       await _commitLocalModel(foundModelPath);
       return;
     }
-    
+
     // No existing model found - clean up thoroughly and start download
     await clearModel();
 
@@ -1217,7 +1219,7 @@ class ModelService extends ChangeNotifier {
     try {
       debugPrint('Searching for existing model files...');
       final List<String> searchPaths = [];
-      
+
       // 1. Downloads directory
       try {
         final downloadsDir = await getDownloadsDirectory();
@@ -1246,7 +1248,7 @@ class ModelService extends ChangeNotifier {
       } catch (e) {
         debugPrint('Could not get app documents directory: $e');
       }
-      
+
       debugPrint('Searching ${searchPaths.length} locations for model files...');
 
       int filesChecked = 0;
@@ -1300,20 +1302,20 @@ class ModelService extends ChangeNotifier {
 
       // Compress image with memory-aware processing
       final compressedBytes = await ImageUtils.compressImage(
-        imageBytes, 
-        maxWidth: 800, 
-        maxHeight: 800, 
+        imageBytes,
+        maxWidth: 800,
+        maxHeight: 800,
         quality: 85,
       );
 
-      final speciesNames = _speciesList.map((s) => s.name).toList();
+      final speciesLatinNames = _speciesList.map((s) => s.latinName).toList();
 
       final systemInstruction = '''
 You are an expert wildlife biologist specializing in Indonesian wildlife identification.
 Your task is to analyze images and identify ANY animal or plant species visible in the image.
 
 First, identify the species using COMMON ENGLISH NAME only (e.g., "Tiger" instead of "Panthera tigris"). Then determine if it is in the following endangered list:
-${speciesNames.join(', ')}.
+${speciesLatinNames.join(', ')}.
 
 Respond in this exact format:
 [COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
@@ -1325,7 +1327,7 @@ Do not add any additional text or explanations outside this format.
 IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant", "Orchid") not Latin/scientific names.
 ''';
 
-      final inputPrompt = 'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.'
+      final inputPrompt = 'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.';
 
       _commitState(
         _state.copyWith(
@@ -1344,8 +1346,6 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
         topK: 32,
         topP: 0.9,
       );
-      
-      final cleanedResponse = response.trim();
 
       _commitState(
         _state.copyWith(
@@ -1354,51 +1354,8 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
         ),
       );
 
-      // Parse response format: [COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
-      final parts = cleanedResponse.split('|').map((p) => p.trim()).toList();
-      
-      if (parts.length >= 3) {
-        final commonName = parts[0];
-        final latinName = parts[1];
-        final status = parts[2].toLowerCase();
-
-        // Check if it's in the endangered list
-        Species? matchedSpecies;
-        for (final species in _speciesList) {
-          if (commonName.toLowerCase().contains(species.name.toLowerCase()) ||
-              species.name.toLowerCase().contains(commonName.toLowerCase())) {
-            matchedSpecies = species;
-            break;
-          }
-        }
-
-        if (matchedSpecies != null && status.contains('endangered')) {
-          // Found endangered species in list
-          return matchedSpecies.name;
-        } else {
-          // Not in endangered list - return special format
-          return 'NOT_LISTED|$commonName|$latinName';
-        }
-      }
-
-      // Fallback: check if response contains any species from list
-      Species? matchedSpecies;
-      for (final species in _speciesList) {
-        if (cleanedResponse.toLowerCase().contains(species.name.toLowerCase())) {
-          matchedSpecies = species;
-          break;
-        }
-      }
-
-      if (matchedSpecies != null) {
-        return matchedSpecies.name;
-      }
-
-      if (!cleanedResponse.toLowerCase().contains('not recognized')) {
-        return cleanedResponse;
-      }
-
-      return '';
+      final cleanedResponse = response.trim();
+      return await _speciesService.parseLatinName(cleanedResponse) ?? '';
     } catch (e) {
       final errorMessage = 'Identification failed: $e';
       await _markError(errorMessage, phase: ModelBootPhase.failed);
@@ -1409,20 +1366,20 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
   /// Request storage permission for Android
   Future<bool> _requestStoragePermission() async {
     if (!Platform.isAndroid) return true;
-    
+
     // Keep asking until permission is granted or user cancels
     while (true) {
       // Check if we already have permission
       if (await Permission.manageExternalStorage.isGranted) return true;
       if (await Permission.storage.isGranted) return true;
-      
+
       // Request permissions with explanation
       final status = await Permission.storage.request();
       if (status.isGranted) return true;
-      
+
       final manageStatus = await Permission.manageExternalStorage.request();
       if (manageStatus.isGranted) return true;
-      
+
       // If permanently denied, open settings and loop back
       if (status.isPermanentlyDenied || manageStatus.isPermanentlyDenied) {
         await openAppSettings();
@@ -1430,18 +1387,18 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
         await Future.delayed(const Duration(seconds: 2));
         continue;
       }
-      
+
       // If user denied (not permanently), wait and ask again
       if (status.isDenied || manageStatus.isDenied) {
         // Wait 2 seconds before asking again
         await Future.delayed(const Duration(seconds: 2));
         continue;
       }
-      
+
       // If anything else, break and return false
       break;
     }
-    
+
     return false;
   }
 
@@ -1472,7 +1429,6 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
 
     return '$dirPath/.gemma-4-E2B-it.litertlm';
   }
-
 
   Future<void> clearModel() async {
     if (_model != null) {
