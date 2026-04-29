@@ -1,6 +1,9 @@
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:provider/provider.dart';
+import '../services/model_service.dart';
 import '../services/species_service.dart';
 
 class ResultPage extends StatefulWidget {
@@ -19,13 +22,72 @@ class ResultPage extends StatefulWidget {
 
 class _ResultPageState extends State<ResultPage> {
   Species? _species;
+  final TextEditingController _questionController = TextEditingController();
+  final ScrollController _chatController = ScrollController();
+  final List<Map<String, dynamic>> _chatMessages = [];
+  bool _isAnalyzing = false;
 
   @override
   void initState() {
     super.initState();
     _loadSpeciesData();
+    _addInitialMessage();
   }
 
+  @override
+  void dispose() {
+    _questionController.dispose();
+    _chatController.dispose();
+    super.dispose();
+  }
+
+  void _addInitialMessage() {
+    final firstSentence = _getFirstSentence(widget.analysisResult);
+    final welcomeMessage = _createWelcomeMessage(firstSentence);
+    
+    setState(() {
+      _chatMessages.add({
+        'role': 'assistant',
+        'content': welcomeMessage,
+        'timestamp': DateTime.now(),
+      });
+    });
+  }
+  
+  String _getFirstSentence(String text) {
+    // Remove markdown formatting and get first sentence
+    String cleaned = text.replaceAll('**', '').replaceAll('*', '').trim();
+    
+    // Split by periods, exclamation marks, or question marks
+    List<String> sentences = cleaned.split(RegExp(r'[.!?]'));
+    if (sentences.isNotEmpty) {
+      return sentences[0].trim();
+    }
+    return cleaned;
+  }
+  
+  String _getInterestingFact(Species? species) {
+    if (species != null && species.facts.isNotEmpty) {
+      return 'Did you know? ${species.facts.first}';
+    }
+    return "It's quite an interesting find!";
+  }
+
+  String _createWelcomeMessage(String firstSentence) {
+    // Extract species name for personalization
+    String? speciesName;
+    if (_species != null) {
+      speciesName = _species!.name;
+    } else if (_isNotListed) {
+      speciesName = _notListedName;
+    }
+    
+    // Create a generic friendly welcome message with fun fact for all species
+    final funFact = _getInterestingFact(_species);
+    
+    return "Great job spotting the ${speciesName ?? 'creature'}! ${funFact} What would you like to know about this amazing species? Feel free to ask anything!";
+  }
+  
   Future<void> _loadSpeciesData() async {
     try {
       final speciesName = _extractSpeciesName(widget.analysisResult);
@@ -67,6 +129,75 @@ class _ResultPageState extends State<ResultPage> {
     return parts.length >= 3 ? parts[2] : null;
   }
 
+  Future<void> _askQuestion() async {
+    if (_questionController.text.trim().isEmpty || _isAnalyzing) return;
+
+    final question = _questionController.text.trim();
+    _questionController.clear();
+
+    // Add user message to chat
+    setState(() {
+      _chatMessages.add({
+        'role': 'user',
+        'content': question,
+        'timestamp': DateTime.now(),
+      });
+      _isAnalyzing = true;
+    });
+
+    // Scroll to bottom
+    await _scrollToBottom();
+
+    try {
+      final modelService = Provider.of<ModelService>(context, listen: false);
+      
+      // Create query for the model including the original analysis
+      final query = '''
+Original Analysis: ${widget.analysisResult}
+
+User Question: $question
+
+Please provide a helpful response about this species based on the original analysis and the user's question.
+''';
+
+      // Get answer from model
+      final answer = await modelService.askQuestion(query);
+
+      // Add assistant response to chat
+      setState(() {
+        _chatMessages.add({
+          'role': 'assistant',
+          'content': answer,
+          'timestamp': DateTime.now(),
+        });
+        _isAnalyzing = false;
+      });
+
+      _scrollToBottom();
+    } catch (e) {
+      setState(() {
+        _chatMessages.add({
+          'role': 'assistant',
+          'content': 'I apologize, but I encountered an error while processing your question. Please try again.',
+          'timestamp': DateTime.now(),
+        });
+        _isAnalyzing = false;
+      });
+      _scrollToBottom();
+    }
+  }
+
+  Future<void> _scrollToBottom() async {
+    await Future.delayed(const Duration(milliseconds: 100));
+    if (_chatController.hasClients) {
+      _chatController.animateTo(
+        _chatController.position.maxScrollExtent,
+        duration: const Duration(milliseconds: 300),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   /// Launch URL in browser
   Future<void> _launchUrl(String url) async {
     try {
@@ -95,212 +226,338 @@ class _ResultPageState extends State<ResultPage> {
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Padding(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Image
-              Card(
-                elevation: 4,
-                child: Padding(
-                  padding: const EdgeInsets.all(8.0),
-                  child: Image.memory(widget.imageBytes),
-                ),
-              ),
+      body: Column(
+        children: [
+          // Image at top
+          Card(
+            elevation: 4,
+            child: Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Image.memory(widget.imageBytes, height: 200),
+            ),
+          ),
 
-              const SizedBox(height: 24),
-
-              if (_species == null && !_isNotListed) ...[
-                const Center(
-                  child: Padding(
-                    padding: EdgeInsets.all(32.0),
-                    child: Text(
-                      "Species not recognized",
-                      style: TextStyle(fontSize: 18, color: Colors.grey),
-                    ),
-                  ),
-                ),
-              ] else if (_isNotListed) ...[
-                // Display non-endangered species
-                Text(
-                  _notListedName ?? 'Unknown',
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                if (_notListedLatinName != null && _notListedLatinName!.isNotEmpty)
-                  Text(
-                    _notListedLatinName!,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                const SizedBox(height: 16),
+          // Species info (first sentence only)
+          Expanded(
+            child: Column(
+              children: [
+                // Quick info section
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                  padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
-                    color: Colors.green[50],
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(color: Colors.green[300]!),
+                    color: Colors.blue[50],
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   ),
-                  child: Row(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Icon(Icons.check_circle, size: 20, color: Colors.green[700]),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          "Not listed as endangered species",
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.green[700],
+                      if (_species == null && !_isNotListed) ...[
+                        const Center(
+                          child: Text(
+                            "Species not recognized",
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                ),
-              ] else ...[
-                Text(
-                  _species!.name,
-                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold),
-                ),
-                if (_species!.latinName.isNotEmpty)
-                  Text(
-                    _species!.latinName,
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontStyle: FontStyle.italic,
-                      color: Colors.grey[600],
-                    ),
-                  ),
-                if (_species!.populationEstimate != null) ...[
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                    decoration: BoxDecoration(
-                      color: Colors.amber[50],
-                      borderRadius: BorderRadius.circular(16),
-                      border: Border.all(color: Colors.amber[300]!),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Icon(Icons.warning_amber, size: 16, color: Colors.amber[800]),
-                        const SizedBox(width: 8),
+                      ] else if (_isNotListed) ...[
                         Text(
-                          "Remaining population:",
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.amber[700],
-                          ),
+                          _notListedName ?? 'Unknown',
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
                         ),
-                        const SizedBox(height: 6),
-                        Row(
-                          children: [
-                            Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
+                        if (_notListedLatinName != null && _notListedLatinName!.isNotEmpty)
+                          Text(
+                            _notListedLatinName!,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.green[50],
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(color: Colors.green[300]!),
+                          ),
+                          child: Row(
                             children: [
-                              Text(
-                                '${_species!.populationEstimate}',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w700,
-                                  color: Colors.amber[800],
+                              Icon(Icons.check_circle, size: 16, color: Colors.green[700]),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(
+                                  "Not listed as endangered species",
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.green[700],
+                                  ),
                                 ),
                               ),
-                              if (_species!.sourceUri != null) ...[
-                                const SizedBox(height: 4),
-                                Text(
-                                  '(',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.amber[600],
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),
-                                InkWell(
-                                  onTap: () => _launchUrl(_species!.sourceUri!),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(Icons.link, size: 12, color: Colors.amber[600]),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        'source',
-                                        style: TextStyle(
-                                          fontSize: 12,
-                                          color: Colors.amber[600],
-                                          decoration: TextDecoration.underline,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                Text(
-                                  ')',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.amber[600],
-                                    decoration: TextDecoration.underline,
-                                  ),
-                                ),                                
-                              ],
                             ],
                           ),
                         ),
-                          ],
+                      ] else ...[
+                        Text(
+                          _species!.name,
+                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                        ),
+                        if (_species!.latinName.isNotEmpty)
+                          Text(
+                            _species!.latinName,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontStyle: FontStyle.italic,
+                              color: Colors.grey[600],
+                            ),
+                          ),
+                        if (_species!.populationEstimate != null) ...[
+                          const SizedBox(height: 8),
+                          Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            decoration: BoxDecoration(
+                              color: Colors.amber[50],
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(color: Colors.amber[300]!),
+                            ),
+                            child: Row(
+                              children: [
+                                Icon(Icons.warning_amber, size: 16, color: Colors.amber[800]),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Remaining: ${_species!.populationEstimate}",
+                                        style: TextStyle(
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.w600,
+                                          color: Colors.amber[800],
+                                        ),
+                                      ),
+                                      if (_species!.sourceUri != null) ...[
+                                        const SizedBox(height: 4),
+                                        InkWell(
+                                          onTap: () => _launchUrl(_species!.sourceUri!),
+                                          child: Row(
+                                            mainAxisSize: MainAxisSize.min,
+                                            children: [
+                                              Icon(Icons.link, size: 12, color: Colors.amber[600]),
+                                              const SizedBox(width: 4),
+                                              Text(
+                                                'source',
+                                                style: TextStyle(
+                                                  fontSize: 12,
+                                                  color: Colors.amber[600],
+                                                  decoration: TextDecoration.underline,
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                      ],
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ],
+                    ],
+                  ),
+                ),
+
+                // Chat interface
+                Expanded(
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: Colors.grey[100],
+                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                    ),
+                    child: Column(
+                      children: [
+                        // Chat header
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: Colors.blue[100],
+                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                          ),
+                          child: const Text(
+                            'Ask about this species',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1565C0),
+                            ),
+                          ),
+                        ),
+
+                        // Messages list
+                        Expanded(
+                          child: ListView.builder(
+                            controller: _chatController,
+                            padding: const EdgeInsets.all(16),
+                            itemCount: _chatMessages.length,
+                            itemBuilder: (context, index) {
+                              final message = _chatMessages[index];
+                              final isUser = message['role'] == 'user';
+                              
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 12),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    if (isUser)
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.blue[500],
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.person,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                    )
+                                    else
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: Colors.green[500],
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: const Icon(
+                                          Icons.smart_toy,
+                                          color: Colors.white,
+                                          size: 16,
+                                        ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Container(
+                                        padding: const EdgeInsets.all(12),
+                                        decoration: BoxDecoration(
+                                          color: isUser 
+                                              ? Colors.blue[100] 
+                                              : Colors.green[100],
+                                          borderRadius: BorderRadius.circular(16),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          children: [
+                                            Text(
+                                              message['content'],
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                color: isUser 
+                                                    ? Colors.blue[900]
+                                                    : Colors.green[900],
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _formatTime(message['timestamp']),
+                                              style: TextStyle(
+                                                fontSize: 10,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              );
+                            },
+                          ),
+                        ),
+
+                        // Input area
+                        Container(
+                          padding: const EdgeInsets.all(16),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.grey[300]!,
+                                blurRadius: 4,
+                                offset: const Offset(0, -2),
+                              ),
+                            ],
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: TextField(
+                                  controller: _questionController,
+                                  decoration: InputDecoration(
+                                    hintText: 'Ask a question about this species...',
+                                    hintStyle: TextStyle(color: Colors.grey[500]),
+                                    border: OutlineInputBorder(
+                                      borderRadius: BorderRadius.circular(24),
+                                    ),
+                                    contentPadding: const EdgeInsets.symmetric(
+                                      horizontal: 16,
+                                      vertical: 12,
+                                    ),
+                                    suffixIcon: _isAnalyzing
+                                        ? const SizedBox(
+                                            width: 20,
+                                            height: 20,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                            ),
+                                          )
+                                        : null,
+                                  ),
+                                  onSubmitted: (_) => _askQuestion(),
+                                  enabled: !_isAnalyzing,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              IconButton(
+                                onPressed: _isAnalyzing ? null : _askQuestion,
+                                icon: const Icon(Icons.send),
+                                style: IconButton.styleFrom(
+                                  backgroundColor: const Color(0xFF2196F3),
+                                  foregroundColor: Colors.white,
+                                  shape: const CircleBorder(),
+                                ),
+                              ),
+                            ],
+                          ),
                         ),
                       ],
                     ),
                   ),
-                ],
-                const SizedBox(height: 20),
-                Text(
-                  _species!.description,
-                  style: const TextStyle(fontSize: 18),
                 ),
-                const SizedBox(height: 30),
-                const Text(
-                  "Interesting Facts:",
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                ..._species!.facts.map((fact) => Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Icon(Icons.star, size: 16, color: Colors.amber),
-                          const SizedBox(width: 10),
-                          Expanded(
-                              child: Text(fact,
-                                  style: const TextStyle(fontSize: 16))),
-                        ],
-                      ),
-                    )),
               ],
-
-              const SizedBox(height: 32),
-
-              // Action buttons
-              Center(
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 15),
-                  ),
-                  child: const Text("Take More Photos"),
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
+        ],
       ),
     );
+  }
+
+  String _formatTime(DateTime? timestamp) {
+    if (timestamp == null) return '';
+    final now = DateTime.now();
+    final difference = now.difference(timestamp);
+    
+    if (difference.inSeconds < 60) {
+      return 'just now';
+    } else if (difference.inMinutes < 60) {
+      return '${difference.inMinutes}m ago';
+    } else if (difference.inHours < 24) {
+      return '${difference.inHours}h ago';
+    } else {
+      return '${difference.inDays}d ago';
+    }
   }
 
   Future<void> _shareResult(BuildContext context) async {

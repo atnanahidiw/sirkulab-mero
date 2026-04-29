@@ -207,7 +207,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
             .fromFile(filePath)
             .install(),
         Future.delayed(const Duration(minutes: 5), () {
-          throw TimeoutException('Model installation timed out after 5 minutes');
+          throw TimeoutException(
+              'Model installation timed out after 5 minutes');
         }),
       ]);
 
@@ -404,6 +405,35 @@ class ModelService extends ChangeNotifier {
       final mbValue = bytes / mb;
       return '${mbValue.toStringAsFixed(0)} MB';
     }
+  }
+
+  /// Get the destination path for persistent model storage
+  Future<String> _getDownloadDestination() async {
+    String dirPath;
+    if (Platform.isAndroid) {
+      final isGranted = await _requestStoragePermission();
+      if (!isGranted) {
+        throw Exception(
+            'Storage permission denied. The model MUST be saved to public storage to persist across reinstalls. Please grant permission.');
+      }
+      dirPath = '/storage/emulated/0/Download';
+    } else {
+      try {
+        final downloadsDir = await getDownloadsDirectory();
+        dirPath = downloadsDir?.path ??
+            (await getApplicationDocumentsDirectory()).path;
+      } catch (e) {
+        dirPath = (await getApplicationDocumentsDirectory()).path;
+      }
+    }
+
+    // Ensure directory exists
+    final dir = Directory(dirPath);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    return '$dirPath/.gemma-4-E2B-it.litertlm';
   }
 
   Future<DownloadTask> _buildDownloadTask({String? customUrl}) async {
@@ -603,7 +633,8 @@ class ModelService extends ChangeNotifier {
             break;
 
           case TaskStatus.notFound:
-            await _markError('Model file not found on server.', phase: ModelBootPhase.failed);
+            await _markError('Model file not found on server.',
+                phase: ModelBootPhase.failed);
             break;
 
           case TaskStatus.canceled:
@@ -1235,12 +1266,7 @@ class ModelService extends ChangeNotifier {
       searchPaths.add('/storage/emulated/0/Download');
       debugPrint('Added Android download path');
 
-      // 3. AI Edge Gallery paths
-      searchPaths.add('/Android/media/com.google.ai.gallery/files/');
-      searchPaths.add('/storage/emulated/0/Android/media/com.google.ai.gallery/files/');
-      debugPrint('Added AI Edge Gallery paths');
-
-      // 4. App-specific documents directory
+      // 3. App-specific documents directory
       try {
         final appDocDir = await getApplicationDocumentsDirectory();
         searchPaths.add(appDocDir.path);
@@ -1249,7 +1275,8 @@ class ModelService extends ChangeNotifier {
         debugPrint('Could not get app documents directory: $e');
       }
 
-      debugPrint('Searching ${searchPaths.length} locations for model files...');
+      debugPrint(
+          'Searching ${searchPaths.length} locations for model files...');
 
       int filesChecked = 0;
       for (final basePath in searchPaths) {
@@ -1262,7 +1289,8 @@ class ModelService extends ChangeNotifier {
               filesChecked++;
               if (file is File) {
                 final fileName = file.path.toLowerCase();
-                if (fileName.endsWith('.litertlm') && fileName.contains('gemma')) {
+                if (fileName.endsWith('.litertlm') &&
+                    fileName.contains('gemma')) {
                   debugPrint('✓ Found model file: ${file.path}');
                   return file.path;
                 }
@@ -1277,11 +1305,41 @@ class ModelService extends ChangeNotifier {
           continue;
         }
       }
-      debugPrint('Model search complete. Checked $filesChecked files across ${searchPaths.length} locations.');
+      debugPrint(
+          'Model search complete. Checked $filesChecked files across ${searchPaths.length} locations.');
     } catch (e) {
       debugPrint('Error checking local model: $e');
     }
     return null;
+  }
+
+  Future<void> clearModel() async {
+    if (_model != null) {
+      // Use optimized cleanup for FlutterGemmaModelRuntime
+      if (_model is FlutterGemmaModelRuntime) {
+        (_model as FlutterGemmaModelRuntime).dispose();
+      } else {
+        await _model!.close();
+      }
+      _model = null;
+    }
+
+    await cancelDownload();
+    await _stateStore?.clear();
+
+    _commitState(
+      _state.copyWith(
+        isInitialized: false,
+        isLoading: false,
+        isModelLoaded: false,
+        status: 'Model cleared',
+        error: null,
+        downloadProgress: null,
+        phase: ModelBootPhase.idle,
+        downloadTaskId: null,
+        downloadFilePath: null,
+      ),
+    );
   }
 
   Future<String> identifySpecies(
@@ -1303,8 +1361,8 @@ class ModelService extends ChangeNotifier {
       // Compress image with memory-aware processing
       final compressedBytes = await ImageUtils.compressImage(
         imageBytes,
-        maxWidth: 800,
-        maxHeight: 800,
+        maxWidth: 336,
+        maxHeight: 336,
         quality: 85,
       );
 
@@ -1327,7 +1385,8 @@ Do not add any additional text or explanations outside this format.
 IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant", "Orchid") not Latin/scientific names.
 ''';
 
-      final inputPrompt = 'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.';
+      final inputPrompt =
+          'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.';
 
       _commitState(
         _state.copyWith(
@@ -1337,7 +1396,8 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
       );
 
       // Use optimized generation method
-      final response = await (_runtime as FlutterGemmaModelRuntime).generateOptimizedResponse(
+      final response = await (_runtime as FlutterGemmaModelRuntime)
+          .generateOptimizedResponse(
         _model!,
         inputPrompt,
         systemInstruction: systemInstruction,
@@ -1359,6 +1419,58 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
     } catch (e) {
       final errorMessage = 'Identification failed: $e';
       await _markError(errorMessage, phase: ModelBootPhase.failed);
+      rethrow;
+    }
+  }
+
+  /// Ask a question about a previously analyzed species
+  Future<String> askQuestion(String question) async {
+    if (_model == null) {
+      throw Exception('Model not loaded. Please wait for model to download.');
+    }
+
+    try {
+      _commitState(
+        _state.copyWith(
+          status: 'Answering question...',
+          phase: ModelBootPhase.analyzing,
+        ),
+      );
+
+      // Use optimized generation method for text-based question
+      final response = await (_runtime as FlutterGemmaModelRuntime)
+          .generateOptimizedResponse(
+        _model!,
+        question,
+        systemInstruction:
+            '''You are an expert wildlife biologist specializing in Indonesian wildlife identification.
+
+Based on the provided context, answer the user's question about the species in a helpful and informative way.
+
+Keep your answers concise but informative, and maintain a professional yet approachable tone.
+''',
+        temperature: 0.7,
+        topK: 32,
+        topP: 0.9,
+      );
+
+      _commitState(
+        _state.copyWith(
+          status: 'Question answered',
+          phase: ModelBootPhase.ready,
+        ),
+      );
+
+      return response.trim();
+    } catch (e) {
+      final errorMessage = 'Question answering failed: $e';
+      _commitState(
+        _state.copyWith(
+          status: errorMessage,
+          phase: ModelBootPhase.failed,
+          error: errorMessage,
+        ),
+      );
       rethrow;
     }
   }
@@ -1400,63 +1512,6 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
     }
 
     return false;
-  }
-
-  /// Get the destination path for persistent model storage
-  Future<String> _getDownloadDestination() async {
-    String dirPath;
-    if (Platform.isAndroid) {
-      final isGranted = await _requestStoragePermission();
-      if (!isGranted) {
-        throw Exception(
-            'Storage permission denied. The model MUST be saved to public storage to persist across reinstalls. Please grant permission.');
-      }
-      dirPath = '/storage/emulated/0/Download';
-    } else {
-      try {
-        final downloadsDir = await getDownloadsDirectory();
-        dirPath = downloadsDir?.path ?? (await getApplicationDocumentsDirectory()).path;
-      } catch (e) {
-        dirPath = (await getApplicationDocumentsDirectory()).path;
-      }
-    }
-
-    // Ensure directory exists
-    final dir = Directory(dirPath);
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-
-    return '$dirPath/.gemma-4-E2B-it.litertlm';
-  }
-
-  Future<void> clearModel() async {
-    if (_model != null) {
-      // Use optimized cleanup for FlutterGemmaModelRuntime
-      if (_model is FlutterGemmaModelRuntime) {
-        (_model as FlutterGemmaModelRuntime).dispose();
-      } else {
-        await _model!.close();
-      }
-      _model = null;
-    }
-
-    await cancelDownload();
-    await _stateStore?.clear();
-
-    _commitState(
-      _state.copyWith(
-        isInitialized: false,
-        isLoading: false,
-        isModelLoaded: false,
-        status: 'Model cleared',
-        error: null,
-        downloadProgress: null,
-        phase: ModelBootPhase.idle,
-        downloadTaskId: null,
-        downloadFilePath: null,
-      ),
-    );
   }
 
   @override
