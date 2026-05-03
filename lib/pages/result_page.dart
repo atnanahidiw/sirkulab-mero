@@ -27,6 +27,7 @@ class _ResultPageState extends State<ResultPage>
   final ScrollController _chatController = ScrollController();
   final List<Map<String, dynamic>> _chatMessages = [];
   bool _isAnalyzing = false;
+  int _currentHintIndex = 0;
   double _analysisProgress = 0.0;
   String _analysisPhase = '';
   late AnimationController _typingAnimationController;
@@ -40,7 +41,8 @@ class _ResultPageState extends State<ResultPage>
       duration: const Duration(milliseconds: 1200),
     )..repeat();
     _typingAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _typingAnimationController, curve: Curves.easeInOut),
+      CurvedAnimation(
+          parent: _typingAnimationController, curve: Curves.easeInOut),
     );
     _loadSpeciesData();
     _addInitialMessage();
@@ -114,7 +116,7 @@ class _ResultPageState extends State<ResultPage>
         }
       }
     } catch (e) {
-            debugPrint('Error loading species data: $e');
+      debugPrint('Error loading species data: $e');
     }
   }
 
@@ -152,18 +154,26 @@ class _ResultPageState extends State<ResultPage>
   }
 
   Future<void> _askQuestion() async {
-    if (_questionController.text.trim().isEmpty || _isAnalyzing) return;
+    if (_questionController.text.trim().isEmpty || _isAnalyzing) {
+      // If empty, fill with current hint
+      if (!_isAnalyzing && _questionController.text.trim().isEmpty) {
+        _questionController.text = _questionHints[_currentHintIndex];
+      } else {
+        return;
+      }
+    }
 
     final question = _questionController.text.trim();
     _questionController.clear();
 
-    // Add user message to chat
+    // Add user message to chat and cycle hint
     setState(() {
       _chatMessages.add({
         'role': 'user',
         'content': question,
         'timestamp': DateTime.now(),
       });
+      _currentHintIndex = (_currentHintIndex + 1) % _questionHints.length;
       _isAnalyzing = true;
     });
 
@@ -295,6 +305,14 @@ Please provide a helpful response about this species based on the original analy
     );
   }
 
+  static const List<String> _questionHints = [
+    'What does this species eat?',
+    'Where can this species be found in the wild?',
+    'Why is this species endangered?',
+    'What are the main threats to this species?',
+    'What conservation efforts are being made?',
+  ];
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -341,8 +359,7 @@ Please provide a helpful response about this species based on the original analy
                         const Center(
                           child: Text(
                             "Species not recognized",
-                            style:
-                                TextStyle(fontSize: 16, color: Colors.grey),
+                            style: TextStyle(fontSize: 16, color: Colors.grey),
                           ),
                         ),
                       ] else if (_isNotListed) ...[
@@ -367,8 +384,7 @@ Please provide a helpful response about this species based on the original analy
                           decoration: BoxDecoration(
                             color: Colors.green[50],
                             borderRadius: BorderRadius.circular(12),
-                            border:
-                                Border.all(color: Colors.green[300]!),
+                            border: Border.all(color: Colors.green[300]!),
                           ),
                           child: Row(
                             children: [
@@ -411,14 +427,12 @@ Please provide a helpful response about this species based on the original analy
                             decoration: BoxDecoration(
                               color: Colors.amber[50],
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(
-                                  color: Colors.amber[300]!),
+                              border: Border.all(color: Colors.amber[300]!),
                             ),
                             child: Row(
                               children: [
                                 Icon(Icons.warning_amber,
-                                    size: 16,
-                                    color: Colors.amber[800]),
+                                    size: 16, color: Colors.amber[800]),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
@@ -436,26 +450,22 @@ Please provide a helpful response about this species based on the original analy
                                       if (_species!.sourceUri != null) ...[
                                         const SizedBox(height: 4),
                                         InkWell(
-                                          onTap: () => _launchUrl(
-                                              _species!.sourceUri!),
+                                          onTap: () =>
+                                              _launchUrl(_species!.sourceUri!),
                                           child: Row(
-                                            mainAxisSize:
-                                                MainAxisSize.min,
+                                            mainAxisSize: MainAxisSize.min,
                                             children: [
                                               Icon(Icons.link,
                                                   size: 12,
-                                                  color:
-                                                      Colors.amber[600]),
+                                                  color: Colors.amber[600]),
                                               const SizedBox(width: 4),
                                               Text(
                                                 'source',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color:
-                                                      Colors.amber[600],
+                                                  color: Colors.amber[600],
                                                   decoration:
-                                                      TextDecoration
-                                                          .underline,
+                                                      TextDecoration.underline,
                                                 ),
                                               ),
                                             ],
@@ -518,11 +528,9 @@ Please provide a helpful response about this species based on the original analy
                                   content.isEmpty;
 
                               return Padding(
-                                padding:
-                                    const EdgeInsets.only(bottom: 12),
+                                padding: const EdgeInsets.only(bottom: 12),
                                 child: Row(
-                                  crossAxisAlignment:
-                                      CrossAxisAlignment.start,
+                                  crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     if (isUser)
                                       Container(
@@ -553,8 +561,7 @@ Please provide a helpful response about this species based on the original analy
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Container(
-                                        padding:
-                                            const EdgeInsets.all(12),
+                                        padding: const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
                                           color: isUser
                                               ? Colors.blue[100]
@@ -566,23 +573,21 @@ Please provide a helpful response about this species based on the original analy
                                           crossAxisAlignment:
                                               CrossAxisAlignment.start,
                                           children: [
-                                            if (isStreaming)
-                                              _buildTypingDots(),
-                                            if (!isStreaming) ...[                                              Text(
+                                            if (isStreaming) _buildTypingDots(),
+                                            if (!isStreaming) ...[
+                                              Text(
                                                 message['content'],
                                                 style: TextStyle(
                                                   fontSize: 14,
                                                   color: isUser
                                                       ? Colors.blue[900]
-                                                      : Colors
-                                                          .green[900],
+                                                      : Colors.green[900],
                                                 ),
                                               ),
                                             ],
                                             const SizedBox(height: 4),
                                             Text(
-                                              _formatTime(
-                                                  message['timestamp']),
+                                              _formatTime(message['timestamp']),
                                               style: TextStyle(
                                                 fontSize: 10,
                                                 color: Colors.grey[600],
@@ -666,16 +671,13 @@ Please provide a helpful response about this species based on the original analy
                                 child: TextField(
                                   controller: _questionController,
                                   decoration: InputDecoration(
-                                    hintText:
-                                        'Ask a question about this species...',
+                                    hintText: _questionHints[_currentHintIndex],
                                     hintStyle:
                                         TextStyle(color: Colors.grey[500]),
                                     border: OutlineInputBorder(
-                                      borderRadius:
-                                          BorderRadius.circular(24),
+                                      borderRadius: BorderRadius.circular(24),
                                     ),
-                                    contentPadding:
-                                        const EdgeInsets.symmetric(
+                                    contentPadding: const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 12,
                                     ),
@@ -683,8 +685,7 @@ Please provide a helpful response about this species based on the original analy
                                         ? const SizedBox(
                                             width: 20,
                                             height: 20,
-                                            child:
-                                                CircularProgressIndicator(
+                                            child: CircularProgressIndicator(
                                               strokeWidth: 2,
                                             ),
                                           )
@@ -696,8 +697,7 @@ Please provide a helpful response about this species based on the original analy
                               ),
                               const SizedBox(width: 12),
                               IconButton(
-                                onPressed:
-                                    _isAnalyzing ? null : _askQuestion,
+                                onPressed: _isAnalyzing ? null : _askQuestion,
                                 icon: const Icon(Icons.send),
                                 style: IconButton.styleFrom(
                                   backgroundColor: const Color(0xFF2196F3),
