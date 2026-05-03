@@ -231,8 +231,12 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     double temperature = 0.7,
     int topK = 40,
     double topP = 0.9,
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
   }) async {
     try {
+      onProgress?.call('Preparing session...', 0.15);
+
       // Use the existing API with optimized parameters
       final session = await model.createSession(
         enableVisionModality: true,
@@ -241,6 +245,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         topP: topP,
         systemInstruction: systemInstruction,
       );
+
+      onProgress?.call('Sending question...', 0.35);
 
       // Add query chunk with image if provided
       if (imageBytes != null) {
@@ -256,9 +262,17 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         ));
       }
 
-      // Generate response with tuned parameters
-      final response = await session.getResponse();
-      return response;
+      onProgress?.call('Generating answer...', 0.55);
+
+      // Use streaming API for real-time token delivery
+      final buffer = StringBuffer();
+      await for (final token in session.getResponseAsync()) {
+        buffer.write(token);
+        onToken?.call(token);
+      }
+
+      onProgress?.call('Complete', 1.0);
+      return buffer.toString();
     } catch (e) {
       debugPrint('Optimized generation failed: $e');
       rethrow;
@@ -1424,7 +1438,11 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
   }
 
   /// Ask a question about a previously analyzed species
-  Future<String> askQuestion(String question) async {
+  Future<String> askQuestion(
+    String question, {
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
+  }) async {
     if (_model == null) {
       throw Exception('Model not loaded. Please wait for model to download.');
     }
@@ -1436,6 +1454,8 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
           phase: ModelBootPhase.analyzing,
         ),
       );
+
+      onProgress?.call('Starting...', 0.0);
 
       // Use optimized generation method for text-based question
       final response = await (_runtime as FlutterGemmaModelRuntime)
@@ -1452,6 +1472,8 @@ Keep your answers concise but informative, and maintain a professional yet appro
         temperature: 0.7,
         topK: 32,
         topP: 0.9,
+        onProgress: onProgress,
+        onToken: onToken,
       );
 
       _commitState(

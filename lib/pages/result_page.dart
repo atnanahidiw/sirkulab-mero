@@ -1,4 +1,4 @@
-import 'dart:typed_data';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -20,16 +20,28 @@ class ResultPage extends StatefulWidget {
   State<ResultPage> createState() => _ResultPageState();
 }
 
-class _ResultPageState extends State<ResultPage> {
+class _ResultPageState extends State<ResultPage>
+    with SingleTickerProviderStateMixin {
   Species? _species;
   final TextEditingController _questionController = TextEditingController();
   final ScrollController _chatController = ScrollController();
   final List<Map<String, dynamic>> _chatMessages = [];
   bool _isAnalyzing = false;
+  double _analysisProgress = 0.0;
+  String _analysisPhase = '';
+  late AnimationController _typingAnimationController;
+  late Animation<double> _typingAnimation;
 
   @override
   void initState() {
     super.initState();
+    _typingAnimationController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1200),
+    )..repeat();
+    _typingAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
+      CurvedAnimation(parent: _typingAnimationController, curve: Curves.easeInOut),
+    );
     _loadSpeciesData();
     _addInitialMessage();
   }
@@ -38,13 +50,14 @@ class _ResultPageState extends State<ResultPage> {
   void dispose() {
     _questionController.dispose();
     _chatController.dispose();
+    _typingAnimationController.dispose();
     super.dispose();
   }
 
   void _addInitialMessage() {
     final firstSentence = _getFirstSentence(widget.analysisResult);
     final welcomeMessage = _createWelcomeMessage(firstSentence);
-    
+
     setState(() {
       _chatMessages.add({
         'role': 'assistant',
@@ -53,11 +66,11 @@ class _ResultPageState extends State<ResultPage> {
       });
     });
   }
-  
+
   String _getFirstSentence(String text) {
     // Remove markdown formatting and get first sentence
     String cleaned = text.replaceAll('**', '').replaceAll('*', '').trim();
-    
+
     // Split by periods, exclamation marks, or question marks
     List<String> sentences = cleaned.split(RegExp(r'[.!?]'));
     if (sentences.isNotEmpty) {
@@ -65,7 +78,7 @@ class _ResultPageState extends State<ResultPage> {
     }
     return cleaned;
   }
-  
+
   String _getInterestingFact(Species? species) {
     if (species != null && species.facts.isNotEmpty) {
       return 'Did you know? ${species.facts.first}';
@@ -81,13 +94,13 @@ class _ResultPageState extends State<ResultPage> {
     } else if (_isNotListed) {
       speciesName = _notListedName;
     }
-    
+
     // Create a generic friendly welcome message with fun fact for all species
     final funFact = _getInterestingFact(_species);
-    
+
     return "Great job spotting the ${speciesName ?? 'creature'}! ${funFact} What would you like to know about this amazing species? Feel free to ask anything!";
   }
-  
+
   Future<void> _loadSpeciesData() async {
     try {
       final speciesName = _extractSpeciesName(widget.analysisResult);
@@ -101,7 +114,7 @@ class _ResultPageState extends State<ResultPage> {
         }
       }
     } catch (e) {
-      debugPrint('Error loading species data: $e');
+            debugPrint('Error loading species data: $e');
     }
   }
 
@@ -129,6 +142,15 @@ class _ResultPageState extends State<ResultPage> {
     return parts.length >= 3 ? parts[2] : null;
   }
 
+  void _onProgress(String phase, double progress) {
+    if (mounted) {
+      setState(() {
+        _analysisPhase = phase;
+        _analysisProgress = progress;
+      });
+    }
+  }
+
   Future<void> _askQuestion() async {
     if (_questionController.text.trim().isEmpty || _isAnalyzing) return;
 
@@ -150,7 +172,7 @@ class _ResultPageState extends State<ResultPage> {
 
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
-      
+
       // Create query for the model including the original analysis
       final query = '''
 Original Analysis: ${widget.analysisResult}
@@ -160,25 +182,55 @@ User Question: $question
 Please provide a helpful response about this species based on the original analysis and the user's question.
 ''';
 
-      // Get answer from model
-      final answer = await modelService.askQuestion(query);
-
-      // Add assistant response to chat
+      // Add a placeholder assistant message that will be streamed into
+      DateTime now = DateTime.now();
       setState(() {
         _chatMessages.add({
           'role': 'assistant',
-          'content': answer,
-          'timestamp': DateTime.now(),
+          'content': '',
+          'timestamp': now,
         });
-        _isAnalyzing = false;
       });
 
+      final int streamingIndex = _chatMessages.length - 1;
+      int lastTokenCount = 0;
+
+      // Get answer from model with real progress tracking + streaming tokens
+      await modelService.askQuestion(
+        query,
+        onProgress: _onProgress,
+        onToken: (token) {
+          if (!mounted) return;
+          setState(() {
+            _chatMessages[streamingIndex]['content'] += token;
+          });
+          // Throttle scrolling to every 5 tokens to avoid performance issues
+          lastTokenCount++;
+          if (lastTokenCount % 5 == 0) {
+            _scrollToBottom();
+          }
+        },
+      );
+
+      // Final scroll to bottom
       _scrollToBottom();
+
+      // Complete progress bar, then hide
+      await Future.delayed(const Duration(milliseconds: 400));
+      if (!mounted) return;
+      setState(() {
+        _isAnalyzing = false;
+        _analysisProgress = 0.0;
+        _analysisPhase = '';
+      });
     } catch (e) {
       setState(() {
+        _analysisProgress = 0.0;
+        _analysisPhase = '';
         _chatMessages.add({
           'role': 'assistant',
-          'content': 'I apologize, but I encountered an error while processing your question. Please try again.',
+          'content':
+              'I apologize, but I encountered an error while processing your question. Please try again.',
           'timestamp': DateTime.now(),
         });
         _isAnalyzing = false;
@@ -208,6 +260,39 @@ Please provide a helpful response about this species based on the original analy
     } catch (e) {
       debugPrint('Failed to launch URL: $e');
     }
+  }
+
+  /// Animated typing indicator widget with bouncing dots
+  /// Animated bouncing dots, shown inside the streaming message bubble
+  Widget _buildTypingDots() {
+    return AnimatedBuilder(
+      animation: _typingAnimation,
+      builder: (context, child) {
+        return Row(
+          mainAxisSize: MainAxisSize.min,
+          children: List.generate(3, (index) {
+            final delay = index * 0.2;
+            final dotValue =
+                ((_typingAnimation.value - delay) % 1.0).clamp(0.0, 1.0);
+            final scale = 0.5 + 0.5 * dotValue;
+            return Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 2),
+              child: Transform.scale(
+                scale: scale,
+                child: Container(
+                  width: 8,
+                  height: 8,
+                  decoration: const BoxDecoration(
+                    color: Colors.green,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            );
+          }),
+        );
+      },
+    );
   }
 
   @override
@@ -246,7 +331,8 @@ Please provide a helpful response about this species based on the original analy
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: Colors.blue[50],
-                    borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                    borderRadius:
+                        const BorderRadius.vertical(top: Radius.circular(16)),
                   ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -255,15 +341,18 @@ Please provide a helpful response about this species based on the original analy
                         const Center(
                           child: Text(
                             "Species not recognized",
-                            style: TextStyle(fontSize: 16, color: Colors.grey),
+                            style:
+                                TextStyle(fontSize: 16, color: Colors.grey),
                           ),
                         ),
                       ] else if (_isNotListed) ...[
                         Text(
                           _notListedName ?? 'Unknown',
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
                         ),
-                        if (_notListedLatinName != null && _notListedLatinName!.isNotEmpty)
+                        if (_notListedLatinName != null &&
+                            _notListedLatinName!.isNotEmpty)
                           Text(
                             _notListedLatinName!,
                             style: TextStyle(
@@ -273,15 +362,18 @@ Please provide a helpful response about this species based on the original analy
                             ),
                           ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 8),
                           decoration: BoxDecoration(
                             color: Colors.green[50],
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: Colors.green[300]!),
+                            border:
+                                Border.all(color: Colors.green[300]!),
                           ),
                           child: Row(
                             children: [
-                              Icon(Icons.check_circle, size: 16, color: Colors.green[700]),
+                              Icon(Icons.check_circle,
+                                  size: 16, color: Colors.green[700]),
                               const SizedBox(width: 8),
                               Expanded(
                                 child: Text(
@@ -299,7 +391,8 @@ Please provide a helpful response about this species based on the original analy
                       ] else ...[
                         Text(
                           _species!.name,
-                          style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                              fontSize: 20, fontWeight: FontWeight.bold),
                         ),
                         if (_species!.latinName.isNotEmpty)
                           Text(
@@ -313,19 +406,24 @@ Please provide a helpful response about this species based on the original analy
                         if (_species!.populationEstimate != null) ...[
                           const SizedBox(height: 8),
                           Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 8),
                             decoration: BoxDecoration(
                               color: Colors.amber[50],
                               borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: Colors.amber[300]!),
+                              border: Border.all(
+                                  color: Colors.amber[300]!),
                             ),
                             child: Row(
                               children: [
-                                Icon(Icons.warning_amber, size: 16, color: Colors.amber[800]),
+                                Icon(Icons.warning_amber,
+                                    size: 16,
+                                    color: Colors.amber[800]),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
                                     children: [
                                       Text(
                                         "Remaining: ${_species!.populationEstimate}",
@@ -338,18 +436,26 @@ Please provide a helpful response about this species based on the original analy
                                       if (_species!.sourceUri != null) ...[
                                         const SizedBox(height: 4),
                                         InkWell(
-                                          onTap: () => _launchUrl(_species!.sourceUri!),
+                                          onTap: () => _launchUrl(
+                                              _species!.sourceUri!),
                                           child: Row(
-                                            mainAxisSize: MainAxisSize.min,
+                                            mainAxisSize:
+                                                MainAxisSize.min,
                                             children: [
-                                              Icon(Icons.link, size: 12, color: Colors.amber[600]),
+                                              Icon(Icons.link,
+                                                  size: 12,
+                                                  color:
+                                                      Colors.amber[600]),
                                               const SizedBox(width: 4),
                                               Text(
                                                 'source',
                                                 style: TextStyle(
                                                   fontSize: 12,
-                                                  color: Colors.amber[600],
-                                                  decoration: TextDecoration.underline,
+                                                  color:
+                                                      Colors.amber[600],
+                                                  decoration:
+                                                      TextDecoration
+                                                          .underline,
                                                 ),
                                               ),
                                             ],
@@ -373,7 +479,8 @@ Please provide a helpful response about this species based on the original analy
                   child: Container(
                     decoration: BoxDecoration(
                       color: Colors.grey[100],
-                      borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                      borderRadius: const BorderRadius.vertical(
+                          bottom: Radius.circular(16)),
                     ),
                     child: Column(
                       children: [
@@ -382,7 +489,8 @@ Please provide a helpful response about this species based on the original analy
                           padding: const EdgeInsets.all(12),
                           decoration: BoxDecoration(
                             color: Colors.blue[100],
-                            borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                            borderRadius: const BorderRadius.vertical(
+                                top: Radius.circular(16)),
                           ),
                           child: const Text(
                             'Ask about this species',
@@ -403,11 +511,18 @@ Please provide a helpful response about this species based on the original analy
                             itemBuilder: (context, index) {
                               final message = _chatMessages[index];
                               final isUser = message['role'] == 'user';
-                              
+                              final content = message['content'] as String;
+                              final isStreaming = !isUser &&
+                                  _isAnalyzing &&
+                                  index == _chatMessages.length - 1 &&
+                                  content.isEmpty;
+
                               return Padding(
-                                padding: const EdgeInsets.only(bottom: 12),
+                                padding:
+                                    const EdgeInsets.only(bottom: 12),
                                 child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  crossAxisAlignment:
+                                      CrossAxisAlignment.start,
                                   children: [
                                     if (isUser)
                                       Container(
@@ -421,7 +536,7 @@ Please provide a helpful response about this species based on the original analy
                                           color: Colors.white,
                                           size: 16,
                                         ),
-                                    )
+                                      )
                                     else
                                       Container(
                                         padding: const EdgeInsets.all(8),
@@ -434,32 +549,40 @@ Please provide a helpful response about this species based on the original analy
                                           color: Colors.white,
                                           size: 16,
                                         ),
-                                    ),
+                                      ),
                                     const SizedBox(width: 12),
                                     Expanded(
                                       child: Container(
-                                        padding: const EdgeInsets.all(12),
+                                        padding:
+                                            const EdgeInsets.all(12),
                                         decoration: BoxDecoration(
-                                          color: isUser 
-                                              ? Colors.blue[100] 
+                                          color: isUser
+                                              ? Colors.blue[100]
                                               : Colors.green[100],
-                                          borderRadius: BorderRadius.circular(16),
+                                          borderRadius:
+                                              BorderRadius.circular(16),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           children: [
-                                            Text(
-                                              message['content'],
-                                              style: TextStyle(
-                                                fontSize: 14,
-                                                color: isUser 
-                                                    ? Colors.blue[900]
-                                                    : Colors.green[900],
+                                            if (isStreaming)
+                                              _buildTypingDots(),
+                                            if (!isStreaming) ...[                                              Text(
+                                                message['content'],
+                                                style: TextStyle(
+                                                  fontSize: 14,
+                                                  color: isUser
+                                                      ? Colors.blue[900]
+                                                      : Colors
+                                                          .green[900],
+                                                ),
                                               ),
-                                            ),
+                                            ],
                                             const SizedBox(height: 4),
                                             Text(
-                                              _formatTime(message['timestamp']),
+                                              _formatTime(
+                                                  message['timestamp']),
                                               style: TextStyle(
                                                 fontSize: 10,
                                                 color: Colors.grey[600],
@@ -476,12 +599,59 @@ Please provide a helpful response about this species based on the original analy
                           ),
                         ),
 
+                        // Progress bar for complex questions
+                        if (_analysisProgress > 0)
+                          Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              ClipRRect(
+                                borderRadius: BorderRadius.circular(4),
+                                child: LinearProgressIndicator(
+                                  value: _analysisProgress,
+                                  minHeight: 4,
+                                  backgroundColor: Colors.grey[200],
+                                  valueColor:
+                                      const AlwaysStoppedAnimation<Color>(
+                                          Color(0xFF2196F3)),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 16, vertical: 4),
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    Text(
+                                      _analysisPhase.isNotEmpty
+                                          ? _analysisPhase
+                                          : 'Processing question...',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                    Text(
+                                      '${(_analysisProgress * 100).toInt()}%',
+                                      style: TextStyle(
+                                        fontSize: 11,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.grey[600],
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ),
+
                         // Input area
                         Container(
                           padding: const EdgeInsets.all(16),
                           decoration: BoxDecoration(
                             color: Colors.white,
-                            borderRadius: const BorderRadius.vertical(bottom: Radius.circular(16)),
+                            borderRadius: const BorderRadius.vertical(
+                                bottom: Radius.circular(16)),
                             boxShadow: [
                               BoxShadow(
                                 color: Colors.grey[300]!,
@@ -496,12 +666,16 @@ Please provide a helpful response about this species based on the original analy
                                 child: TextField(
                                   controller: _questionController,
                                   decoration: InputDecoration(
-                                    hintText: 'Ask a question about this species...',
-                                    hintStyle: TextStyle(color: Colors.grey[500]),
+                                    hintText:
+                                        'Ask a question about this species...',
+                                    hintStyle:
+                                        TextStyle(color: Colors.grey[500]),
                                     border: OutlineInputBorder(
-                                      borderRadius: BorderRadius.circular(24),
+                                      borderRadius:
+                                          BorderRadius.circular(24),
                                     ),
-                                    contentPadding: const EdgeInsets.symmetric(
+                                    contentPadding:
+                                        const EdgeInsets.symmetric(
                                       horizontal: 16,
                                       vertical: 12,
                                     ),
@@ -509,7 +683,8 @@ Please provide a helpful response about this species based on the original analy
                                         ? const SizedBox(
                                             width: 20,
                                             height: 20,
-                                            child: CircularProgressIndicator(
+                                            child:
+                                                CircularProgressIndicator(
                                               strokeWidth: 2,
                                             ),
                                           )
@@ -521,7 +696,8 @@ Please provide a helpful response about this species based on the original analy
                               ),
                               const SizedBox(width: 12),
                               IconButton(
-                                onPressed: _isAnalyzing ? null : _askQuestion,
+                                onPressed:
+                                    _isAnalyzing ? null : _askQuestion,
                                 icon: const Icon(Icons.send),
                                 style: IconButton.styleFrom(
                                   backgroundColor: const Color(0xFF2196F3),
@@ -548,7 +724,7 @@ Please provide a helpful response about this species based on the original analy
     if (timestamp == null) return '';
     final now = DateTime.now();
     final difference = now.difference(timestamp);
-    
+
     if (difference.inSeconds < 60) {
       return 'just now';
     } else if (difference.inMinutes < 60) {
@@ -563,9 +739,11 @@ Please provide a helpful response about this species based on the original analy
   Future<void> _shareResult(BuildContext context) async {
     String text;
     if (_species != null) {
-      text = 'Endangered Species: ${_species!.name}\n\n${_species!.description}';
+      text =
+          'Endangered Species: ${_species!.name}\n\n${_species!.description}';
     } else if (_isNotListed) {
-      text = 'Species: ${_notListedName}\nLatin: ${_notListedLatinName}\n\nNot listed as endangered species';
+      text =
+          'Species: $_notListedName\nLatin: $_notListedLatinName\n\nNot listed as endangered species';
     } else {
       text = 'Analysis Result:\n\n${widget.analysisResult}';
     }
@@ -587,9 +765,11 @@ Please provide a helpful response about this species based on the original analy
   Future<void> _copyToClipboard(BuildContext context) async {
     String text;
     if (_species != null) {
-      text = '${_species!.name}\n${_species!.latinName}\n\n${_species!.description}';
+      text =
+          '${_species!.name}\n${_species!.latinName}\n\n${_species!.description}';
     } else if (_isNotListed) {
-      text = '${_notListedName}\n${_notListedLatinName}\n\nNot listed as endangered species';
+      text =
+          '$_notListedName\n$_notListedLatinName\n\nNot listed as endangered species';
     } else {
       text = widget.analysisResult;
     }
