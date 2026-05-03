@@ -5,6 +5,7 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:provider/provider.dart';
 import '../services/model_service.dart';
 import '../services/species_service.dart';
+import '../models/chat_prompts.dart';
 
 class ResultPage extends StatefulWidget {
   final Uint8List imageBytes;
@@ -157,7 +158,7 @@ class _ResultPageState extends State<ResultPage>
     if (_questionController.text.trim().isEmpty || _isAnalyzing) {
       // If empty, fill with current hint
       if (!_isAnalyzing && _questionController.text.trim().isEmpty) {
-        _questionController.text = _questionHints[_currentHintIndex];
+        _questionController.text = ChatPrompts.questionHints[_currentHintIndex];
       } else {
         return;
       }
@@ -173,7 +174,7 @@ class _ResultPageState extends State<ResultPage>
         'content': question,
         'timestamp': DateTime.now(),
       });
-      _currentHintIndex = (_currentHintIndex + 1) % _questionHints.length;
+      _currentHintIndex = (_currentHintIndex + 1) % ChatPrompts.questionHints.length;
       _isAnalyzing = true;
     });
 
@@ -184,13 +185,10 @@ class _ResultPageState extends State<ResultPage>
       final modelService = Provider.of<ModelService>(context, listen: false);
 
       // Create query for the model including the original analysis
-      final query = '''
-Original Analysis: ${widget.analysisResult}
-
-User Question: $question
-
-Please provide a helpful response about this species based on the original analysis and the user's question.
-''';
+      final query = ChatPrompts.buildQuery(
+        analysisResult: widget.analysisResult,
+        userQuestion: question,
+      );
 
       // Add a placeholder assistant message that will be streamed into
       DateTime now = DateTime.now();
@@ -304,14 +302,6 @@ Please provide a helpful response about this species based on the original analy
       },
     );
   }
-
-  static const List<String> _questionHints = [
-    'What does this species eat?',
-    'Where can this species be found in the wild?',
-    'Why is this species endangered?',
-    'What are the main threats to this species?',
-    'What conservation efforts are being made?',
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -671,7 +661,7 @@ Please provide a helpful response about this species based on the original analy
                                 child: TextField(
                                   controller: _questionController,
                                   decoration: InputDecoration(
-                                    hintText: _questionHints[_currentHintIndex],
+                                    hintText: ChatPrompts.questionHints[_currentHintIndex],
                                     hintStyle:
                                         TextStyle(color: Colors.grey[500]),
                                     border: OutlineInputBorder(

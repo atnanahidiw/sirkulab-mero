@@ -9,6 +9,7 @@ import 'package:path_provider/path_provider.dart';
 
 import 'model_boot_state.dart';
 import 'species_service.dart';
+import '../models/chat_prompts.dart';
 import '../utils/image_utils.dart';
 
 @visibleForTesting
@@ -1382,25 +1383,10 @@ class ModelService extends ChangeNotifier {
 
       final speciesLatinNames = _speciesList.map((s) => s.latinName).toList();
 
-      final systemInstruction = '''
-You are an expert wildlife biologist specializing in Indonesian wildlife identification.
-Your task is to analyze images and identify ANY animal or plant species visible in the image.
+      final systemInstruction =
+          ChatPrompts.buildIdentifySystemInstruction(speciesLatinNames);
 
-First, identify the species using COMMON ENGLISH NAME only (e.g., "Tiger" instead of "Panthera tigris"). Then determine if it is in the following endangered list:
-${speciesLatinNames.join(', ')}.
-
-Respond in this exact format:
-[COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
-
-Where ENDANGERED_STATUS is either "endangered" (if in the list above) or "not listed" (if not in the list or unsure).
-
-Do not add any additional text or explanations outside this format.
-
-IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant", "Orchid") not Latin/scientific names.
-''';
-
-      final inputPrompt =
-          'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.';
+      const inputPrompt = ChatPrompts.identifyInputPrompt;
 
       _commitState(
         _state.copyWith(
@@ -1462,13 +1448,7 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
           .generateOptimizedResponse(
         _model!,
         question,
-        systemInstruction:
-            '''You are an expert wildlife biologist specializing in Indonesian wildlife identification.
-
-Based on the provided context, answer the user's question about the species in a helpful and informative way.
-
-Keep your answers concise but informative, and maintain a professional yet approachable tone.
-''',
+        systemInstruction: ChatPrompts.answerSystemInstruction,
         temperature: 0.7,
         topK: 32,
         topP: 0.9,
