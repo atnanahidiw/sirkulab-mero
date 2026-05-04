@@ -1,11 +1,11 @@
 import 'dart:io';
 
 import 'package:flutter_test/flutter_test.dart';
-import 'package:picture_that/services/model_boot_state.dart';
+import 'package:mero/services/model_boot_state.dart';
 
 void main() {
   test('ModelBootStateStore persists and restores boot state', () async {
-    final tempDir = await Directory.systemTemp.createTemp('picture_that_state');
+    final tempDir = await Directory.systemTemp.createTemp('mero_state');
     addTearDown(() async {
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);
@@ -21,7 +21,7 @@ void main() {
       error: 'network hiccup',
       downloadProgress: 0.61,
       phase: ModelBootPhase.downloading,
-      downloadTaskId: 'picture_that_gemma_model',
+      downloadTaskId: 'mero_gemma_model',
       downloadFilePath: '/tmp/gemma-4-E2B-it.litertlm',
       updatedAt: DateTime.parse('2026-04-24T06:00:00.000Z'),
     );
@@ -37,13 +37,13 @@ void main() {
     expect(restored.error, 'network hiccup');
     expect(restored.downloadProgress, 0.61);
     expect(restored.phase, ModelBootPhase.downloading);
-    expect(restored.downloadTaskId, 'picture_that_gemma_model');
+    expect(restored.downloadTaskId, 'mero_gemma_model');
     expect(restored.downloadFilePath, '/tmp/gemma-4-E2B-it.litertlm');
     expect(restored.updatedAt, DateTime.parse('2026-04-24T06:00:00.000Z'));
   });
 
   test('ModelBootStateStore persists and restores needsDownload phase', () async {
-    final tempDir = await Directory.systemTemp.createTemp('picture_that_state');
+    final tempDir = await Directory.systemTemp.createTemp('mero_state');
     addTearDown(() async {
       if (await tempDir.exists()) {
         await tempDir.delete(recursive: true);

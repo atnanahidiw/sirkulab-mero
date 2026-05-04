@@ -1,4 +1,4 @@
-# Picture That - Project Summary
+# Mero - Project Summary
 
 ## Overview
 A Flutter application that uses **Gemma 4 E2B** AI model running **locally on device** to identify Indonesia endangered species from images. The app minimizes internet usage by downloading the model once (~2.4GB) and then working completely offline.
@@ -37,7 +37,7 @@ A Flutter application that uses **Gemma 4 E2B** AI model running **locally on de
 ## Project Structure
 
 ```
-picture-that/
+mero/
 ├── lib/
 │   ├── main.dart                    # App entry point
 │   ├── app_constants.dart           # Constants and configuration

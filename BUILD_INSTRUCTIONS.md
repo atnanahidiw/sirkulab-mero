@@ -1,4 +1,4 @@
-# Build Instructions for Picture That
+# Build Instructions for Mero
 
 ## Prerequisites
 
@@ -116,7 +116,7 @@ Edit `web/index.html`:
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Picture That</title>
+    <title>Mero</title>
     <script src="flutter.js" defer></script>
     
     <!-- Add this script for MediaPipe -->
@@ -268,7 +268,7 @@ FlutterGemma.initialize(
 #### Check Model Installation
 ```bash
 # Check downloaded models location
-# Android: /data/data/com.example.picturethat/files/models/
+# Android: /data/data/com.sirkulab.mero/files/models/
 # iOS: Documents directory
 # Web: Browser cache
 ```

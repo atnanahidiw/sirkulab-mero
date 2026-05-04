@@ -4,9 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
-import 'package:picture_that/services/model_boot_state.dart';
-import 'package:picture_that/services/model_service.dart';
-import 'package:picture_that/widgets/startup_gate.dart';
+import 'package:mero/services/model_boot_state.dart';
+import 'package:mero/services/model_service.dart';
+import 'package:mero/widgets/startup_gate.dart';
 
 void main() {
   testWidgets('startup gate shows splash and transitions to ready child',
