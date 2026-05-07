@@ -320,42 +320,56 @@ class _DownloadConfirmationCard extends StatefulWidget {
       _DownloadConfirmationCardState();
 }
 
-class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
+class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
+    with WidgetsBindingObserver {
   bool _showAdvanced = false;
-  bool _saveToDownloads = false;
+  bool _storageGranted = false;
   final _urlController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    if (Platform.isAndroid) _checkStoragePermission();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && Platform.isAndroid) {
+      _checkStoragePermission();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _urlController.dispose();
     super.dispose();
   }
 
-  Future<void> _onToggleSaveToDownloads(bool value) async {
-    if (!value) {
-      setState(() => _saveToDownloads = false);
-      return;
-    }
-
-    final status = await Permission.storage.request();
-    final granted = status.isGranted ||
+  Future<void> _checkStoragePermission() async {
+    final granted = await Permission.storage.isGranted ||
         await Permission.manageExternalStorage.isGranted;
-
     if (!mounted) return;
-    if (granted) {
-      setState(() => _saveToDownloads = true);
-    } else {
-      setState(() => _saveToDownloads = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Storage permission denied — saving to app storage instead'),
-        ),
-      );
+    setState(() => _storageGranted = granted);
+  }
+
+  Future<void> _requestStoragePermission() async {
+    // manageExternalStorage.request() on Android 11+ opens the dedicated
+    // "Allow access to manage all files" page directly instead of generic app settings.
+    // On older Android it shows the standard permission dialog.
+    var status = await Permission.manageExternalStorage.request();
+    if (!status.isGranted) {
+      status = await Permission.storage.request();
     }
+    if (!mounted) return;
+    final granted = status.isGranted ||
+        await Permission.storage.isGranted ||
+        await Permission.manageExternalStorage.isGranted;
+    setState(() => _storageGranted = granted);
   }
 
   Future<void> _handleDownload() async {
-    // Request notification permission (optional - can skip)
     if (mounted) {
       await ModelDownloadNotificationService.requestPermission(context);
     }
@@ -363,7 +377,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
     final customUrl = _urlController.text.trim();
     widget.onDownload(
       customUrl: customUrl.isNotEmpty ? customUrl : null,
-      preferDownloadsFolder: _saveToDownloads,
+      preferDownloadsFolder: Platform.isAndroid,
     );
   }
 
@@ -371,6 +385,8 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    final bool needsPermission = Platform.isAndroid && !_storageGranted;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -438,25 +454,6 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
                   ],
                 ),
               ),
-              if (Platform.isAndroid) ...[
-                const SizedBox(height: 8),
-                SwitchListTile(
-                  contentPadding: EdgeInsets.zero,
-                  dense: true,
-                  title: Text(
-                    'Save to Downloads folder',
-                    style: theme.textTheme.labelMedium,
-                  ),
-                  subtitle: Text(
-                    'Model survives app reinstall · Requires storage permission',
-                    style: theme.textTheme.labelSmall?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                    ),
-                  ),
-                  value: _saveToDownloads,
-                  onChanged: _onToggleSaveToDownloads,
-                ),
-              ],
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => setState(() => _showAdvanced = !_showAdvanced),
@@ -485,11 +482,18 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
                 ),
                 const SizedBox(height: 16),
               ],
-              FilledButton.icon(
-                onPressed: _handleDownload,
-                icon: const Icon(Icons.download),
-                label: const Text('Download Model'),
-              ),
+              if (needsPermission) ...[
+                FilledButton.icon(
+                  onPressed: _requestStoragePermission,
+                  icon: const Icon(Icons.lock_open_outlined),
+                  label: const Text('Grant Permission'),
+                ),
+              ] else
+                FilledButton.icon(
+                  onPressed: _handleDownload,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download Model'),
+                ),
               if (widget.onCancel != null) ...[
                 const SizedBox(height: 8),
                 TextButton(

@@ -61,23 +61,15 @@ class _ResultPageState extends State<ResultPage>
   }
 
   void _addInitialMessage() {
-    final funFact = _getInterestingFact(null);
-    final speciesName = _isNotListed ? (_notListedName ?? 'creature') : 'creature';
+    final content = _isNotListed
+        ? 'Great job spotting the ${_notListedName ?? 'creature'}! What would you like to know about this species? Feel free to ask anything!'
+        : '';
     setState(() {
-      _chatMessages.add({
-        'role': 'assistant',
-        'content':
-            'Great job spotting the $speciesName! $funFact What would you like to know about this amazing species? Feel free to ask anything!',
-      });
+      _chatMessages.add({'role': 'assistant', 'content': content});
     });
   }
 
-  String _getInterestingFact(Species? species) {
-    if (species != null && species.facts.isNotEmpty) {
-      return 'Did you know? ${species.facts.first}';
-    }
-    return "It's quite an interesting find!";
-  }
+  bool get _chatEnabled => _species != null || _isNotListed;
 
   Future<void> _loadSpeciesData() async {
     try {
@@ -88,6 +80,13 @@ class _ResultPageState extends State<ResultPage>
         if (matched?.latinName.isNotEmpty == true) {
           setState(() {
             _species = matched;
+            if (_chatMessages.isNotEmpty) {
+              final name = matched!.name;
+              final body = matched.description.isNotEmpty
+                  ? 'Great job spotting the $name! Do you know, ${matched.description}\n\nWhat would you like to know about this amazing species? Feel free to ask anything!'
+                  : 'Great job spotting the $name! What would you like to know about this amazing species? Feel free to ask anything!';
+              _chatMessages[0] = {'role': 'assistant', 'content': body};
+            }
           });
         }
       }
@@ -247,7 +246,7 @@ class _ResultPageState extends State<ResultPage>
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      bottomNavigationBar: _ChatInputBar(
+      bottomNavigationBar: _chatEnabled ? _ChatInputBar(
         controller: _questionController,
         isAnalyzing: _isAnalyzing,
         hintBatch: _currentHintBatch,
@@ -260,7 +259,7 @@ class _ResultPageState extends State<ResultPage>
             TextPosition(offset: hint.length),
           );
         },
-      ),
+      ) : null,
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -367,18 +366,20 @@ class _ResultPageState extends State<ResultPage>
                 colorScheme: colorScheme,
                 textTheme: textTheme,
                 onSourceTap: _launchUrl,
+                onRetake: () => Navigator.pop(context),
               ),
             ),
           ),
 
-          // Chat messages
-          SliverList(
-            delegate: SliverChildBuilderDelegate(
-              (context, index) => _buildChatBubble(
-                  _chatMessages[index], index, colorScheme, textTheme),
-              childCount: _chatMessages.length,
+          // Chat messages — only shown when species is detected
+          if (_chatEnabled)
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) => _buildChatBubble(
+                    _chatMessages[index], index, colorScheme, textTheme),
+                childCount: _chatMessages.length,
+              ),
             ),
-          ),
 
           // Bottom padding
           const SliverToBoxAdapter(child: SizedBox(height: 16)),
@@ -520,6 +521,7 @@ class _SpeciesInfoCard extends StatelessWidget {
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final void Function(String url) onSourceTap;
+  final VoidCallback? onRetake;
 
   const _SpeciesInfoCard({
     required this.species,
@@ -529,6 +531,7 @@ class _SpeciesInfoCard extends StatelessWidget {
     required this.colorScheme,
     required this.textTheme,
     required this.onSourceTap,
+    this.onRetake,
   });
 
   @override
@@ -540,13 +543,34 @@ class _SpeciesInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (species == null && !isNotListed)
+            if (species == null && !isNotListed) ...[
+              Icon(
+                Icons.image_search_outlined,
+                size: 36,
+                color: colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
+              ),
+              const SizedBox(height: 12),
               Text(
                 'Species not recognized',
-                style: textTheme.bodyMedium?.copyWith(
+                style: textTheme.titleMedium?.copyWith(
                   color: colorScheme.onSecondaryContainer,
+                  fontWeight: FontWeight.w600,
                 ),
-              )
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Try taking the photo from a different angle or with adequate lighting for better results.',
+                style: textTheme.bodySmall?.copyWith(
+                  color: colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
+                ),
+              ),
+              const SizedBox(height: 16),
+              FilledButton.icon(
+                onPressed: onRetake,
+                icon: const Icon(Icons.camera_alt_outlined, size: 18),
+                label: const Text('Retake Photo'),
+              ),
+            ]
             else if (isNotListed) ...[
               Text(
                 notListedName ?? 'Unknown',
@@ -596,66 +620,41 @@ class _SpeciesInfoCard extends StatelessWidget {
               ],
               if (species!.populationEstimate != null) ...[
                 const SizedBox(height: 10),
-                Row(
-                  children: [
-                    Chip(
-                      label: Text('Endangered'),
-                      backgroundColor: colorScheme.errorContainer,
-                      labelStyle: TextStyle(
-                        color: colorScheme.onErrorContainer,
-                        fontSize: 12,
-                      ),
-                      side: BorderSide.none,
-                      avatar: Icon(Icons.warning_amber_outlined,
-                          size: 16, color: colorScheme.onErrorContainer),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(
-                        'Remaining: ${species!.populationEstimate}',
-                        style: textTheme.labelMedium?.copyWith(
-                          color: colorScheme.onSecondaryContainer
-                              .withValues(alpha: 0.8),
-                        ),
-                      ),
-                    ),
-                    if (species!.sourceUri != null)
-                      GestureDetector(
-                        onTap: () => onSourceTap(species!.sourceUri!),
-                        child: Text(
-                          'source',
-                          style: textTheme.labelSmall?.copyWith(
-                            color: colorScheme.tertiary,
-                            decoration: TextDecoration.underline,
-                          ),
-                        ),
-                      ),
-                  ],
+                Chip(
+                  label: const Text('Endangered'),
+                  backgroundColor: colorScheme.errorContainer,
+                  labelStyle: TextStyle(
+                    color: colorScheme.onErrorContainer,
+                    fontSize: 12,
+                  ),
+                  side: BorderSide.none,
+                  avatar: Icon(Icons.warning_amber_outlined,
+                      size: 16, color: colorScheme.onErrorContainer),
                 ),
-              ],
-              if (species!.description.isNotEmpty) ...[
-                const SizedBox(height: 12),
-                const Divider(height: 1),
-                const SizedBox(height: 12),
-                MarkdownBody(
-                  data: species!.description,
-                  shrinkWrap: true,
-                  styleSheet: MarkdownStyleSheet.fromTheme(
-                    Theme.of(context),
-                  ).copyWith(
-                    p: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSecondaryContainer,
-                    ),
-                    strong: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSecondaryContainer,
-                      fontWeight: FontWeight.w600,
-                    ),
-                    em: textTheme.bodyMedium?.copyWith(
-                      color: colorScheme.onSecondaryContainer,
-                      fontStyle: FontStyle.italic,
-                    ),
+                const SizedBox(height: 6),
+                Text(
+                  'Remaining: ${species!.populationEstimate}',
+                  style: textTheme.labelMedium?.copyWith(
+                    color: colorScheme.onSecondaryContainer
+                        .withValues(alpha: 0.8),
                   ),
                 ),
+                if (species!.sourceUri != null) ...[
+                  const SizedBox(height: 4),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: GestureDetector(
+                      onTap: () => onSourceTap(species!.sourceUri!),
+                      child: Text(
+                        'source',
+                        style: textTheme.labelSmall?.copyWith(
+                          color: colorScheme.tertiary,
+                          decoration: TextDecoration.underline,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ],
           ],

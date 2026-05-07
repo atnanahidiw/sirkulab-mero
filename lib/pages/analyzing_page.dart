@@ -20,20 +20,20 @@ class AnalyzingPage extends StatefulWidget {
 class _AnalyzingPageState extends State<AnalyzingPage>
     with TickerProviderStateMixin {
   static const List<String> _messages = [
-    'Consulting the wildlife encyclopedia...',
-    'Cross-referencing with 50,000 species records...',
-    'Running pixels through the jungle database...',
-    'Asking the beetles for a second opinion...',
-    'Flipping through field guides, page by page...',
-    'Comparing fur patterns at the pixel level...',
-    'The AI is squinting at your photo very hard...',
-    'Checking the IUCN Red List status...',
-    'Double-checking with a botanist friend...',
-    'Sharpening neurons, calibrating instincts...',
-    'Making sure it\'s not just a very fancy cat...',
-    'Running through the rainforest database...',
-    'Enhancing... enhancing... almost there...',
-    'Scanning habitat markers and field signs...',
+    'Consulting the wildlife encyclopedia... 📚',
+    'Asking the AI to put on its glasses... 🤓',
+    'Cross-referencing with 10,000 species... 🔍',
+    'The AI is squinting really hard... 👀',
+    'Enhancing... enhancing... 🔬',
+    'Running through the jungle database... 🌿',
+    'Teaching the AI what fur looks like... 🐾',
+    'Comparing pixels to paws... 🐾',
+    'Flipping through nature magazines... 📰',
+    'Sharpening AI neurons... 🧠',
+    'Downloading more RAM... just kidding! 😄',
+    'Calibrating the species-o-meter... 📡',
+    'Making sure it\'s not just a fancy cat... 🐱',
+    'Double-checking with a botanist friend... 🌺',
   ];
 
   late AnimationController _pulseController;
