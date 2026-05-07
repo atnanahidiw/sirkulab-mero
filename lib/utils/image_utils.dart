@@ -64,6 +64,7 @@ class ImageProcessor {
           image,
           width: newWidth,
           height: newHeight,
+          interpolation: img.Interpolation.cubic,
         );
         
         // Encode as JPEG with quality

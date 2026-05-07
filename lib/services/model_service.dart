@@ -320,7 +320,7 @@ class ModelService extends ChangeNotifier {
       '7fa1d78473894f7e736a21d920c3aa80f950c0db';
   final String modelUrl =
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';
-  final ModelType modelType = ModelType.gemmaIt;
+  final ModelType modelType = ModelType.gemma4;
   final int maxTokens = 2048;
 
   // Species database
@@ -1505,14 +1505,6 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      // Compress image with memory-aware processing
-      final compressedBytes = await ImageUtils.compressImage(
-        imageBytes,
-        maxWidth: 336,
-        maxHeight: 336,
-        quality: 85,
-      );
-
       final speciesLatinNames = _speciesList.map((s) => s.latinName).toList();
 
       final systemInstruction =
@@ -1533,7 +1525,7 @@ class ModelService extends ChangeNotifier {
         _model!,
         inputPrompt,
         systemInstruction: systemInstruction,
-        imageBytes: compressedBytes,
+        imageBytes: imageBytes,
         temperature: 0.7,
         topK: 32,
         topP: 0.9,
