@@ -66,7 +66,7 @@ picture-that/
 ### Model Configuration
 - **Model**: Gemma 4 E2B (2.4GB, int4 quantized)
 - **Format**: `.litertlm` (LiteRT-LM format)
-- **Source**: HuggingFace - `litert-community/gemma-4-E2B-it-litert-lm`
+- **Source**: HuggingFace `litert-community/gemma-4-E2B-it-litert-lm` pinned to Apr 1 revision `7fa1d78473894f7e736a21d920c3aa80f950c0db`
 - **Capabilities**: Multimodal (text + image), 1024 token context
 
 ### Prompt Engineering

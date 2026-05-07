@@ -30,7 +30,11 @@ class StartupGate extends StatelessWidget {
           phase: modelService.phase,
           modelSize: modelService.pendingModelSize,
           onConfirmDownload: modelService.phase == ModelBootPhase.needsDownload
-              ? ({String? customUrl}) => modelService.confirmDownload(customUrl: customUrl)
+              ? ({String? customUrl, bool preferDownloadsFolder = false}) =>
+                  modelService.confirmDownload(
+                    customUrl: customUrl,
+                    preferDownloadsFolder: preferDownloadsFolder,
+                  )
               : null,
           onRetry: switch (modelService.phase) {
             ModelBootPhase.paused => () => modelService.resumeDownload(),

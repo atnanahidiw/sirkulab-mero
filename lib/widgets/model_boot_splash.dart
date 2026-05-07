@@ -1,11 +1,15 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../services/model_boot_state.dart';
 import '../services/model_download_notification_service.dart';
 
-// Minimal splash layout inspired by quex-flutter splash
-
-typedef DownloadCallback = void Function({String? customUrl});
+typedef DownloadCallback = void Function({
+  String? customUrl,
+  bool preferDownloadsFolder,
+});
 
 class ModelBootSplash extends StatelessWidget {
   final String status;
@@ -94,33 +98,25 @@ class ModelBootSplash extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.displaySmall?.copyWith(
                         color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     Text(
                       'Gotta Snap Them All!',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall?.copyWith(
+                      style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.primary,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    AnimatedOpacity(
-                      duration: const Duration(seconds: 2),
-                      curve: Curves.easeInOut,
-                      opacity: 0.7,
-                      child: Text(
-                        'Don\'t let them fade unseen..',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                          height: 1.4,
-                        ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Don\'t let them fade unseen.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                        height: 1.4,
                       ),
                     ),
                     // Balance padding for visual centering
@@ -133,7 +129,8 @@ class ModelBootSplash extends StatelessWidget {
               Center(
                 child: _DownloadConfirmationCard(
                   modelSize: modelSize,
-                  onDownload: onConfirmDownload ?? ({String? customUrl}) {},
+                  onDownload: onConfirmDownload ??
+                      ({String? customUrl, bool preferDownloadsFolder = false}) {},
                   onCancel: onCancel,
                 ),
               ),
@@ -197,12 +194,15 @@ class ModelBootSplash extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             if (onRetry != null)
-              TextButton.icon(
+              FilledButton.tonal(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: Text(phase == ModelBootPhase.paused ? 'Resume' : 'Retry'),
-                style: TextButton.styleFrom(
-                  foregroundColor: scheme.primary,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.refresh, size: 18),
+                    const SizedBox(width: 8),
+                    Text(phase == ModelBootPhase.paused ? 'Resume' : 'Retry'),
+                  ],
                 ),
               ),
           ],
@@ -259,33 +259,47 @@ class _BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            colorScheme.primaryContainer.withValues(alpha: 0.92),
-            colorScheme.primary.withValues(alpha: 0.18),
-          ],
-        ),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.18),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.12),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Outer circle — surface container
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colorScheme.surfaceContainerHigh,
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withValues(alpha: 0.18),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Icon(
-        Icons.eco_outlined,
-        size: 44,
-        color: colorScheme.primary,
-      ),
+        ),
+        // Inner circle — gradient fill
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.primary,
+                colorScheme.primaryContainer,
+              ],
+            ),
+          ),
+          child: Icon(
+            Icons.eco_outlined,
+            size: 36,
+            color: colorScheme.onPrimary,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -308,12 +322,36 @@ class _DownloadConfirmationCard extends StatefulWidget {
 
 class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
   bool _showAdvanced = false;
+  bool _saveToDownloads = false;
   final _urlController = TextEditingController();
 
   @override
   void dispose() {
     _urlController.dispose();
     super.dispose();
+  }
+
+  Future<void> _onToggleSaveToDownloads(bool value) async {
+    if (!value) {
+      setState(() => _saveToDownloads = false);
+      return;
+    }
+
+    final status = await Permission.storage.request();
+    final granted = status.isGranted ||
+        await Permission.manageExternalStorage.isGranted;
+
+    if (!mounted) return;
+    if (granted) {
+      setState(() => _saveToDownloads = true);
+    } else {
+      setState(() => _saveToDownloads = false);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Storage permission denied — saving to app storage instead'),
+        ),
+      );
+    }
   }
 
   Future<void> _handleDownload() async {
@@ -325,6 +363,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
     final customUrl = _urlController.text.trim();
     widget.onDownload(
       customUrl: customUrl.isNotEmpty ? customUrl : null,
+      preferDownloadsFolder: _saveToDownloads,
     );
   }
 
@@ -399,6 +438,25 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
                   ],
                 ),
               ),
+              if (Platform.isAndroid) ...[
+                const SizedBox(height: 8),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  dense: true,
+                  title: Text(
+                    'Save to Downloads folder',
+                    style: theme.textTheme.labelMedium,
+                  ),
+                  subtitle: Text(
+                    'Model survives app reinstall · Requires storage permission',
+                    style: theme.textTheme.labelSmall?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                  value: _saveToDownloads,
+                  onChanged: _onToggleSaveToDownloads,
+                ),
+              ],
               const SizedBox(height: 16),
               TextButton(
                 onPressed: () => setState(() => _showAdvanced = !_showAdvanced),

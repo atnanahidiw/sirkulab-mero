@@ -19,6 +19,8 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final modelService = Provider.of<ModelService>(context);
 
     return Scaffold(
@@ -27,72 +29,102 @@ class SettingsPage extends StatelessWidget {
       ),
       body: ListView(
         children: [
-          // Model Settings
-          _buildSectionHeader('AI Model'),
-          _buildListTile(
-            title: 'Model Information',
-            subtitle:
-                'Gemma 4 E2B (2.4GB)',
-            icon: Icons.model_training,
+          // AI Model section
+          _sectionHeader('AI Model', colorScheme, textTheme),
+          _ModelInfoCard(
+            modelService: modelService,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
             onTap: () => _showModelInfo(context, modelService),
           ),
-          _buildListTile(
+          const SizedBox(height: 8),
+          _iconTile(
+            context: context,
+            icon: Icons.storage_outlined,
             title: 'Manage Model',
             subtitle: modelService.isModelLoaded ? 'Loaded' : 'Not loaded',
-            icon: Icons.storage,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
             onTap: () => _manageModel(context, modelService),
           ),
 
-          // Permissions
-          _buildSectionHeader('Permissions'),
+          // Permissions section
+          _sectionHeader('Permissions', colorScheme, textTheme),
           FutureBuilder<bool>(
             future: PermissionService.hasCameraPermission(),
             builder: (context, snapshot) {
-              if (!snapshot.hasData) {
-                return const Center(child: CircularProgressIndicator());
-              }
-
-              return _buildPermissionTile(
-                'Camera',
-                snapshot.data!,
+              final granted = snapshot.data ?? false;
+              return _permissionTile(
+                context: context,
+                label: 'Camera',
+                isGranted: granted,
+                colorScheme: colorScheme,
+                textTheme: textTheme,
                 onTap: () => _manageCameraPermission(context),
               );
             },
           ),
 
-          // App Information
-          _buildSectionHeader('Information'),
-          _buildListTile(
+          // App Information section
+          _sectionHeader('Information', colorScheme, textTheme),
+          _iconTile(
+            context: context,
+            icon: Icons.info_outlined,
             title: 'About',
             subtitle: 'Picture That v1.0.0',
-            icon: Icons.info,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
             onTap: () => _showAboutDialog(context),
           ),
-          _buildListTile(
+          _iconTile(
+            context: context,
+            icon: Icons.privacy_tip_outlined,
             title: 'Privacy Policy',
-            icon: Icons.privacy_tip,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
             onTap: () => _launchUrl('https://example.com/privacy'),
           ),
-          _buildListTile(
+          _iconTile(
+            context: context,
+            icon: Icons.description_outlined,
             title: 'Terms of Service',
-            icon: Icons.description,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
             onTap: () => _launchUrl('https://example.com/terms'),
           ),
-          _buildListTile(
+          _iconTile(
+            context: context,
+            icon: Icons.code_outlined,
             title: 'GitHub Repository',
-            icon: Icons.code,
-            onTap: () => _launchUrl('https://github.com/example/picture-that'),
+            colorScheme: colorScheme,
+            textTheme: textTheme,
+            onTap: () =>
+                _launchUrl('https://github.com/example/picture-that'),
           ),
 
-          // Conservation Resources
-          _buildSectionHeader('Conservation Resources'),
-          ..._conservationResources.entries.map((entry) {
-            return _buildListTile(
-              title: entry.key,
-              icon: Icons.open_in_new,
-              onTap: () => _launchUrl(entry.value),
-            );
-          }),
+          // Conservation Resources section
+          _sectionHeader('Conservation Resources', colorScheme, textTheme),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: _conservationResources.entries.map((entry) {
+                return Padding(
+                  padding: const EdgeInsets.only(bottom: 8),
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.open_in_new, size: 16),
+                    label: Text(entry.key),
+                    onPressed: () => _launchUrl(entry.value),
+                    style: OutlinedButton.styleFrom(
+                      side: BorderSide(color: colorScheme.outline),
+                      foregroundColor: colorScheme.tertiary,
+                      alignment: Alignment.centerLeft,
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
 
           const SizedBox(height: 32),
         ],
@@ -100,28 +132,39 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildSectionHeader(String title) {
+  Widget _sectionHeader(
+    String title,
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+  ) {
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 24, 16, 8),
       child: Text(
         title,
-        style: const TextStyle(
-          fontSize: 14,
-          fontWeight: FontWeight.w500,
-          color: Colors.grey,
-        ),
+        style: textTheme.labelLarge?.copyWith(color: colorScheme.primary),
       ),
     );
   }
 
-  Widget _buildListTile({
+  Widget _iconTile({
+    required BuildContext context,
+    required IconData icon,
     required String title,
     String? subtitle,
-    required IconData icon,
+    required ColorScheme colorScheme,
+    required TextTheme textTheme,
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(icon),
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(icon, color: colorScheme.onSecondaryContainer, size: 20),
+      ),
       title: Text(title),
       subtitle: subtitle != null ? Text(subtitle) : null,
       trailing: const Icon(Icons.chevron_right),
@@ -129,19 +172,43 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  Widget _buildPermissionTile(
-    String permission,
-    bool isGranted, {
+  Widget _permissionTile({
+    required BuildContext context,
+    required String label,
+    required bool isGranted,
+    required ColorScheme colorScheme,
+    required TextTheme textTheme,
     required VoidCallback onTap,
   }) {
     return ListTile(
-      leading: Icon(
-        isGranted ? Icons.check_circle : Icons.error_outline,
-        color: isGranted ? Colors.green : Colors.orange,
+      leading: Container(
+        width: 40,
+        height: 40,
+        decoration: BoxDecoration(
+          color: colorScheme.secondaryContainer,
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.camera_alt_outlined,
+          color: colorScheme.onSecondaryContainer,
+          size: 20,
+        ),
       ),
-      title: Text(permission),
-      subtitle: Text(isGranted ? 'Granted' : 'Not granted'),
-      trailing: const Icon(Icons.chevron_right),
+      title: Text(label),
+      trailing: Chip(
+        label: Text(isGranted ? 'Granted' : 'Denied'),
+        backgroundColor: isGranted
+            ? colorScheme.tertiaryContainer
+            : colorScheme.errorContainer,
+        labelStyle: TextStyle(
+          color: isGranted
+              ? colorScheme.onTertiaryContainer
+              : colorScheme.onErrorContainer,
+          fontSize: 12,
+        ),
+        side: BorderSide.none,
+        padding: const EdgeInsets.symmetric(horizontal: 4),
+      ),
       onTap: onTap,
     );
   }
@@ -156,25 +223,19 @@ class SettingsPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Gemma 4 E2B (2.4GB)',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              const Text('Gemma 4 E2B (2.4GB)',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
               Text('Status: ${modelService.status}'),
               const SizedBox(height: 8),
-              const Text(
-                'Capabilities:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              const Text('Capabilities:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const Text('• Multimodal (text + image)'),
               const Text('• 1024 token context window'),
               const Text('• On-device inference'),
               const SizedBox(height: 8),
-              const Text(
-                'Note:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              const Text('Note:',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const Text('Model works offline after initial download.'),
             ],
           ),
@@ -259,7 +320,7 @@ class SettingsPage extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               child: const Text('Cancel'),
             ),
-            TextButton(
+            FilledButton(
               onPressed: () {
                 Navigator.pop(context);
                 PermissionService.openPermissionSettings();
@@ -296,12 +357,10 @@ class SettingsPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Gotta Snap Them All!',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
+              const Text('Gotta Snap Them All!',
+                  style: TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('Version: 1.0.0'),
+              const Text('Version: 1.0.0'),
               const SizedBox(height: 16),
               const Text(
                 'This app uses Gemma 4 AI model to identify endangered species from images.',
@@ -309,11 +368,6 @@ class SettingsPage extends StatelessWidget {
               const SizedBox(height: 8),
               const Text(
                 'All processing happens on your device for privacy. No images are uploaded to servers.',
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Made with ❤️ for wildlife conservation.',
-                style: TextStyle(fontStyle: FontStyle.italic),
               ),
             ],
           ),
@@ -337,5 +391,85 @@ class SettingsPage extends StatelessWidget {
     } catch (e) {
       // Handle error
     }
+  }
+}
+
+class _ModelInfoCard extends StatelessWidget {
+  final ModelService modelService;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final VoidCallback onTap;
+
+  const _ModelInfoCard({
+    required this.modelService,
+    required this.colorScheme,
+    required this.textTheme,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: GestureDetector(
+        onTap: onTap,
+        child: Card(
+          color: colorScheme.primaryContainer,
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: colorScheme.primary.withValues(alpha: 0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(
+                    Icons.model_training_outlined,
+                    color: colorScheme.onPrimaryContainer,
+                    size: 20,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Gemma 4 E2B',
+                        style: textTheme.titleMedium?.copyWith(
+                          color: colorScheme.onPrimaryContainer,
+                        ),
+                      ),
+                      Text(
+                        '2.4 GB · On-device inference',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onPrimaryContainer
+                              .withValues(alpha: 0.7),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                Chip(
+                  label: Text(
+                    modelService.isModelLoaded ? 'Ready' : 'Not loaded',
+                  ),
+                  backgroundColor: colorScheme.secondaryContainer,
+                  labelStyle: TextStyle(
+                    color: colorScheme.onSecondaryContainer,
+                    fontSize: 12,
+                  ),
+                  side: BorderSide.none,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 }

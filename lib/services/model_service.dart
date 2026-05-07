@@ -204,7 +204,10 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     try {
       // Add timeout to prevent hanging
       await Future.any([
-        FlutterGemma.installModel(modelType: modelType)
+        FlutterGemma.installModel(
+              modelType: modelType,
+              fileType: ModelFileType.litertlm
+            )
             .fromFile(filePath)
             .install(),
         Future.delayed(const Duration(minutes: 5), () {
@@ -228,7 +231,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     String prompt, {
     String? systemInstruction,
     Uint8List? imageBytes,
-    int maxTokens = 200,
+    int maxTokens = 2048,
     double temperature = 0.7,
     int topK = 40,
     double topP = 0.9,
@@ -247,33 +250,35 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         systemInstruction: systemInstruction,
       );
 
-      onProgress?.call('Sending question...', 0.35);
+      try {
+        onProgress?.call('Sending question...', 0.35);
 
-      // Add query chunk with image if provided
-      if (imageBytes != null) {
-        await session.addQueryChunk(Message.withImage(
-          text: prompt,
-          imageBytes: imageBytes,
-          isUser: true,
-        ));
-      } else {
-        await session.addQueryChunk(Message.text(
-          text: prompt,
-          isUser: true,
-        ));
+        if (imageBytes != null) {
+          await session.addQueryChunk(Message.withImage(
+            text: prompt,
+            imageBytes: imageBytes,
+            isUser: true,
+          ));
+        } else {
+          await session.addQueryChunk(Message.text(
+            text: prompt,
+            isUser: true,
+          ));
+        }
+
+        onProgress?.call('Generating answer...', 0.55);
+
+        final buffer = StringBuffer();
+        await for (final token in session.getResponseAsync()) {
+          buffer.write(token);
+          onToken?.call(token);
+        }
+
+        onProgress?.call('Complete', 1.0);
+        return buffer.toString();
+      } finally {
+        await session.close();
       }
-
-      onProgress?.call('Generating answer...', 0.55);
-
-      // Use streaming API for real-time token delivery
-      final buffer = StringBuffer();
-      await for (final token in session.getResponseAsync()) {
-        buffer.write(token);
-        onToken?.call(token);
-      }
-
-      onProgress?.call('Complete', 1.0);
-      return buffer.toString();
     } catch (e) {
       debugPrint('Optimized generation failed: $e');
       rethrow;
@@ -311,10 +316,12 @@ class ModelService extends ChangeNotifier {
   String? _pendingModelSize;
 
   // Model configuration - Gemma 4 2B Instruct (quantized)
+  static const String _modelRevision =
+      '7fa1d78473894f7e736a21d920c3aa80f950c0db';
   final String modelUrl =
-      'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm';
+      'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';
   final ModelType modelType = ModelType.gemmaIt;
-  final int maxTokens = 200;
+  final int maxTokens = 2048;
 
   // Species database
   final SpeciesService _speciesService = SpeciesService();
@@ -422,16 +429,22 @@ class ModelService extends ChangeNotifier {
     }
   }
 
-  /// Get the destination path for persistent model storage
-  Future<String> _getDownloadDestination() async {
+  /// Get the destination path for persistent model storage.
+  /// On Android, defaults to app-private storage (no permission needed).
+  /// Pass [preferDownloadsFolder] = true to opt into the public Downloads
+  /// folder — will silently fall back if permission is not already granted.
+  Future<String> _getDownloadDestination({
+    bool preferDownloadsFolder = false,
+  }) async {
     String dirPath;
     if (Platform.isAndroid) {
-      final isGranted = await _requestStoragePermission();
-      if (!isGranted) {
-        throw Exception(
-            'Storage permission denied. The model MUST be saved to public storage to persist across reinstalls. Please grant permission.');
+      if (preferDownloadsFolder &&
+          (await Permission.storage.isGranted ||
+              await Permission.manageExternalStorage.isGranted)) {
+        dirPath = '/storage/emulated/0/Download';
+      } else {
+        dirPath = (await getApplicationSupportDirectory()).path;
       }
-      dirPath = '/storage/emulated/0/Download';
     } else {
       try {
         final downloadsDir = await getDownloadsDirectory();
@@ -451,8 +464,13 @@ class ModelService extends ChangeNotifier {
     return '$dirPath/.gemma-4-E2B-it.litertlm';
   }
 
-  Future<DownloadTask> _buildDownloadTask({String? customUrl}) async {
-    final persistentPath = await _getDownloadDestination();
+  Future<DownloadTask> _buildDownloadTask({
+    String? customUrl,
+    bool preferDownloadsFolder = false,
+  }) async {
+    final persistentPath = await _getDownloadDestination(
+      preferDownloadsFolder: preferDownloadsFolder,
+    );
 
     // Ensure the persistent directory exists
     final persistentDir = Directory(persistentPath).parent;
@@ -1117,7 +1135,10 @@ class ModelService extends ChangeNotifier {
     );
   }
 
-  Future<void> confirmDownload({String? customUrl}) async {
+  Future<void> confirmDownload({
+    String? customUrl,
+    bool preferDownloadsFolder = false,
+  }) async {
     if (_state.phase != ModelBootPhase.needsDownload &&
         _state.phase != ModelBootPhase.canceled) {
       return;
@@ -1132,6 +1153,7 @@ class ModelService extends ChangeNotifier {
     await _startModelDownload(
       resumed: false,
       customUrl: customUrl,
+      preferDownloadsFolder: preferDownloadsFolder,
     );
   }
 
@@ -1188,6 +1210,7 @@ class ModelService extends ChangeNotifier {
   Future<void> _startModelDownload({
     required bool resumed,
     String? customUrl,
+    bool preferDownloadsFolder = false,
   }) async {
     if (_isDownloading || _state.isModelLoaded) {
       return;
@@ -1195,7 +1218,10 @@ class ModelService extends ChangeNotifier {
 
     _isDownloading = true;
     try {
-      final task = await _buildDownloadTask(customUrl: customUrl);
+      final task = await _buildDownloadTask(
+        customUrl: customUrl,
+        preferDownloadsFolder: preferDownloadsFolder,
+      );
       final filePath = await task.filePath();
       _commitState(
         _state.copyWith(
@@ -1477,44 +1503,6 @@ class ModelService extends ChangeNotifier {
     }
   }
 
-  /// Request storage permission for Android
-  Future<bool> _requestStoragePermission() async {
-    if (!Platform.isAndroid) return true;
-
-    // Keep asking until permission is granted or user cancels
-    while (true) {
-      // Check if we already have permission
-      if (await Permission.manageExternalStorage.isGranted) return true;
-      if (await Permission.storage.isGranted) return true;
-
-      // Request permissions with explanation
-      final status = await Permission.storage.request();
-      if (status.isGranted) return true;
-
-      final manageStatus = await Permission.manageExternalStorage.request();
-      if (manageStatus.isGranted) return true;
-
-      // If permanently denied, open settings and loop back
-      if (status.isPermanentlyDenied || manageStatus.isPermanentlyDenied) {
-        await openAppSettings();
-        // Wait a bit for user to interact with settings
-        await Future.delayed(const Duration(seconds: 2));
-        continue;
-      }
-
-      // If user denied (not permanently), wait and ask again
-      if (status.isDenied || manageStatus.isDenied) {
-        // Wait 2 seconds before asking again
-        await Future.delayed(const Duration(seconds: 2));
-        continue;
-      }
-
-      // If anything else, break and return false
-      break;
-    }
-
-    return false;
-  }
 
   @override
   void dispose() {
