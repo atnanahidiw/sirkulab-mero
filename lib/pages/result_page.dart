@@ -31,7 +31,8 @@ class _ResultPageState extends State<ResultPage>
   final ScrollController _scrollController = ScrollController();
   final List<Map<String, dynamic>> _chatMessages = [];
   bool _isAnalyzing = false;
-  int _hintBatchStart = 0;
+  List<String> _remainingHints = [];
+  String? _activeHint;
   static const double _expandedHeight = 340.0;
 
   late AnimationController _typingAnimationController;
@@ -47,6 +48,9 @@ class _ResultPageState extends State<ResultPage>
     _typingAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
       CurvedAnimation(
           parent: _typingAnimationController, curve: Curves.easeInOut),
+    );
+    _remainingHints = List.from(
+      _isNotListed ? ChatPrompts.notEndangeredHints : ChatPrompts.endangeredHints,
     );
     _loadSpeciesData();
     _addInitialMessage();
@@ -80,6 +84,7 @@ class _ResultPageState extends State<ResultPage>
         if (matched?.latinName.isNotEmpty == true) {
           setState(() {
             _species = matched;
+            _remainingHints = List.from(ChatPrompts.endangeredHints);
             if (_chatMessages.isNotEmpty) {
               final name = matched!.name;
               final body = matched.description.isNotEmpty
@@ -114,25 +119,19 @@ class _ResultPageState extends State<ResultPage>
     return parts.length >= 3 ? parts[2] : null;
   }
 
-  List<String> get _currentHintBatch {
-    final hints = ChatPrompts.questionHints;
-    final start = _hintBatchStart % hints.length;
-    final result = <String>[];
-    for (int i = 0; i < 3; i++) {
-      result.add(hints[(start + i) % hints.length]);
-    }
-    return result;
-  }
+  List<String> get _currentHintBatch => _remainingHints.take(3).toList();
 
   Future<void> _askQuestion() async {
     final text = _questionController.text.trim();
     if (text.isEmpty || _isAnalyzing) return;
 
     _questionController.clear();
+    final usedHint = _activeHint;
+    _activeHint = null;
 
     setState(() {
       _chatMessages.add({'role': 'user', 'content': text});
-      _hintBatchStart += 3;
+      if (usedHint != null) _remainingHints.remove(usedHint);
       _isAnalyzing = true;
     });
 
@@ -143,6 +142,12 @@ class _ResultPageState extends State<ResultPage>
       final query = ChatPrompts.buildQuery(
         analysisResult: widget.analysisResult,
         userQuestion: text,
+        speciesName: _species?.name ?? _notListedName,
+        speciesLatinName: _species?.latinName ?? _notListedLatinName,
+        isEndangered: _species != null,
+        populationEstimate: _species?.populationEstimate,
+        description: _species?.description,
+        facts: _species?.facts,
       );
 
       setState(() {
@@ -254,6 +259,7 @@ class _ResultPageState extends State<ResultPage>
         textTheme: textTheme,
         onSend: _askQuestion,
         onHintTap: (hint) {
+          setState(() => _activeHint = hint);
           _questionController.text = hint;
           _questionController.selection = TextSelection.fromPosition(
             TextPosition(offset: hint.length),

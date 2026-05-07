@@ -2,13 +2,18 @@
 class ChatPrompts {
   ChatPrompts._();
 
-  static const List<String> questionHints = [
-    'What does this species eat?',
-    'Where can this species be found in the wild?',
+  static const List<String> endangeredHints = [
     'Why is this species endangered?',
     'How many individuals are left in the wild?',
     'What are the main threats to this species?',
     'What conservation efforts are being made?',
+  ];
+
+  static const List<String> notEndangeredHints = [
+    'What does this species eat?',
+    'Where can this species be found in the wild?',
+    'How does this species reproduce?',
+    'What are its natural predators?',
   ];
 
   /// Build the system instruction for species identification from an image.
@@ -52,13 +57,34 @@ Rules:
   static String buildQuery({
     required String analysisResult,
     required String userQuestion,
+    String? speciesName,
+    String? speciesLatinName,
+    bool isEndangered = false,
+    String? populationEstimate,
+    String? description,
+    List<String>? facts,
   }) {
-    return '''
-Original Analysis: $analysisResult
+    final buffer = StringBuffer();
+    buffer.writeln('Original Analysis: $analysisResult');
 
-User Question: $userQuestion
+    if (speciesName != null || speciesLatinName != null) {
+      buffer.writeln();
+      buffer.writeln('Species Context:');
+      if (speciesName != null) buffer.writeln('- Common name: $speciesName');
+      if (speciesLatinName != null) buffer.writeln('- Latin name: $speciesLatinName');
+      buffer.writeln('- Conservation status: ${isEndangered ? 'ENDANGERED' : 'Not listed as endangered'}');
+      if (populationEstimate != null) buffer.writeln('- Estimated population: $populationEstimate');
+      if (description != null && description.isNotEmpty) buffer.writeln('- Description: $description');
+      if (facts != null && facts.isNotEmpty) {
+        buffer.writeln('- Key facts: ${facts.join('; ')}');
+      }
+    }
 
-Please provide a helpful response about this species based on the original analysis and the user's question.
-''';
+    buffer.writeln();
+    buffer.writeln('User Question: $userQuestion');
+    buffer.writeln();
+    buffer.writeln('Please provide a helpful response about this species based on the original analysis and the user\'s question.');
+
+    return buffer.toString();
   }
 }
