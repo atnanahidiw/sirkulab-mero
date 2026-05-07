@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -18,7 +19,9 @@ class ModelBootSplash extends StatelessWidget {
   final bool isLoading;
   final ModelBootPhase phase;
   final String? modelSize;
+  final String? downloadFilePath;
   final DownloadCallback? onConfirmDownload;
+  final Future<void> Function()? onLoadExistingModel;
   final VoidCallback? onRetry;
   final VoidCallback? onCancel;
 
@@ -30,7 +33,9 @@ class ModelBootSplash extends StatelessWidget {
     required this.isLoading,
     required this.phase,
     this.modelSize,
+    this.downloadFilePath,
     this.onConfirmDownload,
+    this.onLoadExistingModel,
     this.onRetry,
     this.onCancel,
   });
@@ -49,27 +54,6 @@ class ModelBootSplash extends StatelessWidget {
       ModelBootPhase.failed => 'Needs attention',
       ModelBootPhase.ready => 'Ready',
       ModelBootPhase.analyzing => 'Working',
-    };
-  }
-
-  String _phaseSubtitle() {
-    return switch (phase) {
-      ModelBootPhase.idle => 'Checking the model setup.',
-      ModelBootPhase.checking =>
-        'Looking for an existing model before we download anything.',
-      ModelBootPhase.needsDownload =>
-        'A machine learning model is needed to identify species.',
-      ModelBootPhase.starting => 'Getting the download ready.',
-      ModelBootPhase.downloading =>
-        'Downloading the model in the background.',
-      ModelBootPhase.resuming => '',
-      ModelBootPhase.paused => 'The download is paused. You can resume it.',
-      ModelBootPhase.canceled =>
-        'The download was canceled. Start it again when you are ready.',
-      ModelBootPhase.installing => 'Finishing local setup.',
-      ModelBootPhase.failed => 'The download failed. You can try again here.',
-      ModelBootPhase.ready => 'The model is ready and the app will open next.',
-      ModelBootPhase.analyzing => 'Processing an image with the local model.',
     };
   }
 
@@ -129,8 +113,12 @@ class ModelBootSplash extends StatelessWidget {
               Center(
                 child: _DownloadConfirmationCard(
                   modelSize: modelSize,
+                  downloadFilePath: downloadFilePath,
                   onDownload: onConfirmDownload ??
-                      ({String? customUrl, bool preferDownloadsFolder = false}) {},
+                      (
+                          {String? customUrl,
+                          bool preferDownloadsFolder = false}) {},
+                  onLoadExistingModel: onLoadExistingModel,
                   onCancel: onCancel,
                 ),
               ),
@@ -160,7 +148,8 @@ class ModelBootSplash extends StatelessWidget {
     );
   }
 
-  Widget _buildStateIndicator(BuildContext context, ColorScheme scheme, int? percent) {
+  Widget _buildStateIndicator(
+      BuildContext context, ColorScheme scheme, int? percent) {
     // Ready state
     if (phase == ModelBootPhase.ready) {
       return Center(
@@ -306,12 +295,16 @@ class _BrandMark extends StatelessWidget {
 
 class _DownloadConfirmationCard extends StatefulWidget {
   final String? modelSize;
+  final String? downloadFilePath;
   final DownloadCallback onDownload;
+  final Future<void> Function()? onLoadExistingModel;
   final VoidCallback? onCancel;
 
   const _DownloadConfirmationCard({
     this.modelSize,
+    this.downloadFilePath,
     required this.onDownload,
+    this.onLoadExistingModel,
     this.onCancel,
   });
 
@@ -330,13 +323,16 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    if (Platform.isAndroid) _checkStoragePermission();
+    if (_isAndroid) {
+      _checkStoragePermission();
+    }
   }
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && Platform.isAndroid) {
+    if (state == AppLifecycleState.resumed && _isAndroid) {
       _checkStoragePermission();
+      _maybeLoadExistingDownloadedModel();
     }
   }
 
@@ -354,6 +350,8 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
     setState(() => _storageGranted = granted);
   }
 
+  bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
+
   Future<void> _requestStoragePermission() async {
     // manageExternalStorage.request() on Android 11+ opens the dedicated
     // "Allow access to manage all files" page directly instead of generic app settings.
@@ -367,6 +365,34 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
         await Permission.storage.isGranted ||
         await Permission.manageExternalStorage.isGranted;
     setState(() => _storageGranted = granted);
+    if (!granted) {
+      return;
+    }
+
+    if (!mounted) return;
+    await _maybeLoadExistingDownloadedModel();
+  }
+
+  Future<bool> _hasStoragePermission() async {
+    return await Permission.storage.isGranted ||
+        await Permission.manageExternalStorage.isGranted;
+  }
+
+  Future<void> _maybeLoadExistingDownloadedModel() async {
+    if (!mounted || widget.onLoadExistingModel == null) {
+      return;
+    }
+
+    final filePath = widget.downloadFilePath;
+    if (filePath == null || !await File(filePath).exists()) {
+      return;
+    }
+
+    if (!await _hasStoragePermission()) {
+      return;
+    }
+
+    await widget.onLoadExistingModel!();
   }
 
   Future<void> _handleDownload() async {
@@ -386,7 +412,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
 
-    final bool needsPermission = Platform.isAndroid && !_storageGranted;
+    final bool needsPermission = _isAndroid && !_storageGranted;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -462,9 +488,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
                   children: [
                     Text(_showAdvanced ? 'Hide Advanced' : 'Advanced'),
                     Icon(
-                      _showAdvanced
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                      _showAdvanced ? Icons.expand_less : Icons.expand_more,
                     ),
                   ],
                 ),

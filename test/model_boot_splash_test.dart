@@ -1,177 +1,216 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:picture_that/services/model_boot_state.dart';
 import 'package:picture_that/widgets/model_boot_splash.dart';
 
+Future<void> runWithPlatform(
+  TargetPlatform platform,
+  Future<void> Function() body,
+) async {
+  final previous = debugDefaultTargetPlatformOverride;
+  debugDefaultTargetPlatformOverride = platform;
+  try {
+    await body();
+  } finally {
+    debugDefaultTargetPlatformOverride = previous;
+  }
+}
+
 void main() {
   group('ModelBootSplash', () {
     group('needsDownload phase', () {
       testWidgets('shows download confirmation card', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: ModelBootSplash(
-              status: 'Model download required',
-              error: null,
-              progress: null,
-              isLoading: false,
-              phase: ModelBootPhase.needsDownload,
-              onConfirmDownload: ({String? customUrl}) {},
-              onCancel: () {},
+        await runWithPlatform(TargetPlatform.iOS, () async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: ModelBootSplash(
+                status: 'Model download required',
+                error: null,
+                progress: null,
+                isLoading: false,
+                phase: ModelBootPhase.needsDownload,
+                onConfirmDownload: (
+                    {String? customUrl, bool preferDownloadsFolder = false}) {},
+                onCancel: () {},
+              ),
             ),
-          ),
-        );
+          );
 
-        expect(find.text('Download Required'), findsOneWidget);
-        expect(find.textContaining('machine learning model'), findsOneWidget);
-        expect(find.text('Download Model'), findsOneWidget);
-        expect(find.byIcon(Icons.cloud_download_outlined), findsOneWidget);
+          expect(find.text('Download Required'), findsOneWidget);
+          expect(find.textContaining('To identify species, the model'),
+              findsOneWidget);
+          expect(find.text('Download Model'), findsOneWidget);
+          expect(find.byIcon(Icons.cloud_download_outlined), findsOneWidget);
+        });
       });
 
       testWidgets('shows WiFi warning', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: ModelBootSplash(
-              status: 'Model download required',
-              error: null,
-              progress: null,
-              isLoading: false,
-              phase: ModelBootPhase.needsDownload,
-              onConfirmDownload: ({String? customUrl}) {},
+        await runWithPlatform(TargetPlatform.iOS, () async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: ModelBootSplash(
+                status: 'Model download required',
+                error: null,
+                progress: null,
+                isLoading: false,
+                phase: ModelBootPhase.needsDownload,
+                onConfirmDownload: (
+                    {String? customUrl, bool preferDownloadsFolder = false}) {},
+              ),
             ),
-          ),
-        );
+          );
 
-        expect(find.byIcon(Icons.wifi_outlined), findsOneWidget);
-        expect(find.textContaining('Connect to WiFi'), findsOneWidget);
+          expect(find.byIcon(Icons.wifi_outlined), findsOneWidget);
+          expect(find.textContaining('Connect to WiFi'), findsOneWidget);
+        });
       });
 
       testWidgets('displays model size when provided', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: ModelBootSplash(
-              status: 'Model download required',
-              error: null,
-              progress: null,
-              isLoading: false,
-              phase: ModelBootPhase.needsDownload,
-              modelSize: '1.8 GB',
-              onConfirmDownload: ({String? customUrl}) {},
+        await runWithPlatform(TargetPlatform.iOS, () async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: ModelBootSplash(
+                status: 'Model download required',
+                error: null,
+                progress: null,
+                isLoading: false,
+                phase: ModelBootPhase.needsDownload,
+                modelSize: '1.8 GB',
+                onConfirmDownload: (
+                    {String? customUrl, bool preferDownloadsFolder = false}) {},
+              ),
             ),
-          ),
-        );
+          );
 
-        expect(find.textContaining('1.8 GB'), findsOneWidget);
+          expect(find.textContaining('1.8 GB'), findsOneWidget);
+        });
       });
 
-      testWidgets('calls onConfirmDownload when Download Model pressed', (tester) async {
+      testWidgets('calls onConfirmDownload when Download Model pressed',
+          (tester) async {
         String? capturedCustomUrl;
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: ModelBootSplash(
-              status: 'Model download required',
-              error: null,
-              progress: null,
-              isLoading: false,
-              phase: ModelBootPhase.needsDownload,
-              onConfirmDownload: ({String? customUrl}) {
-                capturedCustomUrl = customUrl;
-              },
+        await runWithPlatform(TargetPlatform.iOS, () async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: ModelBootSplash(
+                status: 'Model download required',
+                error: null,
+                progress: null,
+                isLoading: false,
+                phase: ModelBootPhase.needsDownload,
+                onConfirmDownload: (
+                    {String? customUrl, bool preferDownloadsFolder = false}) {
+                  capturedCustomUrl = customUrl;
+                },
+              ),
             ),
-          ),
-        );
+          );
 
-        await tester.tap(find.text('Download Model'));
-        await tester.pump();
+          await tester.tap(find.text('Download Model'));
+          await tester.pump();
 
-        expect(capturedCustomUrl, isNull);
+          expect(capturedCustomUrl, isNull);
+        });
       });
 
-      testWidgets('shows advanced section when Advanced tapped', (tester) async {
-        await tester.pumpWidget(
-          MaterialApp(
-            home: ModelBootSplash(
-              status: 'Model download required',
-              error: null,
-              progress: null,
-              isLoading: false,
-              phase: ModelBootPhase.needsDownload,
-              onConfirmDownload: ({String? customUrl}) {},
+      testWidgets('shows advanced section when Advanced tapped',
+          (tester) async {
+        await runWithPlatform(TargetPlatform.iOS, () async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: ModelBootSplash(
+                status: 'Model download required',
+                error: null,
+                progress: null,
+                isLoading: false,
+                phase: ModelBootPhase.needsDownload,
+                onConfirmDownload: (
+                    {String? customUrl, bool preferDownloadsFolder = false}) {},
+              ),
             ),
-          ),
-        );
+          );
 
-        expect(find.text('Custom Model URL'), findsNothing);
+          expect(find.text('Custom Model URL'), findsNothing);
 
-        await tester.tap(find.text('Advanced'));
-        await tester.pumpAndSettle();
+          await tester.tap(find.text('Advanced'));
+          await tester.pumpAndSettle();
 
-        expect(find.text('Custom Model URL'), findsOneWidget);
-        expect(find.text('Leave empty to use default (Hugging Face)'), findsOneWidget);
-        expect(find.text('Download from Custom URL'), findsOneWidget);
+          expect(find.text('Custom Model URL'), findsOneWidget);
+          expect(find.byType(TextField), findsOneWidget);
+          expect(find.text('Download Model'), findsOneWidget);
+        });
       });
 
-      testWidgets('passes custom URL when downloading from custom URL', (tester) async {
+      testWidgets('passes custom URL when downloading from custom URL',
+          (tester) async {
         const testUrl = 'https://internal-server.com/model.litertlm';
         String? capturedCustomUrl;
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: ModelBootSplash(
-              status: 'Model download required',
-              error: null,
-              progress: null,
-              isLoading: false,
-              phase: ModelBootPhase.needsDownload,
-              onConfirmDownload: ({String? customUrl}) {
-                capturedCustomUrl = customUrl;
-              },
+        await runWithPlatform(TargetPlatform.iOS, () async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: ModelBootSplash(
+                status: 'Model download required',
+                error: null,
+                progress: null,
+                isLoading: false,
+                phase: ModelBootPhase.needsDownload,
+                onConfirmDownload: (
+                    {String? customUrl, bool preferDownloadsFolder = false}) {
+                  capturedCustomUrl = customUrl;
+                },
+              ),
             ),
-          ),
-        );
+          );
 
-        // Open advanced section
-        await tester.tap(find.text('Advanced'));
-        await tester.pumpAndSettle();
+          // Open advanced section
+          await tester.tap(find.text('Advanced'));
+          await tester.pumpAndSettle();
 
-        // Enter custom URL
-        await tester.enterText(find.byType(TextField), testUrl);
-        await tester.pump();
+          // Enter custom URL
+          await tester.enterText(find.byType(TextField), testUrl);
+          await tester.pump();
 
-        // Tap download from custom URL button
-        await tester.tap(find.text('Download from Custom URL'));
-        await tester.pump();
+          // Tap the main download button
+          await tester.tap(find.text('Download Model'));
+          await tester.pump();
 
-        expect(capturedCustomUrl, testUrl);
+          expect(capturedCustomUrl, testUrl);
+        });
       });
 
       testWidgets('passes null when custom URL is empty', (tester) async {
         String? capturedCustomUrl;
 
-        await tester.pumpWidget(
-          MaterialApp(
-            home: ModelBootSplash(
-              status: 'Model download required',
-              error: null,
-              progress: null,
-              isLoading: false,
-              phase: ModelBootPhase.needsDownload,
-              onConfirmDownload: ({String? customUrl}) {
-                capturedCustomUrl = customUrl;
-              },
+        await runWithPlatform(TargetPlatform.iOS, () async {
+          await tester.pumpWidget(
+            MaterialApp(
+              home: ModelBootSplash(
+                status: 'Model download required',
+                error: null,
+                progress: null,
+                isLoading: false,
+                phase: ModelBootPhase.needsDownload,
+                onConfirmDownload: (
+                    {String? customUrl, bool preferDownloadsFolder = false}) {
+                  capturedCustomUrl = customUrl;
+                },
+              ),
             ),
-          ),
-        );
+          );
 
-        // Open advanced section
-        await tester.tap(find.text('Advanced'));
-        await tester.pumpAndSettle();
+          // Open advanced section
+          await tester.tap(find.text('Advanced'));
+          await tester.pumpAndSettle();
 
-        // Leave field empty and tap download
-        await tester.tap(find.text('Download from Custom URL'));
-        await tester.pump();
+          // Leave field empty and tap download
+          await tester.tap(find.text('Download Model'));
+          await tester.pump();
 
-        expect(capturedCustomUrl, isNull);
+          expect(capturedCustomUrl, isNull);
+        });
       });
     });
 

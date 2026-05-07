@@ -3,9 +3,9 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:background_downloader/background_downloader.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'model_boot_state.dart';
 import 'species_service.dart';
@@ -205,9 +205,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       // Add timeout to prevent hanging
       await Future.any([
         FlutterGemma.installModel(
-              modelType: modelType,
-              fileType: ModelFileType.litertlm
-            )
+                modelType: modelType, fileType: ModelFileType.litertlm)
             .fromFile(filePath)
             .install(),
         Future.delayed(const Duration(minutes: 5), () {
@@ -402,7 +400,7 @@ class ModelService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final contentLength = response.headers.contentLength;
-        if (contentLength != null && contentLength > 0) {
+        if (contentLength > 0) {
           return _formatBytes(contentLength);
         }
       }
@@ -429,22 +427,57 @@ class ModelService extends ChangeNotifier {
     }
   }
 
+  bool _isAndroidDownloadPath(String filePath) {
+    if (!Platform.isAndroid) {
+      return false;
+    }
+
+    final normalized = filePath.replaceAll('\\', '/').toLowerCase();
+    return normalized.startsWith('/storage/emulated/0/download') ||
+        normalized.startsWith('/sdcard/download');
+  }
+
+  Future<bool> _hasDownloadFolderAccess() async {
+    return await Permission.storage.isGranted ||
+        await Permission.manageExternalStorage.isGranted;
+  }
+
+  Future<bool> _deferModelSetupUntilDownloadPermission(
+    String filePath, {
+    String? status,
+  }) async {
+    if (!_isAndroidDownloadPath(filePath)) {
+      return false;
+    }
+
+    if (await _hasDownloadFolderAccess()) {
+      return false;
+    }
+
+    _commitState(
+      _state.copyWith(
+        isInitialized: true,
+        isLoading: false,
+        isModelLoaded: false,
+        status: status ?? 'Model download required',
+        error: null,
+        phase: ModelBootPhase.needsDownload,
+        downloadProgress: null,
+        downloadFilePath: filePath,
+      ),
+    );
+    return true;
+  }
+
   /// Get the destination path for persistent model storage.
-  /// On Android, defaults to app-private storage (no permission needed).
-  /// Pass [preferDownloadsFolder] = true to opt into the public Downloads
-  /// folder — will silently fall back if permission is not already granted.
+  /// On Android, the model must live in the public Downloads folder so it can
+  /// be reused across launches and loaded when storage access is granted.
   Future<String> _getDownloadDestination({
     bool preferDownloadsFolder = false,
   }) async {
     String dirPath;
     if (Platform.isAndroid) {
-      if (preferDownloadsFolder &&
-          (await Permission.storage.isGranted ||
-              await Permission.manageExternalStorage.isGranted)) {
-        dirPath = '/storage/emulated/0/Download';
-      } else {
-        dirPath = (await getApplicationSupportDirectory()).path;
-      }
+      dirPath = '/storage/emulated/0/Download';
     } else {
       try {
         final downloadsDir = await getDownloadsDirectory();
@@ -508,6 +541,12 @@ class ModelService extends ChangeNotifier {
   }
 
   Future<void> _installDownloadedModel(String filePath) async {
+    if (await _deferModelSetupUntilDownloadPermission(
+      filePath,
+    )) {
+      return;
+    }
+
     _commitState(
       _state.copyWith(
         isInitialized: false,
@@ -772,6 +811,12 @@ class ModelService extends ChangeNotifier {
     final filePath = _state.downloadFilePath ?? await _getDownloadDestination();
     final fileExists = await _isDownloadedModelPresent(filePath);
     if (fileExists) {
+      if (await _deferModelSetupUntilDownloadPermission(
+        filePath,
+      )) {
+        return;
+      }
+
       await _installDownloadedModel(filePath);
       return;
     }
@@ -894,6 +939,12 @@ class ModelService extends ChangeNotifier {
         return;
       case TaskStatus.complete:
         if (await File(filePath).exists()) {
+          if (await _deferModelSetupUntilDownloadPermission(
+            filePath,
+          )) {
+            return;
+          }
+
           await _installDownloadedModel(filePath);
           return;
         }
@@ -993,6 +1044,12 @@ class ModelService extends ChangeNotifier {
         return;
       case TaskStatus.complete:
         if (await File(filePath).exists()) {
+          if (await _deferModelSetupUntilDownloadPermission(
+            filePath,
+          )) {
+            return;
+          }
+
           await _installDownloadedModel(filePath);
           return;
         }
@@ -1261,6 +1318,12 @@ class ModelService extends ChangeNotifier {
     // First check if model exists at the expected location
     final expectedFilePath = await _getDownloadDestination();
     if (await _isDownloadedModelPresent(expectedFilePath)) {
+      if (await _deferModelSetupUntilDownloadPermission(
+        expectedFilePath,
+      )) {
+        return;
+      }
+
       await _installDownloadedModel(expectedFilePath);
       return;
     }
@@ -1304,16 +1367,18 @@ class ModelService extends ChangeNotifier {
       }
 
       // 2. Common Android download path
-      searchPaths.add('/storage/emulated/0/Download');
-      debugPrint('Added Android download path');
-
-      // 3. App-specific documents directory
-      try {
-        final appDocDir = await getApplicationDocumentsDirectory();
-        searchPaths.add(appDocDir.path);
-        debugPrint('Added app documents directory: ${appDocDir.path}');
-      } catch (e) {
-        debugPrint('Could not get app documents directory: $e');
+      if (Platform.isAndroid) {
+        searchPaths.add('/storage/emulated/0/Download');
+        debugPrint('Added Android download path');
+      } else {
+        // 3. App-specific documents directory for non-Android platforms
+        try {
+          final appDocDir = await getApplicationDocumentsDirectory();
+          searchPaths.add(appDocDir.path);
+          debugPrint('Added app documents directory: ${appDocDir.path}');
+        } catch (e) {
+          debugPrint('Could not get app documents directory: $e');
+        }
       }
 
       debugPrint(
@@ -1502,7 +1567,6 @@ class ModelService extends ChangeNotifier {
       rethrow;
     }
   }
-
 
   @override
   void dispose() {
