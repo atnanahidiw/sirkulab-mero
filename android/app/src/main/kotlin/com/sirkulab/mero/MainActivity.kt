@@ -1,4 +1,4 @@
-package com.example.picturethat.picture_that
+package com.sirkulab.mero
 
 import io.flutter.embedding.android.FlutterActivity
 

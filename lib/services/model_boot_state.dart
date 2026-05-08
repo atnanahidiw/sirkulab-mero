@@ -145,7 +145,7 @@ class ModelBootStateStore {
 
   static Future<ModelBootStateStore> create() async {
     final supportDir = await getApplicationSupportDirectory();
-    final storeDir = Directory('${supportDir.path}/picture_that');
+    final storeDir = Directory('${supportDir.path}/mero');
     await storeDir.create(recursive: true);
     return ModelBootStateStore(File('${storeDir.path}/$_fileName'));
   }

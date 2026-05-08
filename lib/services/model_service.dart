@@ -75,11 +75,11 @@ class BackgroundModelDownloadBackend implements ModelDownloadBackend {
     FileDownloader().configureNotification(
       running: const TaskNotification(
         'Downloading model',
-        'Picture That is downloading {filename}',
+        'Mero is downloading {filename}',
       ),
       paused: const TaskNotification(
         'Download paused',
-        'Picture That will continue automatically.',
+        'Mero will continue automatically.',
       ),
       complete: const TaskNotification(
         'Model ready',
@@ -87,7 +87,7 @@ class BackgroundModelDownloadBackend implements ModelDownloadBackend {
       ),
       error: const TaskNotification(
         'Download failed',
-        'Picture That could not finish downloading the model.',
+        'Mero could not finish downloading the model.',
       ),
       canceled: const TaskNotification(
         'Download canceled',
@@ -205,7 +205,9 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       // Add timeout to prevent hanging
       await Future.any([
         FlutterGemma.installModel(
-                modelType: modelType, fileType: ModelFileType.litertlm)
+                modelType: modelType,
+                fileType: ModelFileType.litertlm
+            )
             .fromFile(filePath)
             .install(),
         Future.delayed(const Duration(minutes: 5), () {
@@ -293,8 +295,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 }
 
 class ModelService extends ChangeNotifier {
-  static const String _downloadGroup = 'picture_that_model_downloads';
-  static const String _downloadTaskId = 'picture_that_gemma_model';
+  static const String _downloadGroup = 'mero_model_downloads';
+  static const String _downloadTaskId = 'mero_gemma_model';
 
   final ModelDownloadBackend _downloader;
   final ModelRuntime _runtime;
@@ -318,7 +320,7 @@ class ModelService extends ChangeNotifier {
       '7fa1d78473894f7e736a21d920c3aa80f950c0db';
   final String modelUrl =
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';
-  final ModelType modelType = ModelType.gemmaIt;
+  final ModelType modelType = ModelType.gemma4;
   final int maxTokens = 2048;
 
   // Species database
@@ -477,7 +479,7 @@ class ModelService extends ChangeNotifier {
   }) async {
     String dirPath;
     if (Platform.isAndroid) {
-      dirPath = '/storage/emulated/0/Download';
+        dirPath = '/storage/emulated/0/Download';
     } else {
       try {
         final downloadsDir = await getDownloadsDirectory();
@@ -1419,6 +1421,45 @@ class ModelService extends ChangeNotifier {
     return null;
   }
 
+  /// Request storage permission for Android
+  Future<bool> _requestStoragePermission() async {
+    if (!Platform.isAndroid) return true;
+
+    // Keep asking until permission is granted or user cancels
+    while (true) {
+      // Check if we already have permission
+      if (await Permission.manageExternalStorage.isGranted) return true;
+      if (await Permission.storage.isGranted) return true;
+
+      // Request permissions with explanation
+      final status = await Permission.storage.request();
+      if (status.isGranted) return true;
+
+      final manageStatus = await Permission.manageExternalStorage.request();
+      if (manageStatus.isGranted) return true;
+
+      // If permanently denied, open settings and loop back
+      if (status.isPermanentlyDenied || manageStatus.isPermanentlyDenied) {
+        await openAppSettings();
+        // Wait a bit for user to interact with settings
+        await Future.delayed(const Duration(seconds: 2));
+        continue;
+      }
+
+      // If user denied (not permanently), wait and ask again
+      if (status.isDenied || manageStatus.isDenied) {
+        // Wait 2 seconds before asking again
+        await Future.delayed(const Duration(seconds: 2));
+        continue;
+      }
+
+      // If anything else, break and return false
+      break;
+    }
+
+    return false;
+  }
+
   Future<void> clearModel() async {
     if (_model != null) {
       // Use optimized cleanup for FlutterGemmaModelRuntime
@@ -1464,14 +1505,6 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      // Compress image with memory-aware processing
-      final compressedBytes = await ImageUtils.compressImage(
-        imageBytes,
-        maxWidth: 336,
-        maxHeight: 336,
-        quality: 85,
-      );
-
       final speciesLatinNames = _speciesList.map((s) => s.latinName).toList();
 
       final systemInstruction =
@@ -1492,7 +1525,7 @@ class ModelService extends ChangeNotifier {
         _model!,
         inputPrompt,
         systemInstruction: systemInstruction,
-        imageBytes: compressedBytes,
+        imageBytes: imageBytes,
         temperature: 0.7,
         topK: 32,
         topP: 0.9,

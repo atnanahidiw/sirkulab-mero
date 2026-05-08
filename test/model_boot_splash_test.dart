@@ -1,8 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:picture_that/services/model_boot_state.dart';
-import 'package:picture_that/widgets/model_boot_splash.dart';
+import 'package:mero/services/model_boot_state.dart';
+import 'package:mero/widgets/model_boot_splash.dart';
 
 Future<void> runWithPlatform(
   TargetPlatform platform,

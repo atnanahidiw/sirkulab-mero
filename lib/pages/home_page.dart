@@ -198,6 +198,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (!currentContext.mounted) return;
 
+      // Navigate to analyzing page
       Navigator.push(
         currentContext,
         AppPageRoute.fadeScale((_) => AnalyzingPage(rawImageBytes: bytes)),
@@ -298,8 +299,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+
+    // Dispose camera controller and cancel any pending operations
     _controller?.dispose();
     _controller = null;
+    _isCameraReady = false;
+
     super.dispose();
   }
 
@@ -316,7 +321,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         children: [
           // Full-screen camera
           Positioned.fill(
-            child: _isCameraReady ? _buildCameraPreview() : _buildCameraErrorState(),
+            child: _isCameraReady
+                ? _buildCameraPreview()
+                : _buildCameraErrorState(),
           ),
 
           // Top gradient overlay — status chip + settings button
@@ -453,8 +460,7 @@ class _ModelStatusChip extends StatelessWidget {
           size: 16, color: colorScheme.onPrimaryContainer);
       label = 'Model Ready';
     } else if (isError) {
-      icon = Icon(Icons.error_outline,
-          size: 16, color: colorScheme.error);
+      icon = Icon(Icons.error_outline, size: 16, color: colorScheme.error);
       label = 'Model Error';
     } else if (isLoading) {
       final percent = _extractPercent(modelService.status);
@@ -475,12 +481,15 @@ class _ModelStatusChip extends StatelessWidget {
     }
 
     return GestureDetector(
-      onTap: isReady ? null : () {
-        final modelService = Provider.of<ModelService>(context, listen: false);
-        if (!modelService.isLoading) {
-          modelService.downloadModel(onProgress: (_) {});
-        }
-      },
+      onTap: isReady
+          ? null
+          : () {
+              final modelService =
+                  Provider.of<ModelService>(context, listen: false);
+              if (!modelService.isLoading) {
+                modelService.downloadModel(onProgress: (_) {});
+              }
+            },
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
         decoration: BoxDecoration(
@@ -542,8 +551,8 @@ class _ModelStatusCard extends StatelessWidget {
           const SizedBox(height: 4),
           Text(
             modelService.status,
-            style: textTheme.bodySmall?.copyWith(
-                color: colorScheme.onSurfaceVariant),
+            style: textTheme.bodySmall
+                ?.copyWith(color: colorScheme.onSurfaceVariant),
           ),
           if (modelService.error != null) ...[
             const SizedBox(height: 4),

@@ -4,8 +4,8 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:picture_that/services/model_boot_state.dart';
-import 'package:picture_that/services/model_service.dart';
+import 'package:mero/services/model_boot_state.dart';
+import 'package:mero/services/model_service.dart';
 
 // Mocks
 class MockModelDownloadBackend extends Mock implements ModelDownloadBackend {}

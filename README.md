@@ -1,6 +1,6 @@
-# Picture That - Gotta Snap Them All!
+# Mero - Empowering the Guardians of Tomorrow
 
-> Don’t let them fade unseen..
+> we can’t protect what we don’t recognize
 
 A Flutter application that uses Gemma 4 AI model running locally on device to identify endangered species from images. Works offline after initial model download.
 
@@ -49,11 +49,11 @@ Add to `android/app/src/main/AndroidManifest.xml` (above `</application>`):
 <uses-native-library
     android:name="libOpenCL.so"
     android:required="false"/>
-<uses-native-library 
-    android:name="libOpenCL-car.so" 
+<uses-native-library
+    android:name="libOpenCL-car.so"
     android:required="false"/>
-<uses-native-library 
-    android:name="libOpenCL-pixel.so" 
+<uses-native-library
+    android:name="libOpenCL-pixel.so"
     android:required="false"/>
 ```
 

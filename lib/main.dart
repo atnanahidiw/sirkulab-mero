@@ -23,14 +23,14 @@ void main() async {
   final modelService = ModelService();
 
   runApp(
-    PictureThatApp(modelService: modelService),
+    MeroApp(modelService: modelService),
   );
 }
 
-class PictureThatApp extends StatelessWidget {
+class MeroApp extends StatelessWidget {
   final ModelService modelService;
 
-  const PictureThatApp({
+  const MeroApp({
     super.key,
     required this.modelService,
   });
@@ -40,7 +40,7 @@ class PictureThatApp extends StatelessWidget {
     return ChangeNotifierProvider<ModelService>.value(
       value: modelService,
       child: MaterialApp(
-        title: 'Picture That - Gotta Snap Them All!',
+        title: 'Mero - Empowering the Guardians of Tomorrow',
         theme: AppTheme.light(),
         darkTheme: AppTheme.dark(),
         themeMode: ThemeMode.system,

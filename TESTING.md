@@ -1,4 +1,4 @@
-# Testing Picture That App
+# Testing Mero App
 
 ## Test Cases
 

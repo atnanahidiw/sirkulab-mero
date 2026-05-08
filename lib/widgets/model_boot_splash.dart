@@ -1,5 +1,6 @@
 import 'dart:io';
 
+import 'package:auto_size_text/auto_size_text.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -78,29 +79,44 @@ class ModelBootSplash extends StatelessWidget {
                     _BrandMark(colorScheme: colorScheme),
                     const SizedBox(height: 24),
                     Text(
-                      'Picture That',
+                      'Mero',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.displaySmall?.copyWith(
                         color: colorScheme.onSurface,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: AutoSizeText(
+                        'Empowering the Guardians of Tomorrow',
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        minFontSize: 10,
+                        stepGranularity: 0.5,
+                        style: theme.textTheme.labelLarge?.copyWith(
+                          color: colorScheme.primary,
+                          letterSpacing: 0.3,
+                          height: 1.2,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                     ),
                     const SizedBox(height: 6),
-                    Text(
-                      'Gotta Snap Them All!',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.labelLarge?.copyWith(
-                        color: colorScheme.primary,
-                        letterSpacing: 0.5,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      'Don\'t let them fade unseen.',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        color: colorScheme.onSurfaceVariant,
-                        fontStyle: FontStyle.italic,
-                        height: 1.4,
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 8),
+                      child: AutoSizeText(
+                        'we can\’t protect what we don\’t recognize',
+                        textAlign: TextAlign.center,
+                        maxLines: 1,
+                        minFontSize: 10,
+                        stepGranularity: 0.5,
+                        style: theme.textTheme.bodySmall?.copyWith(
+                          color: colorScheme.onSurfaceVariant,
+                          fontStyle: FontStyle.italic,
+                          height: 1.2,
+                        ),
                       ),
                     ),
                     // Balance padding for visual centering

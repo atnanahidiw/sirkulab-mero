@@ -89,9 +89,9 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
       final compressedBytes = await ImageUtils.compressImage(
         widget.rawImageBytes,
-        maxWidth: 336,
-        maxHeight: 336,
-        quality: 85,
+        maxWidth: 768,
+        maxHeight: 768,  // https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4
+        quality: 92,
       );
 
       final result =

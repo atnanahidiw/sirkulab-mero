@@ -71,7 +71,7 @@ class SettingsPage extends StatelessWidget {
             context: context,
             icon: Icons.info_outlined,
             title: 'About',
-            subtitle: 'Picture That v1.0.0',
+            subtitle: 'Mero v1.0.0',
             colorScheme: colorScheme,
             textTheme: textTheme,
             onTap: () => _showAboutDialog(context),
@@ -98,8 +98,7 @@ class SettingsPage extends StatelessWidget {
             title: 'GitHub Repository',
             colorScheme: colorScheme,
             textTheme: textTheme,
-            onTap: () =>
-                _launchUrl('https://github.com/example/picture-that'),
+            onTap: () => _launchUrl('https://github.com/example/mero'),
           ),
 
           // Conservation Resources section
@@ -351,14 +350,16 @@ class SettingsPage extends StatelessWidget {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About Picture That'),
+        title: const Text('About Mero'),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Gotta Snap Them All!',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              const Text(
+                'Empowering the Guardians of Tomorrow',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               const Text('Version: 1.0.0'),
               const SizedBox(height: 16),

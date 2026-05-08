@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 
-import 'package:picture_that/services/model_service.dart';
+import 'package:mero/services/model_service.dart';
 
 void main() {
   test('cancellation error descriptions are detected', () {
