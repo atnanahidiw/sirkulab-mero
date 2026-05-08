@@ -1,0 +1,45 @@
+{
+  "common_name": "Jati",
+  "latin_name": "Tectona grandis",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Lamiales",
+  "family": "Lamiaceae",
+  "genus": "Tectona",
+  "visual_features": "Teak is a large deciduous tree reaching up to 40 m (131 ft) tall with grey to greyish-brown branches. Its leaves are ovate-elliptic to ovate, 15-45 cm long by 8-23 cm wide, held on robust petioles 2-4 cm long, with entire margins. The large, papery leaves are often hairy on the lower surface. Fragrant white flowers are borne on 25-40 cm long panicles from June to August; each flower is small with a 2.5-3 mm corolla tube and 2 mm wide obtuse lobes. Fruits are globose, 1.2-1.8 cm in diameter, ripening from September to December. The tree produces high-quality heartwood that is yellowish to golden-brown with a leather-like smell when freshly cut, darkening with age. The heartwood is naturally oily, making it termite- and pest-resistant.",
+  "description": "Teak (Tectona grandis, locally known as Jati) is a tropical hardwood tree species in the mint family (Lamiaceae). Native to south and southeast Asia including India, Myanmar, Thailand, Laos, Indonesia, and Bangladesh, it is one of the world's most valuable timber trees. Teak wood is particularly prized for its durability, water resistance, and natural oils. The species has been classified as Endangered on the IUCN Red List because natural teak populations and their habitats have been decreasing consistently due to illegal logging and deforestation. Myanmar's teak forests account for nearly half of the world's naturally occurring teak. Molecular studies show two genetic origins: one in India and another in Myanmar and Laos.",
+  "conservation_status": "Endangered",
+  "population_estimate": "Natural teak populations and their habitats have been decreasing consistently across its native range. In Myanmar, which holds the largest natural teak forests, populations have declined significantly due to illegal logging. The species is listed as Endangered by IUCN. While widely planted in plantations globally (especially in Indonesia, India, and Latin America), natural old-growth teak forests have been severely depleted. The species is threatened by illegal logging in countries with natural teak forests, including India and Myanmar.",
+  "habitat": "Teak grows in mixed hardwood forests across south and southeast Asia. It is found in a variety of habitats and climatic conditions from arid areas with only 500 mm of rain per year to very moist forests with up to 5,000 mm of rain annually. Typically, teak thrives where annual rainfall averages 1,250-1,650 mm with a 3-5 month dry season. It occurs naturally in India, Bangladesh, Sri Lanka, Indonesia (Java and surrounding islands), Myanmar, northern Thailand, northwestern Laos, and southern Vietnam.",
+  "habitat_tags": [
+    "tropical dry forest",
+    "mixed hardwood forest",
+    "deciduous forest",
+    "monsoon forest",
+    "savanna woodland"
+  ],
+  "threats": [
+    "Illegal logging in countries with natural teak forests",
+    "Depletion of rare old-growth teak forests due to overharvesting",
+    "Deforestation for agricultural land conversion",
+    "Habitat fragmentation across its native range",
+    "Poor forest governance enabling illegal timber trade"
+  ],
+  "ecosystem_role": "Teak trees play a significant role in tropical dry and monsoon forest ecosystems. They provide canopy cover that moderates understory microclimate, contribute leaf litter that enriches forest soils, and offer nesting sites and food for various bird and insect species. The flowers attract pollinators including bee species from the genus Ceratina. Teak forests support diverse understory vegetation and wildlife. Stands of teak also help prevent soil erosion and regulate local water cycles.",
+  "human_connection": "Teak is among the most culturally and economically important timber trees in the world, used for boat building, exterior construction, furniture, veneer, carving, and small projects. In Indonesia, Java's state-owned forest enterprise (Perum Perhutani) manages extensive teak plantations producing outdoor furniture for export. The wood's natural oils make it durable in exposed locations without needing treatment. However, high demand has driven illegal logging and depletion of natural forests. The illegal timber trade in teak is subject to international regulations including the EU Timber Regulation. The longest teak bridge in the world, U Bein Bridge in Myanmar, stretches 1.2 km.",
+  "what_students_can_do": [
+    "Research sustainable forestry and certification systems like the Forest Stewardship Council (FSC)",
+    "Study the difference between plantation-grown teak and old-growth teak in terms of quality and environmental impact",
+    "Learn about international timber regulations and their role in combating illegal logging",
+    "Support reforestation projects that restore native mixed hardwood forests rather than monoculture plantations",
+    "Investigate the traditional uses of teak in Indonesian and Southeast Asian cultures"
+  ],
+  "fun_fact": [
+    "Teak wood has a distinctive leather-like smell when freshly milled, making it easy to identify",
+    "The world's longest teak bridge, U Bein Bridge in Myanmar, stretches 1.2 km (0.75 miles) across a lake",
+    "Teak's natural oils make it one of the few timbers that is durable even without any treatment with oil or varnish",
+    "The word 'teak' derives from the Malayalam word 'thekku' via Portuguese 'teca'",
+    "Flowering plants (angiosperms) produce over 80% of the food that humans eat worldwide, and teak belongs to this group"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/62019897/62019910"
+}

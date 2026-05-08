@@ -1,0 +1,42 @@
+{
+  "common_name": "Climbing Swamp Fern",
+  "latin_name": "Stenochlaena palustris",
+  "kingdom": "Plantae",
+  "class": "Polypodiopsida",
+  "order": "Polypodiales",
+  "family": "Blechnaceae",
+  "genus": "Stenochlaena",
+  "visual_features": "A coarse, climbing fern with stems that can reach indefinite length. The rhizomes attach themselves to tree trunks using adhesive roots. Stems are brown, smooth, less than 1 centimeter in diameter and sparingly branched. Sterile fronds can grow up to 80 centimeters in length, while fertile fronds are somewhat shorter.",
+  "description": "Stenochlaena palustris is an important ecological and economic plant found in swampy areas across Southeast Asia and the Pacific. This adaptable fern can thrive in both full sun and deep shade, making it highly versatile in different forest conditions. The plant has significant cultural importance as a food source, with young shoots consumed raw as salad or cooked in various dishes. Additionally, it plays a crucial role in traditional medicine due to its antibacterial properties.",
+  "conservation_status": "Endangered",
+  "population_estimate": "Exact population estimates are not widely available, but the species is classified as Endangered due to habitat loss and overharvesting for local use (IUCN assessment)",
+  "habitat": "Open places and secondary forests at elevations from near sea level to 400 meters. Widely distributed in thickets, usually in swampy places near the sea. Also found in paperbark swamp forests, palm swamp forests, and creek banks in rainforest areas.",
+  "habitat_tags": [
+    "swamp forest",
+    "secondary forest",
+    "coastal forest",
+    "mangrove",
+    "paperbark swamp",
+    "palm swamp"
+  ],
+  "threats": [
+    "Habitat loss due to deforestation and land conversion",
+    "Overharvesting for local use as food and fiber",
+    "Climate change affecting swamp ecosystems",
+    "Pollution of coastal and swamp habitats"
+  ],
+  "ecosystem_role": "Provides ground cover in shady forest areas, helps prevent soil erosion in swampy regions, and serves as a habitat for various small organisms. The plant's extensive root system helps stabilize soil in wetland ecosystems.",
+  "human_connection": "Young shoots are consumed as a vegetable salad (lalab) with rice or in soups, particularly in Java. The stems are highly valued for making durable ropes and bindings for fish traps due to their strength when submerged in salt water. Traditional medicine uses the plant for its antibacterial properties.",
+  "what_students_can_do": [
+    "Research traditional uses of ferns in local communities",
+    "Study the ecological importance of ferns in wetland ecosystems",
+    "Document traditional knowledge about medicinal plants",
+    "Learn about sustainable harvesting practices for non-timber forest products"
+  ],
+  "fun_fact": [
+    "The young leaves are wine-red in color and are used to make soup with the same distinctive color",
+    "The plant contains five flavonol glycosides (stenopalustrosides A-E) that show significant activity against gram-positive bacteria",
+    "Stems are noted for their durability when submerged in salt water, making them ideal for fish trap construction"
+  ],
+  "population_estimate_source_uri": "https://tropical.theferns.info/viewtropical.php?id=Stenochlaena+palustris"
+}

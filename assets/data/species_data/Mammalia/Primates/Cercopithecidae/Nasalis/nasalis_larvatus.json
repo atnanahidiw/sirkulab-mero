@@ -1,0 +1,39 @@
+{
+  "common_name": "Proboscis Monkey",
+  "latin_name": "Nasalis larvatus",
+  "kingdom": "Animalia",
+  "class": "Mammalia",
+  "order": "Primates",
+  "family": "Cercopithecidae",
+  "genus": "Nasalis",
+  "visual_features": "A large arboreal Old World monkey with a remarkably large, fleshy nose (proboscis) that can exceed 10.2 cm in length in males and hangs below the mouth. Females have a smaller, upturned nose. Sexual dimorphism is pronounced: males have a head-body length of 66-76 cm and weigh 16-22.5 kg (up to 30 kg), while females measure 53-62 cm and weigh 7-12 kg (up to 15 kg). The coat is long with bright orange, reddish-brown or brick-red fur on the back and light-grey to yellowish underfur. Both sexes have bulging stomachs creating a pot-bellied appearance. Infants are born with blue faces that darken to grey by 2.5 months and become cream-coloured by 8.5 months. The tail is long and the toes are partially webbed for swimming.",
+  "description": "The proboscis monkey or long-nosed monkey (Nasalis larvatus) is an arboreal Old World monkey endemic to the Southeast Asian island of Borneo. It belongs to the subfamily Colobinae and is the only species in the monotypic genus Nasalis. It is found mostly in mangrove forests and coastal areas of Brunei, Indonesia (Kalimantan) and Malaysia (Sabah and Sarawak). Two subspecies are recognized: N. l. larvatus (entire range except northeast Kalimantan) and N. l. orientalis (northeast Kalimantan). It is one of the largest monkey species native to Asia and is perhaps the most aquatic of all primates, capable of swimming up to 20 meters underwater. The species is listed as Endangered on the IUCN Red List and on CITES Appendix I.",
+  "conservation_status": "Endangered",
+  "population_estimate": "Total population estimated at roughly 20,000-25,000 individuals across Borneo but declining rapidly due to habitat loss. In Sabah, a minimum of 5,907 individuals were estimated in surveys. In Sarawak, fewer than 1,000 animals remain in patchily distributed populations. In Kalimantan, the population size is poorly documented but believed to be declining. The species has experienced significant population reductions across its range over the past 40 years, primarily due to deforestation for oil palm plantations and other agricultural expansion.",
+  "habitat": "Strictly restricted to lowland habitats near water sources, usually within at least 1 km of rivers or coasts. Favors dipterocarp forests, mangrove forests, and riverine forests. Also found in swamp forests, stunted swamp forests, rubber forests, nypa palm swamps, nibong palm swamps, tropical heath forests, limestone hill forests, and steep cliffs. It is endemic to Borneo and most common in coastal areas and along rivers. The species is highly aquatic and an excellent swimmer, often crossing rivers and even swimming underwater to escape predators.",
+  "habitat_tags": ["mangrove", "riverine forest", "coastal forest", "swamp forest", "lowland dipterocarp", "Borneo endemic"],
+  "threats": [
+    "Deforestation for oil palm plantation expansion - the primary threat across Borneo",
+    "Habitat fragmentation isolating populations and reducing genetic diversity",
+    "Logging of riverine and mangrove forests",
+    "Human-wildlife conflict in areas where monkeys raid crops",
+    "Hunting for bushmeat and traditional medicine in some regions",
+    "Forest fires, particularly in Kalimantan during drought years",
+    "Small population sizes in Sarawak making local extinctions likely"
+  ],
+  "ecosystem_role": "As a large-bodied folivore and frugivore, the proboscis monkey plays a vital role in seed dispersal through riverine and mangrove forests. They consume at least 55 different plant species and disperse seeds through their digestive system, helping maintain forest regeneration. As a seasonal eater (fruits from January to May, leaves from June to December), they influence forest composition seasonally. They also serve as prey for Sunda clouded leopards, crocodiles, and pythons, forming a key link in the Bornean food web.",
+  "human_connection": "The proboscis monkey is a flagship species for Bornean conservation, recognized worldwide for its distinctive appearance. It is a major draw for wildlife tourism in Sabah (especially along the Kinabatangan River) and Sarawak, providing economic incentives for forest protection. The species' specialized habitat requirements make it highly vulnerable to deforestation for oil palm, which has converted vast areas of Borneo's lowland forests. Conservation groups like the Proboscis Monkey Conservation Program work with local communities to protect remaining habitat. The proboscis monkey appears on the RM1 Malaysian banknote.",
+  "what_students_can_do": [
+    "Learn about the connection between palm oil consumption and deforestation of proboscis monkey habitat",
+    "Support certified sustainable palm oil (RSPO) products instead of uncertified sources",
+    "Donate to or fundraise for organizations protecting Bornean rainforests such as the Borneo Nature Foundation",
+    "Reduce paper consumption to help protect forests from logging",
+    "Share information about this unique species to raise awareness of Borneo's endangered biodiversity"
+  ],
+  "fun_fact": [
+    "The male proboscis monkey's enormous nose may act as a resonance chamber to amplify its honking calls, helping attract females - the bigger the nose, the louder the call!",
+    "Proboscis monkeys are among the most aquatic primates - they can swim up to 20 meters underwater and have partially webbed toes to help them paddle.",
+    "Infant proboscis monkeys are born with blue faces that gradually change colour, turning grey at 2.5 months and cream-coloured by 8.5 months of age."
+  ],
+  "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Proboscis_monkey"
+}

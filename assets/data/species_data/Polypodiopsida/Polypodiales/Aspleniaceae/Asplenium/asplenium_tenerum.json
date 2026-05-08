@@ -1,0 +1,50 @@
+{
+  "common_name": "Tender Spleenwort",
+  "latin_name": "Asplenium tenerum",
+  "kingdom": "Plantae",
+  "class": "Polypodiopsida",
+  "order": "Polypodiales",
+  "family": "Aspleniaceae",
+  "genus": "Asplenium",
+  "visual_features": "A lithophytic fern (growing on rocks) with erect, scaly rhizomes. Rhizome scales are blackish-brown with pale reddish-brown edges, triangular, 3-5 mm, with fimbriate to subentire margins. Stipe (stalk) 5-30 cm long, 0.5-1 mm in diameter, green or stramineous (straw-colored) when dry, with very scattered scales, mainly green except at extreme base. Lamina (frond blade) is narrowly ovate to narrowly triangular or linear, pinnate, 11-50 cm long, 4-14 cm wide, pale green, subleathery, and grayish-green when dry. Pinnae (leaflets) in 10-35 pairs, ±oblong, 2-5 cm long, 1-1.5 cm wide, with deeply and regularly crenate (rounded-toothed) margins, shortly stalked. Sori (spore clusters) are linear, about 3 mm long, located median on veins. Indusia (protective covers) are whitish to gray-brown, linear, membranous, and entire, opening toward the costa (midrib). Fronds are caespitose (growing in dense tufts). The rachis (midrib) is stramineous when dry with hastate-stellate fibrillar scales and has a median supravascular ridge on the adaxial side; sometimes gemmiferous (bearing buds) near the apex. Plants grow 30-65 cm tall.",
+  "description": "A fern species in the family Aspleniaceae, first described by German botanist Johann Georg Adam Forster in 1786 based on specimens from the Pacific Islands (type locality). It is a highly variable taxon distributed across a wide range from Sri Lanka and southern India, through mainland Southeast Asia (Thailand, Myanmar, Vietnam), China (Hainan, Taiwan), Japan (Ryukyu Islands), and across the Pacific to Polynesia. Also found in Australia (NE Queensland - Mt Carbine to Atherton Tablelands). A. tenerum is an aggregate of closely related forms — plants with gemmiferous (bud-bearing) rachises from China, Taiwan, Indonesia, Japan, and Malaysia may represent a different taxon. Indian plants are tetraploid, while chromosome numbers of Chinese material remain unknown. The species prefers moist, shaded environments, colonizing rock crevices in high-rainfall forests. Classified as Endangered (EN) on the IUCN Red List, facing habitat loss pressures across its range.",
+  "conservation_status": "Endangered",
+  "population_estimate": "Exact population numbers not available. The species has been assessed as Endangered (EN) on the IUCN Red List with a decreasing population trend across its Southeast Asian range. Threats include habitat destruction from deforestation, climate change impacts on montane cloud forest habitats, and possible collection for ornamental horticultural trade. Scattered distribution across isolated populations in the Palaeotropics makes comprehensive population assessment challenging.",
+  "population_estimate_source_uri": "http://www.efloras.org/florataxon.aspx?flora_id=2&taxon_id=200004175",
+  "habitat": "Wide distribution across the Palaeotropics: Sri Lanka and southern India, Indochina (Thailand, Myanmar, Vietnam), China (Hainan and Taiwan), Japan (Ryukyu Islands), Malaysia, Indonesia, Philippines, New Guinea, and Pacific islands (Polynesia). Also in NE Queensland, Australia (Mt Carbine to Atherton Tablelands). Grows on rocks in dense forests at elevations of 400-1,000 m. In Australia, found as lithophytic on rocks and boulders near creeks in high-rainfall high-altitude vine forest. Thrives in moist, shaded environments with high humidity. Can grow on tree trunks (epiphytic) as well as rocks.",
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "montane",
+    "lithophytic",
+    "epiphytic",
+    "understory",
+    "Southeast_Asia",
+    "Pacific_islands"
+  ],
+  "threats": [
+    "Habitat destruction and deforestation across its range",
+    "Climate change affecting montane cloud forest habitats and moisture availability",
+    "Limited and scattered distribution making populations vulnerable to localized extinction",
+    "Possible collection for ornamental trade",
+    "Loss of forest understory microhabitats from logging and land conversion",
+    "Invasive species competition in some island ecosystems"
+  ],
+  "ecosystem_role": "As a lithophytic fern, helps retain soil moisture on rocky surfaces, prevent erosion, and create microhabitats for insects, bryophytes, and small organisms in the forest understory. Ferns of the genus Asplenium are pioneer colonizers on rock faces, initiating soil formation processes. Their fronds contribute organic matter to forest floors when shed. Their presence indicates intact forest ecosystems with high humidity and consistent moisture. As spore-producing plants, they provide food for various invertebrates and contribute to overall forest biodiversity and nutrient cycling.",
+  "human_connection": "Asplenium tenerum, like many spleenworts, is of interest to fern enthusiasts, botanists, and horticulturists. Ferns of the Asplenium genus have a long history in traditional medicine — the name 'spleenwort' derives from the ancient Doctrine of Signatures, where spleen-shaped leaf markings were believed to indicate usefulness for treating spleen ailments. While less commonly cultivated than some ornamental ferns, A. tenerum is valued for its delicate, elegant fronds in specialized collections. The species contributes to scientific understanding of fern taxonomy and evolution, particularly the study of species complexes and polyploidy (Indian plants are tetraploid).",
+  "what_students_can_do": [
+    "Learn about fern ecology and the importance of non-flowering plants in forest ecosystems",
+    "Support forest conservation initiatives that protect understory habitats",
+    "Study the impacts of climate change on montane cloud forest species",
+    "Participate in botanical surveys and herbarium digitization projects",
+    "Raise awareness about the diversity and importance of ferns in tropical ecosystems",
+    "Support protected area management that includes non-charismatic plant species"
+  ],
+  "fun_fact": [
+    "Ferns are among the oldest land plants on Earth, appearing in the fossil record over 360 million years ago — long before the dinosaurs",
+    "Asplenium tenerum is part of a variable species complex — plants with bud-bearing fronds from different regions may actually represent separate, yet-undescribed species",
+    "Unlike flowering plants, ferns reproduce through tiny spores rather than seeds — a single frond can produce millions of microscopic spores",
+    "The name 'spleenwort' comes from the ancient Doctrine of Signatures — physicians once believed spleen-shaped fern leaf markings indicated the plant could treat spleen ailments",
+    "Indian populations of Asplenium tenerum are tetraploid (having four sets of chromosomes), while the chromosome count of Chinese populations remains unknown — an ongoing botanical mystery"
+  ]
+}

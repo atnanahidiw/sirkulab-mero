@@ -1,0 +1,38 @@
+{
+  "common_name": "Rhinoceros Hornbill",
+  "latin_name": "Buceros rhinoceros",
+  "kingdom": "Animalia",
+  "class": "Aves",
+  "order": "Bucerotiformes",
+  "family": "Bucerotidae",
+  "genus": "Buceros",
+  "visual_features": "The rhinoceros hornbill is a large arboreal hornbill, 80 to 90 cm (31-35 in) long. Males weigh around 2,465 to 2,960 g (87.0-104.4 oz) and females 2,040 to 2,330 g (72-82 oz). The plumage is predominantly black with white legs and vent and a white tail with a black band. The huge bill and casque are orange and red, with the colour coming from preen oil rubbed on from the preen gland above the tail. Males have red eyes with black rims, while females have white eyes with red rims.",
+  "description": "The rhinoceros hornbill is a large forest hornbill found in lowland and montane tropical rainforests up to 1,400 metres in Borneo, Sumatra, Java, the Malay Peninsula, Singapore, and southern Thailand. Its diet is dominated by fruit, but it will also take insects, small reptiles, rodents, and smaller birds it can catch. Courtship and bonding are critical as the female must trust the male to provide her with everything during incubation. These hornbills nest inside tree trunks and the female stays inside with eggs and chicks while the male brings food. After eggs are laid, the pair collect mud and pack it along with food and feces to wall up the entrance to the tree cavity, leaving only a small hole for feeding. In captivity they can live for up to 35 years.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Fewer than 10,000 mature individuals estimated globally, with a decreasing population trend. The species was uplisted from Near Threatened to Vulnerable on the IUCN Red List in 2018 due to accelerating habitat loss and hunting pressure across its range.",
+  "habitat": "Found in lowland and montane tropical and subtropical rainforests up to 1,400 metres elevation in Borneo, Sumatra, Java, the Malay Peninsula, Singapore, and southern Thailand. Requires large, mature forest trees with suitable cavities for nesting. Occurs in several large protected areas including Taman Negara National Park (Malaysia), Gunung Leuser and Way Kambas National Parks (Sumatra), and Berbak Game Reserve.",
+  "habitat_tags": ["tropical", "rainforest", "lowland_forest", "montane_forest", "southeast_asia", "borneo", "sumatra", "tree_cavity_nesting"],
+  "threats": [
+    "Loss of rainforest habitat from logging and conversion to palm oil plantations",
+    "Hunting for meat, skull, and feathers",
+    "Loss of large nest trees needed for breeding",
+    "Shooting due to confusion with the highly sought-after helmeted hornbill",
+    "Poaching for illegal wildlife trade"
+  ],
+  "ecosystem_role": "As a large frugivorous bird, the rhinoceros hornbill plays a vital role in seed dispersal for many rainforest tree species, particularly large-fruited trees whose seeds are too big for smaller birds. By dispersing seeds across the forest, hornbills contribute directly to forest regeneration and maintain the genetic diversity and health of tropical rainforest ecosystems. They also help control insect populations when feeding on animal prey.",
+  "human_connection": "The rhinoceros hornbill is the state bird of Sarawak, Malaysia, and the country's national bird. Some Dayak people, especially Ibanic groups, believe it to be the chief of worldly birds, and its statue is used to welcome the god of augural birds to feasts and celebrations. It is featured on the reverse of the 5 Malaysian ringgit banknote. The species is protected under CITES Appendix II and Indonesian law, but habitat destruction continues to threaten its survival.",
+  "what_students_can_do": [
+    "Support sustainable palm oil certification to protect Southeast Asian rainforests",
+    "Learn about hornbill conservation programs like the Rangkong Indonesia initiative",
+    "Participate in reforestation efforts and habitat restoration projects",
+    "Educate others about the threat of illegal wildlife trade to hornbills",
+    "Support protected areas like Taman Negara and Gunung Leuser National Parks"
+  ],
+  "fun_fact": [
+    "The rhinoceros hornbill is the national bird of Malaysia and appears on the 5 Malaysian ringgit note",
+    "During nesting, the female seals herself inside a tree cavity with mud and feces, leaving only a tiny slit for the male to pass food through",
+    "Its bright orange and red bill color comes from preen oil that the bird rubs from a gland above its tail",
+    "Despite its size, the rhinoceros hornbill can live up to 35 years in captivity"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/22682453/184603863"
+}

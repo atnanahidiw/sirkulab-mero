@@ -1,0 +1,40 @@
+{
+  "common_name": "Javan Rusa",
+  "latin_name": "Rusa timorensis",
+  "kingdom": "Animalia",
+  "class": "Mammalia",
+  "order": "Cetartiodactyla",
+  "family": "Cervidae",
+  "genus": "Rusa",
+  "visual_features": "Large deer with coarse, dark blackish-brown coat and gray forehead. Back almost black, underparts and inner thighs yellowish-brown, abdomen lighter brown. Tail tuft dark blackish-brown. Hair coarse, longer on chest. Ears wide and shorter than head. Males have medium-long, lyre-shaped, three-tined antlers (~2.5 kg). Males larger (142-185 cm head-to-body, 152-160 kg) than females (~74 kg). Fawns born without spots.",
+  "description": "The Javan rusa (also known as Sunda sambar or Timor deer) is a large deer species native to Indonesia and Timor-Leste, with seven recognised subspecies. It has been widely introduced across the Southern Hemisphere including Australia, New Zealand, Mauritius, Fiji, and many Pacific islands. Despite being common in introduced ranges, its native population has declined markedly by approximately 10,000 individuals in the past two decades due to poaching and habitat loss. Declared a protected species under Indonesian law in 2018. The word 'rusa' is Malay for 'deer'.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Approximately 10,000 individuals lost from native range in past two decades (Java, Bali, Timor). Still common in introduced ranges (Australia, New Zealand, Mauritius, Fiji, many Pacific islands). Listed as Vulnerable on IUCN Red List.",
+  "habitat": "Primarily found in deciduous forests, plantations, and grasslands in Southeast Asian islands. Prefers forest edges. Inhabits tropical dry forests, open scrub, savannas, shrublands, and marshes from sea level to 900 m. Nocturnal, rarely seen in open areas. Prefers environments with access to grass, leaves, and fallen fruit for food.",
+  "habitat_tags": ["tropical", "forest", "grassland", "savanna", "southeast_asia", "island"],
+  "threats": [
+    "Poaching and hunting for bushmeat and antlers",
+    "Habitat loss from deforestation and agricultural expansion",
+    "Invasive thorny acacia (Vachellia nilotica) destroying grazing areas in Baluran National Park",
+    "Competition with domestic livestock for pasture",
+    "Land conversion destroying grazing areas",
+    "Crop raiding leading to human-wildlife conflict"
+  ],
+  "ecosystem_role": "Javan rusa help disperse seeds in the forest as they forage on leaves, grass, and fallen fruit. They serve as important prey for native predators including dhole, estuarine crocodiles, reticulated pythons, and Komodo dragons on Rinca, Komodo, and Flores islands. Their grazing helps maintain grassland ecosystems and forest edges.",
+  "human_connection": "Javan rusa have a complex relationship with humans. They are farmed commercially in Australia for venison production, with 50% of farmed deer in Queensland being this species. Their shed antlers are collected for Asian medicine and jewelry. The deer appears on the 1988 Indonesian 500 rupiah banknote. However, they compete with domestic livestock for pasture in Indonesia and damage agricultural crops. Introduced by the Dutch to New Guinea in the early 1900s.",
+  "what_students_can_do": [
+    "Study the impacts of introduced deer species on native ecosystems in Australia and Pacific islands",
+    "Learn about sustainable deer farming and venison production",
+    "Research invasive species management and control of thorny acacia",
+    "Support conservation of Baluran National Park and other protected areas",
+    "Investigate human-wildlife coexistence strategies in agricultural areas"
+  ],
+  "fun_fact": [
+    "The word 'rusa' is Malay for 'deer' and also lends its name to the genus Rusa",
+    "When alarmed, a rusa stag lets out an extremely loud honk that alerts other deer in the vicinity",
+    "They hardly drink water because most fluid requirements are met by the food they consume",
+    "The species has been introduced to over 20 countries and islands across the Southern Hemisphere",
+    "They were introduced by the Dutch to New Guinea in the early 1900s and have since become widely dispersed"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/41789/22156866"
+}

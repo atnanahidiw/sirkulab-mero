@@ -1,0 +1,48 @@
+{
+  "common_name": "Variable Harlequin Frog",
+  "latin_name": "Atelopus varius",
+  "kingdom": "Animalia",
+  "class": "Amphibia",
+  "order": "Anura",
+  "family": "Bufonidae",
+  "genus": "Atelopus",
+  "visual_features": "The Variable Harlequin Frog is a small, slender amphibian measuring only 2.4-3.8 cm (1-1.5 inches) in length. It has a distinctive pointy snout and highly variable coloration - its dorsal surface is typically black or brown overlaid with a mosaic of spots and streaks in almost any combination of orange, red, yellow, blue, or green. The belly is marbled with white, yellow, orange, and/or red patterns. Unlike many frogs, its toes are pointed without adhesive discs, making it well-adapted to its forest floor habitat. Its bright colors serve as aposematic warning signals about its toxicity.",
+  "description": "The Variable Harlequin Frog is a remarkable amphibian species found in the rainforests of Costa Rica and northwestern South America. This small frog is part of the harlequin toad genus (Atelopus), which is renowned for its stunning array of colors and patterns, earning them the nickname 'clown frogs.' The species has a fascinating reproductive strategy, laying eggs in long strings in shallow moving waters where the tadpoles develop with abdominal suckers to prevent being swept away by currents. Males lack vocal sacs and instead attract females through visual displays including leg twitching, ground stamping, and hopping behaviors.",
+  "conservation_status": "Critically Endangered",
+  "population_estimate": "Severely fragmented with continuing decline; many populations feared extinct, though some rediscoveries have occurred",
+  "habitat": "The Variable Harlequin Frog inhabits moist environments of tropical rainforests, from lowlands up to cloud forests. They are typically found near streams and other sources of moving water where they breed. These frogs require specific microhabitats with clean water for breeding and humid forest conditions for survival. Their habitat is primarily undisturbed forest areas with adequate canopy cover to maintain the humidity levels they need. The species has shown a preference for areas with abundant leaf litter and rocky substrates near water bodies.",
+  "threats": [
+    "Chytridiomycosis - a deadly fungal disease that causes heart failure in amphibians",
+    "Habitat loss due to deforestation and land conversion",
+    "Climate change affecting temperature and humidity patterns",
+    "Pollution of water sources where they breed",
+    "Collection for the pet trade",
+    "Agricultural runoff and pesticide contamination",
+    "Disease emergence and spread"
+  ],
+  "ecosystem_role": "As an insectivorous species, the Variable Harlequin Frog plays an important role in controlling insect populations in forest ecosystems. They are particularly valuable as predators of small insects like flies and gnats on the forest floor. As a bioindicator species, their presence and health reflect the overall condition of their ecosystem. Their decline signals broader environmental problems affecting amphibians worldwide. The species also contributes to nutrient cycling through their role in the food web.",
+  "human_connection": "The Variable Harlequin Frog holds significant cultural value in some Central and South American countries, where it is often featured in local folklore and traditional stories. Its stunning beauty has made it popular in nature photography and conservation campaigns. The species has become a flagship species for amphibian conservation efforts, symbolizing the global amphibian crisis. Several subspecies are protected under international agreements like CITES Appendix I, recognizing their conservation importance. The harlequin toads have inspired scientific research into amphibian diseases and conservation strategies.",
+  "what_students_can_do": [
+    "Learn about amphibian conservation and the chytrid fungus threat",
+    "Support organizations working on amphibian disease research",
+    "Reduce pesticide use and promote water conservation",
+    "Participate in citizen science projects monitoring amphibian populations",
+    "Educate others about the importance of amphibians in ecosystems"
+  ],
+  "fun_fact": [
+    "The Variable Harlequin Frog gets its name from its highly variable coloration - no two individuals have exactly the same pattern of spots and streaks",
+    "These frogs possess potent skin secretions containing toxins that deter predators, with some compounds showing potential for pharmaceutical research",
+    "Males don't call like most frogs - they attract females through elaborate visual displays including leg twitching, ground stamping, and hopping",
+    "The species has shown some surprising resilience in areas where chytrid fungus is present, with some populations developing natural resistance",
+    "Harlequin toads have been described as the 'jewels of the Neotropics' due to their stunning beauty and diversity of colors and patterns"
+  ],
+  "population_estimate_source_uri": "https://www.atelopus.org/post/new-paper-atelopus-conservation",
+  "habitat_tags": [
+    "montane",
+    "stream",
+    "tropical",
+    "rainforest",
+    "central_america",
+    "costa_rica"
+  ]
+}

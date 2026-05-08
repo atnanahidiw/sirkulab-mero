@@ -1,0 +1,42 @@
+{
+  "common_name": "Maleo",
+  "latin_name": "Macrocephalon maleo",
+  "kingdom": "Animalia",
+  "class": "Aves",
+  "order": "Galliformes",
+  "family": "Megapodiidae",
+  "genus": "Macrocephalon",
+  "visual_features": "The Maleo is a large megapode, 55–60 cm long, with blackish plumage covering most of the body and rosy salmon-colored underparts. It has bare yellow facial skin, a reddish-orange beak, and reddish-brown irises. The most distinctive feature is a prominent, bony, dark casque (helmet) on the crown — the origin of its genus name Macrocephalon (Greek: 'large head'). The greyish-blue feet have four long sharp claws separated by a membranous web. Sexes are similar but females are slightly smaller and duller. Juveniles are browner with paler heads and short blackish-brown crests.",
+  "description": "The Maleo is a unique megapode bird and the only member of the monotypic genus Macrocephalon. It is endemic to the Indonesian island of Sulawesi and the nearby island of Buton. Unlike any other bird, the Maleo relies entirely on external heat sources — solar-heated beaches and geothermally heated forest soils — to incubate its eggs. The female lays a single large egg (about five times the size of a domestic chicken egg) in a deep hole in warm sand, buries it, and leaves it to incubate naturally. The chick hatches fully developed, digs its way up through the sand, and is immediately independent — able to fly and find food on its own. This extraordinary reproductive strategy makes the Maleo extremely vulnerable to egg poaching and habitat disturbance.",
+  "conservation_status": "Critically Endangered",
+  "population_estimate": "Estimated 4,000–7,000 breeding pairs remaining in the wild as of 2005. Of the 142 known nesting grounds, only 4 are currently considered non-threatened. The population continues to decline rapidly.",
+  "habitat": "Tropical lowland and hill forests of Sulawesi, usually below 1,000 m elevation. Nesting occurs in open sandy areas, volcanic soils, riverbanks, lake shores, and beaches heated by the sun or geothermal energy. They breed year-round but peak breeding varies by location. Ideal nesting sites include coastal beaches and geothermally active forest soils.",
+  "habitat_tags": ["tropical", "rainforest", "lowland", "coastal", "beach", "sulawesi", "endemic"],
+  "threats": [
+    "Egg poaching — their unusually large and nutritious eggs are considered a delicacy in Sulawesi",
+    "Habitat loss from conversion of forests to agriculture",
+    "Shrinking and fragmentation of forest habitats on Sulawesi",
+    "Loss of nesting beaches to human urban development and tourism",
+    "Increasing isolation between non-breeding habitats and coastal breeding grounds",
+    "Wildfires (major fires in 2000 and 2004 destroyed large areas of suitable habitat)",
+    "Predation of chicks by monitor lizards, reticulated pythons, wild pigs, and cats"
+  ],
+  "ecosystem_role": "As a large frugivorous and insectivorous bird, the Maleo helps disperse seeds of forest fruits and controls insect populations. Its unique nesting behavior creates nutrient cycling in coastal and geothermal soils. As an endemic species with a highly specialized reproductive strategy, it serves as an indicator species for the health of Sulawesi's lowland and coastal ecosystems.",
+  "human_connection": "The Maleo is culturally significant in Sulawesi, though its large eggs have been harvested as a delicacy for generations — a major threat to the species. Conservation organizations like the Alliance for Tompotika Conservation work with local communities to protect nesting grounds and educate about the bird's endangered status. The Maleo is now considered a local hero in Tompotika and surrounding villages. The Bronx Zoo and Nashville Zoo are among the few places outside Indonesia with captive breeding programs. Listed on CITES Appendix I since 1972.",
+  "what_students_can_do": [
+    "Support the Alliance for Tompotika Conservation and other Maleo protection programs",
+    "Learn about the unique reproductive biology of megapode birds",
+    "Raise awareness about the impact of egg poaching on endangered bird species",
+    "Study conservation biology and habitat protection strategies",
+    "Participate in or donate to community-based conservation programs in Sulawesi",
+    "Understand the vulnerability of island endemic species to human activities"
+  ],
+  "fun_fact": [
+    "Maleo chicks are born fully independent — they dig themselves out of the sand, can fly immediately, and never meet their parents",
+    "The Maleo's eggs are about five times larger than a chicken egg, as they contain nearly full-formed chicks ready to survive on their own",
+    "The name 'Maleo' comes from the local Sulawesi language, and the genus name Macrocephalon means 'large head' in Greek — referring to its distinctive bony casque",
+    "The Maleo is the only bird in the world that relies entirely on external (solar and geothermal) heat for incubation, never sitting on its eggs",
+    "Of 142 known nesting grounds across Sulawesi, only 4 are considered non-threatened — just 2.8%"
+  ],
+  "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Maleo"
+}

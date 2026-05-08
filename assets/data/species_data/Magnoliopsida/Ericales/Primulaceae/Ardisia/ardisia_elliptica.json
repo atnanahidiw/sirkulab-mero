@@ -1,0 +1,52 @@
+{
+  "common_name": "Lempeni",
+  "latin_name": "Ardisia elliptica",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Ericales",
+  "family": "Primulaceae",
+  "genus": "Ardisia",
+  "visual_features": "An evergreen tropical understory shrub reaching heights of up to 5 meters. Undamaged plants in forest habitats have a single stem with short, perpendicular branches. Leaves are elliptic to elliptic-obovate, entire, leathery, and alternate, typically 5-16 cm by 2.5-7 cm. Umbellate inflorescences develop in leaf axils with light pink petals. Fruits are distinctive drupes that first turn red as they mature then deep purple-black, with pulp that stains fingers deep purple. Seeds are approximately spherical with a diameter of about 5 mm. Young leaves and stems are often reddish, while mature leaves are dark green.",
+  "description": "An evergreen tree also known as shoebutton ardisia, duck's eye, and coralberry, native to the west coast of India, Sri Lanka, Indochina, Malaysia, Indonesia, and New Guinea. A prolific reproducer that has become a successful invasive species in tropical regions where introduced as a garden ornamental. Given ideal conditions, individuals reach reproductive maturity in 2-4 years in the field and 1-2 years in a shade house. Large adults in bright forested sites can produce up to 400 fruits. Seeds do not have long-term dormancy (greater than 6 months), but seedlings and juveniles can survive under very shady conditions for many years. Given enough light, juveniles rapidly develop into reproductive adults. The plant contains various bioactive compounds including benzoquinone rapanone, terpenoids bauerenol and amyrin, and phenolic compounds like syringic acid, isorhamnetin, quercetin, and bergenin.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Unknown exact population estimate. Classified as Vulnerable on the IUCN Red List with a decreasing population trend in native habitats due to habitat loss and collection. However, the species is highly invasive in introduced ranges including Hawaii, Florida, the Caribbean, Australia, and the Mascarene Islands.",
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/57545/184684620",
+  "habitat": "In native range: tropical and subtropical moist broadleaf forests, particularly understory of upland wet forests at elevations up to 600 m. In introduced ranges: hammocks, suburban woodlands, disturbed areas, forest margins, and roadsides. Has become invasive in Puerto Rico, tropical Australia (Queensland, Northern Territory), Southern Florida, the Caribbean, the Mascarene Islands, the Seychelles, and Pacific islands including Hawaii. Thrives in a wide range of soil conditions and elevations, often forming dense monotypic stands that exclude native plant species.",
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "understory",
+    "invasive",
+    "evergreen",
+    "Southeast_Asia",
+    "lowland",
+    "disturbed"
+  ],
+  "threats": [
+    "Habitat loss and degradation in native range from deforestation",
+    "Collection for ornamental plant trade",
+    "Highly invasive in introduced ranges, forming dense monotypic stands",
+    "Competition with native plant species for resources and light",
+    "Alteration of forest understory dynamics and ecosystem processes",
+    "High seed viability (~99%) and rapid dispersal by avian and mammalian frugivores",
+    "Conversion of native habitats to agricultural or urban areas"
+  ],
+  "ecosystem_role": "In its native range, provides food for frugivores and contributes to soil stabilization. Contains various bioactive compounds with potential medicinal applications (antiplatelet and antibacterial properties). In introduced ranges, becomes a disruptive invasive species that outcompetes native vegetation, reduces biodiversity, alters light availability and soil chemistry. The dense thickets negatively impact native plant communities and associated fauna. Rapid spread across landscapes is possible because fruit is readily consumed by both avian and mammalian frugivores.",
+  "human_connection": "Introduced as an ornamental plant in various tropical regions due to attractive foliage and distinctive fruits. In traditional medicine: in Malaysia, decoction of leaves said to assuage retrosternal pains, and leaf paste used to treat herpes and measles. In Thai traditional medicine, fruits used to cure diarrhoea with fever. In Southeast Asia, leaves used to treat scabies, and fruit for intestinal worms. Classified as a noxious weed and prohibited species in Hawaii and Florida, requiring significant management efforts. Ardisia solanacea and Ardisia humilis are considered by some botanists to be included in the single variable species A. elliptica.",
+  "what_students_can_do": [
+    "Learn about the importance of risk assessment before introducing non-native species",
+    "Support native plant restoration projects in invaded areas",
+    "Practice responsible gardening by avoiding invasive ornamental species",
+    "Participate in citizen science programs monitoring invasive species spread",
+    "Educate others about the ecological impacts of invasive plants",
+    "Support organizations working on invasive species management and eradication"
+  ],
+  "fun_fact": [
+    "The plant gets its common name 'shoebutton ardisia' from its distinctive button-like fruits that go through white, red, and black color stages",
+    "Extremely high seed viability rate of approximately 99%, making it an extraordinarily effective colonizer",
+    "Can form dense thickets that completely shade out native vegetation, altering entire forest understories",
+    "Young leaves and stems are often reddish, while mature leaves are dark green — creating a distinctive two-tone appearance",
+    "The horizontal branching pattern of undamaged forest plants creates a distinctive layered canopy structure",
+    "Native from India to New Guinea but has become invasive in tropical regions worldwide"
+  ]
+}

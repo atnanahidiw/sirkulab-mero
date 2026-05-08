@@ -1,0 +1,44 @@
+{
+  "common_name": "siamang",
+  "latin_name": "Symphalangus syndactylus",
+  "kingdom": "Animalia",
+  "class": "Mammalia",
+  "order": "Primates",
+  "family": "Hylobatidae",
+  "genus": "Symphalangus",
+  "visual_features": "The siamang is the largest of all gibbons, reaching 1 m (3.3 ft) in height and weighing up to 14 kg (31 lb). It has long, dense, shaggy black fur covering its slender body, with pale hair around the mouth and chin. The face is mostly hairless apart from a thin mustache. The ape's long, gangling arms are longer than its legs, adapted for brachiation (swinging from tree to tree). A distinctive large gular sac (throat pouch) found in both sexes can inflate to the size of the siamang's head, allowing resonant calls. Two digits on each foot — the second and third toes — are partially joined by a membrane (syndactyly). Like all apes, they lack a tail. They have opposable thumbs and opposable big toes.",
+  "description": "The siamang (Symphalangus syndactylus) is an endangered, arboreal, black-furred gibbon native to the forests of Indonesia (Sumatra), Malaysia (Malay Peninsula), and southern Thailand. It is the only species in the genus Symphalangus and can be twice the size of other gibbons. Two features distinguish it from other gibbons: partially webbed second and third toes on each foot, and a large inflatable gular sac used for vocalizations. The siamang's melodious singing breaks the forest's silence in the early morning. They live in small family groups of up to 6 individuals with an average home range of 23 hectares. Fossils of siamangs date back to the Middle Pleistocene.",
+  "conservation_status": "Endangered",
+  "population_estimate": "Historically estimated at 360,000 individuals in the 1980s. Current numbers are significantly lower, with a decline of approximately 50% over the last 40 years. In Bukit Barisan Selatan National Park (Sumatra), approximately 22,390 siamangs were recorded in 2002 censuses across roughly 2,570 km² of remaining forest cover. The Indonesian population has declined substantially due to habitat loss, the illegal pet trade, and agricultural expansion.",
+  "habitat": "Found in a wide variety of forest habitats from lowland rainforests and monsoon forests to mountain forests on Sumatra and the Malay Peninsula. They inhabit altitudes ranging from sea level up to 3,800 m. Siamangs are strictly arboreal and prefer areas with dense canopy cover. They occupy relatively small home ranges of about 60 acres (24.3 hectares), of which roughly 60% is actively defended as group territory.",
+  "habitat_tags": [
+    "lowland rainforest",
+    "montane forest",
+    "monsoon forest",
+    "tropical forest",
+    "arboreal habitat"
+  ],
+  "threats": [
+    "Habitat loss from unsustainable timber extraction and palm oil plantation expansion",
+    "Illegal pet trade — infants captured often involve killing of adult protectors",
+    "Forest fragmentation from agricultural conversion, mining, and road construction",
+    "Residential and commercial development encroaching on protected areas",
+    "Habitat degradation from fires"
+  ],
+  "ecosystem_role": "Siamangs are important seed dispersers in their forest ecosystem. As frugivores, they consume fruits (particularly figs) and disperse seeds through defecation as they travel across their territory, carrying seeds between 81.9 and 365.9 m from the source. This supports forest regeneration and ecological succession. They also eat leaves, flowers, and insects, contributing to the regulation of insect populations. Siamangs are the most folivorous of all gibbons, and as the largest gibbon, they occupy a unique ecological niche.",
+  "human_connection": "Siamangs face severe threats from human activities including habitat destruction for palm oil production, which clears large swaths of forest in Indonesia and Malaysia. The illegal pet trade remains a significant threat, with infants captured for sale and adults often killed in the process. Siamangs are protected under CITES Appendix I. They have been extensively studied as a model species for primate behavioral ecology, particularly regarding monogamous social systems and parental care behaviors.",
+  "what_students_can_do": [
+    "Learn about the impact of palm oil production on gibbon habitats and support sustainable palm oil certification (RSPO)",
+    "Study siamang vocal communication and how their duet songs maintain pair bonds and territorial boundaries",
+    "Research the ecological role of gibbons as seed dispersers in tropical rainforest restoration",
+    "Support conservation organizations like the World Wildlife Fund and local Sumatran conservation programs",
+    "Educate others about the illegal pet trade and its devastating impact on wild primate populations"
+  ],
+  "fun_fact": [
+    "The siamang's gular (throat) sac can inflate to the size of a grapefruit, enabling it to produce the loudest calls of all gibbon species — reaching up to 113 decibels, roughly equivalent to a chainsaw",
+    "The siamang's specific name 'syndactylus' comes from Ancient Greek meaning 'with fingers' — referring to the webbing between their second and third toes",
+    "Siamangs are the only place in the world where three species of non-human apes coexist (siamangs, orangutans, and lar gibbons in northern Sumatra)",
+    "Siamang songs can be heard up to 2 miles (3.2 km) away through dense forest"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/39779/17967873"
+}

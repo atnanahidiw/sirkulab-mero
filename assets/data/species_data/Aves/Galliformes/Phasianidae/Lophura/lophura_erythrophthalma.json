@@ -1,0 +1,39 @@
+{
+  "common_name": "Crestless Fireback",
+  "latin_name": "Lophura erythrophthalma",
+  "kingdom": "Animalia",
+  "class": "Aves",
+  "order": "Galliformes",
+  "family": "Phasianidae",
+  "genus": "Lophura",
+  "visual_features": "Male about 38 cm (15 in) long, females slightly smaller. Face has bare red skin. Bill is greenish in males, black in females. No crest (hence 'crestless'). Legs bluish-grey, with long spurs in males, short spurs in females. Tail short and rounded or with outer feathers longer than central ones. Male has purplish-black plumage with white vermiculation on mantle, back, wings, and side of breast. Rump bright chestnut. Upper tail coverts purple with maroon margins. Tail feathers cinnamon with black bases. Female is almost completely black with blue or green gloss. Head brownish paling to white on throat. Juveniles resemble females with pale-edged feathers.",
+  "description": "A shy, retiring species of pheasant in the family Phasianidae, seldom seen in the wild. The Malayan crestless fireback (L. erythrophthalma) occurs in mainland Malaysia and Sumatra, while the Bornean crestless fireback (L. pyronota — now often split as a separate species) occurs in Borneo. Little studied. Lives on the ground among undergrowth. Feeds during the day by scratching up leaf litter and eating small animals exposed, as well as feeding on vegetable matter and fallen fruit. Nest recorded in the wild was between buttress roots of a large tree, containing 4-5 pink or pale buff eggs. Breeding season April to June. Gestation period 24 days. The female is very similar to the male Salvadori's pheasant (Lophura inornata), endemic to Sumatra, but that species inhabits higher altitude forests.",
+  "conservation_status": "Critically Endangered",
+  "population_estimate": "IUCN estimates 10,000-20,000 mature individuals total across both species. Recorded at densities of 6 birds per square kilometer in partially logged secondary forest in Malaysia and Sumatra. Population trend is decreasing. Has a moderate-sized range with patchy distribution.",
+  "habitat": "Found in Brunei, Indonesia, Malaysia, and Singapore. Inhabits undergrowth in lowland rainforests, including peat forest and karst forest. Also found in secondary growth forest in Malaysia, up to altitudes of about 300 m (1,000 ft). Has been observed in partially logged secondary forest in both Malaysia and Sumatra.",
+  "habitat_tags": ["forest", "lowland", "rainforest", "tropical", "peat forest", "karst forest", "undergrowth", "Southeast Asia"],
+  "threats": [
+    "Habitat destruction — lowland evergreen virgin forest is increasingly cleared",
+    "Deforestation for palm oil plantations and logging",
+    "Patchy distribution makes populations vulnerable",
+    "Hunting pressure in some areas",
+    "Fragmentation of remaining forest habitats"
+  ],
+  "ecosystem_role": "Ground-dwelling seed disperser and insect controller. Scratching through leaf litter aerates soil and helps nutrient cycling. Prey for larger forest predators. Indicator species for healthy lowland rainforest ecosystems — their shy nature means they thrive best in undisturbed forests.",
+  "human_connection": "Part of the pheasant family which includes many species hunted for food or kept for ornament. One of the many lesser-known but ecologically important birds of Southeast Asian rainforests. Their decline signals the health of lowland forests crucial for climate regulation, water cycles, and biodiversity that benefit human communities.",
+  "what_students_can_do": [
+    "Support sustainable palm oil — choose certified sustainable products to reduce deforestation",
+    "Learn about and advocate for protection of Southeast Asian lowland rainforests",
+    "Support bird conservation organizations working in the region",
+    "Spread awareness about this little-known species",
+    "Reduce consumption of products linked to deforestation in Indonesia and Malaysia"
+  ],
+  "fun_fact": [
+    "Despite its name being 'crestless fireback,' the male has a brilliantly bright chestnut rump — a fiery 'back' that gives the firebacks their name!",
+    "It was once considered the same species as the Bornean crestless fireback (Lophura pyronota), but scientists recently split them into two separate species",
+    "These birds are so shy that they are seldom seen, spending most of their time hidden in dense undergrowth",
+    "The female was for some time thought to be a completely separate species because she looks so different from the male",
+    "They can be found in Singapore — one of the most urbanized countries on Earth — in its remaining forest patches"
+  ],
+  "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Crestless_fireback"
+}

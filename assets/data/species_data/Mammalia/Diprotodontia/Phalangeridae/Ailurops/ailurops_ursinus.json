@@ -1,0 +1,49 @@
+{
+  "common_name": "Sulawesi Bear Cuscus",
+  "latin_name": "Ailurops ursinus",
+  "kingdom": "Animalia",
+  "class": "Mammalia",
+  "order": "Diprotodontia",
+  "family": "Phalangeridae",
+  "genus": "Ailurops",
+  "visual_features": "A stocky arboreal marsupial with a bear-like appearance, featuring dense, woolly fur that ranges from white, cream, gray to brown. Large, round yellow-rimmed eyes, short fuzzy ears, and rounded facial features. Possesses a prehensile unfurred tail that constitutes half of its total body length, used in conjunction with opposable digits on forefeet and syndactylous hindfeet for navigating forest canopies. Adults weigh 2-4 kg with a body length of about 40-45 cm, excluding the tail. The most primitive and plesiomorphic of all phalangerids, making them evolutionarily significant.",
+  "description": "An arboreal marsupial in the family Phalangeridae that is endemic to Sulawesi and nearby islands in Indonesia. Lives in tropical moist lowland forests at elevations up to 600 m. Diurnal, folivorous, and often found in pairs. A. ursinus is threatened by hunting, collection for the pet trade, and deforestation. One specimen was observed adopting a raised posture while making short, harsh chattering and clicking sounds, indicating complex vocal communication. Bear cuscuses can feed on young leaves of up to 31 different plant species including trees, lianas, and mistletoes. Feeding only amounts to about 5% of daily activity, compared to about 63% spent on resting, indicating a slow-paced lifestyle adapted to the forest canopy.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Exact population unknown but declining. The species was previously protected by Indonesian law from 1999 to 2018 but was removed from the protected species list in 2018, leaving it without legal protection despite continued decline. Studies modeling habitat suitability in South Sulawesi show ongoing habitat loss from mining operations and land conversion.",
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/40637/21949654",
+  "habitat": "Endemic to Sulawesi and nearby islands in Indonesia. Inhabits tropical moist lowland forests at elevations up to 600 m, strongly associated with undisturbed forest areas. Spends most time in the upper canopy of lowland tropical rainforests, utilizing large trees over 15 m tall for both nesting and foraging. Found in protected areas like Tangkoko Nature Reserve in North Sulawesi. Requires contiguous forest habitat and is particularly vulnerable to habitat fragmentation from land conversion. There are three recognized subspecies: A. u. ursinus, A. u. flavissimus, and A. u. togianus.",
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "canopy",
+    "arboreal",
+    "island",
+    "Southeast_Asia",
+    "lowland",
+    "endemic"
+  ],
+  "threats": [
+    "Intensive hunting for consumption and illegal trade at bushmeat markets",
+    "Collection for the pet trade",
+    "Habitat loss from deforestation, land conversion, and licensed mining operations",
+    "Removal from Indonesia's protected species list in 2018, leaving it without legal protection",
+    "Not listed in CITES appendices despite being traded internationally",
+    "Habitat fragmentation from agricultural expansion"
+  ],
+  "ecosystem_role": "As folivorous marsupials, they play important roles in seed dispersal and forest regeneration. Feed on young leaves of up to 31 different plant species including trees, lianas, and mistletoes. Their feeding activities help maintain plant diversity and forest structure. As the most primitive marsupial in the Phalangeridae family, they serve as indicators of ecosystem health and evolutionary history. Their presence in forest canopies supports complex ecological interactions of tropical rainforest systems.",
+  "human_connection": "Illegally hunted for consumption, trade between villages, rearing or pet food. Consistent demand for bear cuscus meat at bushmeat markets. Despite its vulnerable status, the species is not protected by Indonesian law or listed in CITES appendices — a conservation paradox. The species was protected from 1999 to 2018 but removed from the protected species list in 2018. Only the closely related A. melanotis (found on Talaud and Sangihe islands) was included for protection in 2018. Stronger action needed to combat poaching, including alternative economic opportunities for local people, environmental education, and mitigating bushmeat demand.",
+  "what_students_can_do": [
+    "Research and advocate for stronger legal protections for the Sulawesi bear cuscus",
+    "Support organizations working on habitat conservation in Sulawesi",
+    "Raise awareness about the impacts of bushmeat trade and illegal wildlife trafficking",
+    "Participate in citizen science projects monitoring wildlife populations",
+    "Promote sustainable ecotourism practices that benefit local communities and conservation"
+  ],
+  "fun_fact": [
+    "The Sulawesi bear cuscus is the most primitive and plesiomorphic of all phalangerids, making it evolutionarily significant for understanding marsupial evolution",
+    "Feeding accounts for only about 5% of daily activity, compared to about 63% spent on resting — among the least active marsupials documented",
+    "Despite being vulnerable and declining, the species was removed from Indonesia's protected species list in 2018, leaving it without legal protection",
+    "First record of acoustic behavior was documented in 2021, showing complex chattering and clicking sounds",
+    "Feeds on young leaves of up to 31 different plant species including trees, lianas, and mistletoes"
+  ]
+}

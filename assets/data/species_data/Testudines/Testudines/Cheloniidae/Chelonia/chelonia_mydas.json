@@ -1,0 +1,53 @@
+{
+  "common_name": "Green Turtle",
+  "latin_name": "Chelonia mydas",
+  "kingdom": "Animalia",
+  "class": "Testudines",
+  "order": "Testudines",
+  "family": "Cheloniidae",
+  "genus": "Chelonia",
+  "visual_features": "Green turtles have a dorsoventrally flattened body covered by a large, teardrop-shaped carapace. They grow to 1.5 metres (5 ft) long, with average weights of 68-190 kg (150-419 lb) and carapace lengths of 78-112 cm (31-44 in). Exceptional specimens can weigh 315 kg (694 lb) or more. The carapace varies from black in hatchlings to dark brown to olive in juveniles, and brown, spotted, or marbled with variegated rays in adults. The plastron is yellow, and limbs are dark-colored lined with yellow. They have a pair of large, paddle-like flippers adapted for swimming.",
+  "description": "Unlike other members of its family, green turtles are mostly herbivorous when fully grown, feeding primarily on seagrasses and algae. They are the only aquatic turtle species that is herbivorous as adults. Adults usually inhabit shallow lagoons and seagrass beds. Like other sea turtles, they migrate long distances between feeding grounds and nesting beaches. Females crawl out on beaches, dig nests, and lay eggs during the night. Hatchlings emerge about two months later and scramble into the water. Those that reach maturity may live 80-90 years in the wild. The common name refers to the green fat beneath its carapace, due to its seagrass diet, not the shell color.",
+  "conservation_status": "Least Concern",
+  "population_estimate": "Global population increased by over 28% since the 1970s. In October 2025, the IUCN reclassified the green turtle from Endangered to Least Concern, making it one of the most dramatic recoveries on the Red List. Notable recoveries documented in nesting populations across Mexico, Hawaii, Brazil, and other key regions. Some subpopulations remain threatened, including Mediterranean green turtles facing small nesting populations and heavy coastal tourism pressure.",
+  "habitat": "Inhabits tropical and subtropical waters worldwide. Adults forage primarily in seagrass beds and shallow coastal waters. Nesting occurs on sandy beaches in tropical regions. The species requires both productive seagrass feeding grounds and safe, undisturbed nesting beaches to complete its life cycle. Green turtles migrate up to thousands of kilometers between feeding areas and nesting beaches. The coral islands of the Berau Archipelago in Indonesia form one of the largest nesting sites for this species in the country.",
+  "habitat_tags": [
+    "marine",
+    "tropical",
+    "subtropical",
+    "seagrass_beds",
+    "coral_reef",
+    "nesting_beach",
+    "coastal_waters",
+    "migratory",
+    "indo_pacific",
+    "atlantic"
+  ],
+  "threats": [
+    "Coastal development destroying nesting beaches and seagrass habitats",
+    "Bycatch in commercial and artisanal fishing gear",
+    "Plastic pollution causing ingestion and entanglement",
+    "Climate change affecting nesting beach temperatures and sex ratios",
+    "Illegal hunting of turtles and collection of eggs",
+    "Light pollution disorienting hatchlings on nesting beaches",
+    "Boat strikes in busy coastal waters"
+  ],
+  "ecosystem_role": "As herbivorous grazers, green turtles play a crucial role in maintaining seagrass bed health. Their grazing promotes new seagrass growth, maintains productivity, and helps cycle nutrients. Healthy seagrass beds sequester carbon, stabilize sediments, and provide nursery habitat for countless marine species. Green turtles also transport nutrients between marine and terrestrial ecosystems through their nesting activities, fertilizing coastal vegetation with their eggs and hatchling shells.",
+  "human_connection": "Green turtles have deep cultural significance for coastal communities worldwide and feature prominently in the mythology of many indigenous cultures. Their dramatic recovery from Endangered to Least Concern in 2025 demonstrates the power of coordinated international conservation. They are protected under CITES Appendix I since 1988 and are legally protected in most countries. The species' recovery is a conservation success story, but continued vigilance is needed as some regional populations remain at risk from coastal development, illegal hunting, and climate change.",
+  "what_students_can_do": [
+    "Reduce plastic use to prevent marine debris that entangles turtles",
+    "Support sea turtle conservation programs through reputable organizations",
+    "Choose sustainable seafood to reduce bycatch impact on turtles",
+    "Participate in beach cleanups and report injured turtles to local authorities",
+    "Reduce light pollution during nesting season if living near turtle beaches",
+    "Learn about and support the Marine Turtle Conservation Fund"
+  ],
+  "fun_fact": [
+    "Green turtles can hold their breath for up to 5 hours while resting under ledges",
+    "They return to the exact beach where they were born to nest, sometimes traveling thousands of miles across oceans",
+    "Nest temperature determines hatchling sex: warmer sand produces more females, cooler sand produces more males",
+    "Green sea turtles have been swimming the oceans for over 100 million years since the time of the dinosaurs",
+    "In October 2025, the IUCN officially downlisted the green turtle from Endangered to Least Concern—one of the most dramatic conservation recoveries on the Red List"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/4615/152502026"
+}

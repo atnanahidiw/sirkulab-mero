@@ -1,0 +1,39 @@
+{
+  "common_name": "Narra",
+  "latin_name": "Pterocarpus indicus",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Fabales",
+  "family": "Fabaceae",
+  "genus": "Pterocarpus",
+  "visual_features": "Large deciduous tree growing 30-40 m tall with trunk up to 2 m in diameter and crown 12-34 m wide. Compound pinnate leaves 12-22 cm long with 5-11 leaflets. Flowers in panicles 6-13 cm long, slightly fragrant, yellow or orange-yellow petals. Fruit is a semiorbicular pod 2-3 cm diameter with flat membranaceous wing 4-6 cm diameter, containing 1-2 seeds. Bark greyish-brown. Heartwood purplish, termite-resistant, and rose-scented.",
+  "description": "Narra (also known as Angsana, Amboyna wood, Malay padauk, or Philippine mahogany) is a majestic tropical hardwood tree native to Southeast Asia, northern Australasia, and the western Pacific islands. It is the national tree of the Philippines (proclaimed in 1934) and one of two species historically used as a source for lignum nephriticum, a traditional diuretic in 16th-18th century Europe. The premium timber is prized for high-grade furniture, cabinetry, musical instruments, and decorative veneers. Wood from its burl (Amboyna) is among the rarest and most valued in the world. Many populations are seriously threatened; extinct in Vietnam and possibly in Sri Lanka and Peninsular Malaysia.",
+  "conservation_status": "Endangered",
+  "population_estimate": "Severely declining across its range. Extinct in Vietnam and possibly in Sri Lanka and Peninsular Malaysia. Listed as Endangered on the IUCN Red List.",
+  "habitat": "Lowland primary and secondary rainforests, often along tidal creeks and rocky shores at elevations up to 750 m. Unlike most Pterocarpus species preferring seasonal weather, P. indicus prefers rainforest environments. Behaves as a pioneer species thriving in open positions. Grows best with annual daytime temperatures 24-32°C and mean annual rainfall 2,000-3,000 mm.",
+  "habitat_tags": ["tropical", "rainforest", "lowland", "coastal", "southeast_asia"],
+  "threats": [
+    "Overexploitation for valuable timber and Amboyna burl",
+    "Deforestation and habitat loss across Southeast Asia",
+    "Illegal logging and lack of enforcement",
+    "Extirpated from Vietnam and possibly Sri Lanka and Peninsular Malaysia",
+    "Angsana wilt disease caused by Fusarium oxysporum fungus carried by ambrosia beetles"
+  ],
+  "ecosystem_role": "As a nitrogen-fixing leguminous tree, Pterocarpus indicus transforms atmospheric nitrogen into plant-usable form via symbiotic bacteria in root nodules, enriching soil fertility. Provides shade and habitat for wildlife, prevents soil erosion along riverbanks and coastal areas with its extensive root system, and serves as a food source for pollinators through its fragrant flowers.",
+  "human_connection": "Narra holds deep cultural significance as the national tree of the Philippines (proclaimed 1934 by Governor-General Frank Murphy) and provincial tree of Chonburi and Phuket in Thailand. Its wood has been prized for centuries for furniture, musical instruments, and traditional medicine to treat tumors, throat problems, and mouth sores. Leaves contain flavonoids with antioxidant, anti-inflammatory, and anti-allergic benefits. In Singapore, it was extensively planted as a roadside tree until Angsana wilt disease outbreak in the 1980s destroyed 1,400 trees.",
+  "what_students_can_do": [
+    "Support sustainable forestry and wood certification programs",
+    "Learn about traditional medicinal uses of native plants from Southeast Asia",
+    "Study the importance of nitrogen-fixing trees in tropical ecosystems",
+    "Advocate for protection of remaining lowland rainforest habitats",
+    "Research the history of lignum nephriticum and fluorescent wood properties"
+  ],
+  "fun_fact": [
+    "The wood has a distinctive sweet rose scent when freshly cut and is naturally termite-resistant",
+    "Amboyna burl, formed from the tree's burls named after Ambon Island, is one of the rarest and most valuable wood products in the world used for decorative veneers",
+    "The tree's heartwood produces a fluorescent infusion in water, which led to its use as a medicinal diuretic in Europe for 200 years",
+    "It is one of the few tree species that can be easily propagated from large stem cuttings as well as seeds",
+    "A 60-year-old specimen in Singapore is marked as a heritage tree"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/33241/2835450"
+}

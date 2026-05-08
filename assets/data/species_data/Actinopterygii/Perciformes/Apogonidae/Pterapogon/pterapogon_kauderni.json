@@ -1,0 +1,41 @@
+{
+  "common_name": "Banggai Cardinalfish",
+  "latin_name": "Pterapogon kauderni",
+  "kingdom": "Animalia",
+  "class": "Actinopterygii",
+  "order": "Perciformes",
+  "family": "Apogonidae",
+  "genus": "Pterapogon",
+  "visual_features": "A small tropical cardinalfish growing up to 8 cm (3 in) total length. Easily distinguished by its tasseled first dorsal fin, elongated anal and second dorsal fin rays, and deeply forked caudal fin. Color pattern consists of three bold black vertical bars across the head and body, with prominent black anterior edges on the anal and second dorsal fin. Silvery-white body with iridescent blue speckles. The male can be differentiated from the female by a conspicuous enlarged oral cavity, apparent only when brooding eggs in the mouth.",
+  "description": "The Banggai cardinalfish (Pterapogon kauderni) is a small tropical cardinalfish in the family Apogonidae. It is the only member of its genus, now separated from the sailfin cardinalfish group. This attractive fish is popular in the aquarium trade and is among the relatively few marine fish bred regularly in captivity, though significant numbers are still captured in the wild. It is listed as Endangered on the IUCN Red List. The species has an extremely limited geographic range of only 5,500 km², restricted to the Banggai Islands of Indonesia. It is the only member of the Apogonidae family that is diurnal (active during the day). The species is additionally listed as 'Threatened' under the US Endangered Species Act.",
+  "conservation_status": "Endangered (IUCN 3.1); listed as Threatened under the US Endangered Species Act (2016)",
+  "population_estimate": "Estimated endemic population of approximately 2.4 million individuals based on 34 km² of suitable habitat (0.07–0.08 fish per m²). Some estimates range between 1.4–1.7 million. Annual collection for the aquarium trade estimated at 500,000–900,000 individuals.",
+  "habitat": "Extremely restricted to the Banggai Archipelago of Central Sulawesi, Indonesia — the only endemic range, spanning approximately 34 km² of shallow-water habitat around 34 islands. A small introduced population exists in Lembeh Strait, North Sulawesi (400 km north of natural range). Inhabits shallow waters 1.5–2.5 m deep, preferring calm habitats on the protected side of larger islands. Found in coral reefs, seagrass beds (especially Enhalus acoroides), and open areas of sand and rubble. Forms stable groups of about 9 individuals.",
+  "habitat_tags": ["coral reef", "seagrass bed", "shallow lagoon", "tropical marine", "Banggai Islands", "Indonesia"],
+  "threats": [
+    "Overcollection for the international aquarium trade — 500,000–900,000 fish collected annually",
+    "Coral reef degradation and habitat destruction",
+    "Destructive fishing practices including blast fishing",
+    "Very restricted geographic range (5,500 km², only 34 km² of suitable habitat)",
+    "Low fecundity and limited dispersal ability",
+    "Iridovirus diseases causing significant mortality",
+    "Collection of host sea urchins and sea anemones (their microhabitats) for the ornamental trade"
+  ],
+  "ecosystem_role": "As a diurnal planktivore, feeding primarily on copepods and other planktonic organisms, they play a role in the marine food web, transferring energy from plankton to higher predators. They serve as prey for lionfish (Pterois spp.), honeycomb groupers, and other piscivores. They form mutualistic associations with long-spined sea urchins (Diadema setosum), sea anemones, and branching corals, using them as shelter. Their presence supports the abundance of these invertebrate hosts — when removed by collectors, associated invertebrate abundance declines.",
+  "human_connection": "One of the most popular marine aquarium fish globally, prized for its striking black-and-white banded pattern and hardiness in captivity. It is among the few marine fish species that breed readily in captivity, offering an alternative to wild collection. Listed as 'Threatened' under the US Endangered Species Act. The species has become an important case study in marine conservation biology and sustainable aquarium trade practices.",
+  "what_students_can_do": [
+    "Choose captive-bred Banggai cardinalfish instead of wild-caught for home aquariums",
+    "Support the Marine Aquarium Council and other certification programs for sustainable collection",
+    "Study the species' reproductive biology to improve captive breeding programs",
+    "Research population dynamics and the impact of collection on wild populations",
+    "Raise awareness about endemic marine species and their vulnerability to overexploitation"
+  ],
+  "fun_fact": [
+    "The Banggai cardinalfish is the only member of its family (Apogonidae) that is diurnal — all other cardinalfish are nocturnal",
+    "Males are mouthbrooders, carrying fertilized eggs in their mouth for several weeks until the young are ready to hatch",
+    "They have an extremely restricted natural range of only 34 km² around the Banggai Islands — one of the smallest geographic ranges of any marine fish",
+    "They form mutualistic relationships with long-spined sea urchins, hiding among the venomous spines for protection without being stung",
+    "An introduced population now exists in the Lembeh Strait, 400 km north of their natural range, after aquarium traders released them there in 2000"
+  ],
+  "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Banggai_cardinalfish"
+}

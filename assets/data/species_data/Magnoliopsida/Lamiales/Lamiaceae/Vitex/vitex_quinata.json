@@ -1,0 +1,43 @@
+{
+  "common_name": "Five-leaved Chaste Tree",
+  "latin_name": "Vitex quinata",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Lamiales",
+  "family": "Lamiaceae",
+  "genus": "Vitex",
+  "visual_features": "An evergreen tree growing 4-35 m tall with brown bark. The bole is cylindrical with buttresses up to 100 cm high. Leaves are opposite and palmately compound with 3-5 leaflets (hence 'quinata' meaning five-fold). Leaflets are obovate-elliptic to oblong, thickly papery, shiny on both surfaces with yellow glands underneath. Flowers are yellowish, 6-8 mm, 2-lipped, 5-lobed, arranged in panicles 9-18 cm long. The fruit is a black drupe, obovoid to spherical, about 8 mm in diameter.",
+  "description": "Vitex quinata, also known as joho lawe tree or five-leaved chaste tree, is an evergreen tree in the mint family Lamiaceae. It is native to a vast range extending from the Andaman Islands and India through Southeast Asia to Papua New Guinea and the Caroline Islands. It yields excellent timber that is hard, heavy, elastic, and resistant to moisture - used for house construction, bridges, and boat building. The bark is used medicinally as a tonic and stomachic to stimulate appetite. Listed as Least Concern on the IUCN Red List (2019) due to its very widespread distribution and lack of globally significant threats.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Least Concern (IUCN 2019). Very widespread distribution across East Asia, Indian subcontinent, Southeast Asia, and Pacific Islands. No globally significant threats identified, though local deforestation and timber harvesting impact some populations.",
+  "habitat": "Grows as a sub-canopy to large canopy tree in forests on mountain slopes at elevations of 200-1,200 m in southern China. Also found in lowland forests in Malaysia. Native range includes Andaman Islands, India, Bangladesh, China, Myanmar, Thailand, Laos, Vietnam, Malaysia, Indonesia (Java, Sumatra, Borneo, Sulawesi, Maluku, Lesser Sunda Islands), Philippines, Papua New Guinea, Taiwan, Ryukyu Islands, and the Caroline Islands.",
+  "habitat_tags": [
+    "tropical forest",
+    "mountain forest",
+    "lowland forest",
+    "evergreen forest",
+    "sub-canopy tree"
+  ],
+  "threats": [
+    "Localized deforestation for agriculture",
+    "Timber harvesting for construction and boat building",
+    "Habitat conversion in parts of its range"
+  ],
+  "ecosystem_role": "As a canopy and sub-canopy tree, it provides timber, fruits for wildlife, and habitat for birds and insects. Its flowers support pollinators including bees. Its root system helps stabilize soil on mountain slopes. Its heartwood is fine-textured, hard, heavy, and elastic.",
+  "human_connection": "This tree provides valuable timber used for house construction, bridges, and boats. Its bark is used in traditional medicine as a tonic to stimulate appetite. The wood is prized for tool handles, turnery, carving, and decorative items. It is one of the most widespread Vitex species and an important timber tree throughout Southeast Asia.",
+  "what_students_can_do": [
+    "Learn about sustainable forestry practices and timber certification",
+    "Study traditional medicinal uses of native plants",
+    "Support reforestation with native tree species",
+    "Document local ecological knowledge about tree uses",
+    "Participate in tree planting programs for native species"
+  ],
+  "fun_fact": [
+    "The species name 'quinata' refers to its characteristic leaves with five leaflets - 'quinate' meaning arranged in groups of five.",
+    "Its wood is so resistant to moisture that it is traditionally used for boat building across Southeast Asia.",
+    "The bark is used in folk medicine as a stomachic - an infusion is drunk to stimulate appetite.",
+    "Despite being a common timber tree, it is one of the least threatened Vitex species, classified as Least Concern by the IUCN.",
+    "It grows across a vast range from the Andaman Islands to the Caroline Islands - spanning over 7,000 km."
+  ],
+  "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Vitex_quinata"
+}

@@ -1,0 +1,44 @@
+{
+  "common_name": "Whitetip Reef Shark",
+  "latin_name": "Triaenodon obesus",
+  "kingdom": "Animalia",
+  "class": "Elasmobranchii",
+  "order": "Carcharhiniformes",
+  "family": "Carcharhinidae",
+  "genus": "Triaenodon",
+  "visual_features": "A small, slender shark that usually does not exceed 1.6 m (5.2 ft) in length. It has a short, broad head with a flattened blunt snout and distinctive tubular skin flaps beside the nostrils. The eyes are oval with vertical pupils. It is easily recognized by the conspicuous white tips on the first dorsal fin and upper caudal fin. The body is slim and grayish. It has 42-50 tooth rows in the upper jaw and 42-48 in the lower jaw, each tooth with a single narrow cusp flanked by smaller cusplets. Maximum reported weight is 18.3 kg (40 lb).",
+  "description": "The whitetip reef shark is a species of requiem shark and the only extant species of genus Triaenodon. It is one of the most common sharks found on Indo-Pacific coral reefs, with a range extending from South Africa and the Red Sea to Central America and the Galápagos Islands. It is typically found on or near the bottom in clear water at depths of 8-40 m (26-131 ft). Unlike most requiem sharks, it can pump water over its gills and rest motionless on the bottom. It is nocturnal, hunting bony fishes, crustaceans, and octopus. Its slender body allows it to wriggle into tight crevices in the reef to extract hidden prey. The species is viviparous, with developing embryos sustained by a placental connection. It is listed as Vulnerable by the IUCN.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Vulnerable with decreasing population across the Indo-Pacific. Numbers are dwindling due to unregulated fishing activity. The species' slow reproductive rate and limited habitat preferences make it vulnerable to overfishing.",
+  "habitat": "Almost exclusively associated with coral reef habitats. It is most often found around coral heads and ledges, over sandy flats, in lagoons, and near drop-offs to deeper water. It prefers clear water, typically at depths of 8-40 m (26-131 ft), though it has been recorded down to 330 m. Found throughout the Indian and Pacific Oceans from South Africa to Central America, including Indonesia, Australia's Great Barrier Reef, Hawaii, and the Galápagos Islands.",
+  "habitat_tags": [
+    "coral reef",
+    "lagoon",
+    "tropical marine",
+    "clear water reef"
+  ],
+  "threats": [
+    "Overfishing and unregulated fishing",
+    "Bycatch in gill nets and longlines",
+    "Coral reef degradation",
+    "Climate change affecting reef quality",
+    "Slow reproductive rate limiting population recovery",
+    "Ciguatera poisoning affecting market demand"
+  ],
+  "ecosystem_role": "A mesopredator on coral reefs, maintaining healthy fish populations by preying on smaller prey species. Its nocturnal hunting in crevices helps control populations of reef fish, crustaceans, and cephalopods. It is an indicator species for healthy coral reef ecosystems.",
+  "human_connection": "Sharks are vital for healthy coral reef ecosystems that support tourism and fisheries worldwide. Whitetip reef sharks are rarely aggressive toward humans but may investigate swimmers. Spear fishers risk being bitten when this shark attempts to steal their catch. Ciguatera poisoning from consuming this species has been reported.",
+  "what_students_can_do": [
+    "Learn about coral reef ecosystems and why sharks are essential for reef health",
+    "Support marine protected areas and sustainable fishing practices",
+    "Avoid products made from shark fins",
+    "Participate in reef conservation and clean-up activities",
+    "Spread awareness about the importance of shark conservation"
+  ],
+  "fun_fact": [
+    "Unlike most requiem sharks, the whitetip reef shark can pump water over its gills and rest completely motionless on the sea floor.",
+    "Its slender body allows it to wriggle into tight crevices and caves in the reef to hunt hidden prey.",
+    "This species was first described in 1837 from the Red Sea by German naturalist Eduard Rüppell.",
+    "It lives 19 to 25 years and gives birth to litters of 1-5 pups after a gestation period."
+  ],
+  "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Whitetip_reef_shark"
+}

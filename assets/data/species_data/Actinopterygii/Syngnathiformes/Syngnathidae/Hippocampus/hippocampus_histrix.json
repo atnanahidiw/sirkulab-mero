@@ -1,0 +1,40 @@
+{
+  "common_name": "Thorny Seahorse",
+  "latin_name": "Hippocampus histrix",
+  "kingdom": "Animalia",
+  "class": "Actinopterygii",
+  "order": "Syngnathiformes",
+  "family": "Syngnathidae",
+  "genus": "Hippocampus",
+  "visual_features": "A small fish reaching a maximum length of 15-17 cm. Body is slender, elongated and completely covered with sharp thorns with dark tips that are uniformly sized on the prehensile tail. The trunk has long thorns continuing to the coronet (crown), which has 4-5 spines. The head is provided with numerous spines especially on the forehead, base of cheeks, nose and above the eyes. The snout is very long and tapered. Body coloration is highly variable: grey, cream, bright yellow, green, red, or brownish — can be plain or patterned. The snout is generally striped with one or more thin white lines.",
+  "description": "The spiny or thorny seahorse is a marine fish in the family Syngnathidae, native to the Indo-Pacific area. It is classified as Vulnerable by the IUCN with populations thought to have declined by more than 30% over the last 10-15 years. Like all seahorses, the male broods fertilized eggs in a ventral brood pouch with villi rich in capillaries that surround each egg, creating a placenta-like structure providing nourishment, osmoregulation, and aeration until the young are born. It feeds on small crustaceans and other zooplankton. The species is monogamous, always found in home-ranging pairs. Listed in CITES Appendix II, meaning trade must be controlled.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Population size unknown but thought to have declined by more than 30% over the last 10-15 years across its range. Long-term declines documented throughout the Indo-Pacific. One of the six most common internationally traded seahorse species reported to CITES.",
+  "habitat": "Widespread but relatively rare throughout the Indo-Pacific: from South Africa to French Polynesia, north to Japan, south to Australia. Found in relatively deep waters of 10-95 m, usually below 15 m. Inhabits a variety of substrates including sponges, weedy rocky reefs, soft corals, and primarily seagrass beds. Large adults may be pelagic and associated with drifting debris. Associated with sponges and sea-squirts.",
+  "habitat_tags": ["tropical", "marine", "seagrass_bed", "coral_reef", "rocky_reef", "coastal"],
+  "threats": [
+    "Targeted exploitation for international trade — traditional Chinese medicine and aquarium trade",
+    "Bycatch in non-selective fisheries, especially fish and shrimp trawls",
+    "Habitat destruction of inshore seagrass beds from eutrophication, sedimentation, and coastal construction",
+    "Dredging and invasive species degrading seagrass habitats",
+    "One of the six most commonly traded seahorse species globally",
+    "Slow population recovery due to monogamous pairing and low fecundity"
+  ],
+  "ecosystem_role": "As a small predator in marine ecosystems, helps control populations of small crustaceans and zooplankton. Serves as prey for larger fish and marine animals. Their presence in seagrass beds and coral reefs contributes to the biodiversity and health of these ecosystems. Their monogamous pairing and site fidelity make them important indicators of habitat stability and quality in seagrass ecosystems.",
+  "human_connection": "Thorny seahorses have long been used in traditional Chinese medicine, with trade increasing as patent medicines rise in popularity. Despite their spines making them less desirable for the medicine trade, they remain among the six most traded seahorse species globally. Their unique appearance and reproductive biology (male pregnancy) fascinate scientists and the public. They are occasionally used in the aquarium trade, though less commonly due to their deeper water habitat.",
+  "what_students_can_do": [
+    "Support marine protected areas conserving seagrass and coral reef habitats",
+    "Choose sustainably sourced seahorses and avoid wild-caught specimens",
+    "Learn about sustainable fishing practices and bycatch reduction",
+    "Raise awareness about the impact of the traditional medicine trade on marine species",
+    "Support CITES enforcement to regulate international seahorse trade"
+  ],
+  "fun_fact": [
+    "Male thorny seahorses carry fertilized eggs in a brood pouch until they hatch — a form of male pregnancy unique among fish",
+    "They can move their eyes independently like chameleons, scanning for food and predators in different directions",
+    "Unlike most fish, seahorses have no scales — their bodies are covered in bony plates arranged in rings",
+    "They are monogamous and remain in home-ranging pairs, performing daily greeting rituals with their mate",
+    "Their sharp spines make them less desirable for traditional medicine, but paradoxically they remain heavily traded"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/10070/54905206"
+}

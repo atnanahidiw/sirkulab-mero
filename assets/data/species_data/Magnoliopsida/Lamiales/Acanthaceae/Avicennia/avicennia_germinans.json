@@ -1,0 +1,48 @@
+{
+  "common_name": "Black Mangrove",
+  "latin_name": "Avicennia germinans",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Lamiales",
+  "family": "Acanthaceae",
+  "genus": "Avicennia",
+  "visual_features": "Black mangroves are evergreen shrubs or small trees that typically grow 3-10 meters tall, though they can reach up to 15 meters in optimal conditions. Their most distinctive feature is their specialized pneumatophore roots that grow vertically up to 30cm above the soil surface, allowing the tree to 'breathe' in waterlogged saline environments. The leaves are leathery, elliptical, and have a distinctive white hue due to salt excretion, with salt crystals often visible on the leaf surfaces. They produce fragrant white flowers that bloom mainly in spring and summer but can occur year-round. The seeds are green, tear-dropped shaped, and float in water until they wash ashore to sprout.",
+  "description": "Black mangroves are remarkable salt-tolerant trees that inhabit coastal ecosystems throughout the tropical and subtropical regions of the Americas and Western Africa. These highly specialized plants have evolved unique adaptations to thrive in harsh intertidal zones where most other vegetation cannot survive. Their distinctive pneumatophore roots protrude vertically from the soil, allowing oxygen uptake when the ground is submerged during high tides. Black mangroves play crucial ecological roles as nursery habitats for juvenile marine species, particularly crustaceans and fish, while their dead foliage provides food for numerous marine organisms. They are also important nesting sites for coastal birds including brown pelicans, making them keystone species in coastal ecosystems.",
+  "conservation_status": "Least Concern",
+  "population_estimate": "Widespread and abundant throughout its range; currently stable but facing localized declines in some areas",
+  "habitat": "Black mangroves are found in saline environments along coastlines, particularly in the upper intertidal zone of protected coastal bays, salt ponds, and salt marshes. They thrive in waterlogged soils with high salinity and are typically located in areas with periods of inundation. These trees grow from the southern United States (Florida) through tropical and subtropical regions of the Americas to the northern parts of South America, and along the coastlines of Western Africa. Bermuda represents the northernmost limit of their natural range due to the warming effects of the nearby Gulf Stream. They prefer sheltered coastal areas where they can establish colonies and form important coastal ecosystems.",
+  "threats": [
+    "Habitat loss due to coastal development and aquaculture expansion",
+    "Agricultural encroachment on natural mangrove habitats",
+    "Coastal development including construction of seawalls and manmade structures",
+    "Pollution from industrial and agricultural runoff",
+    "Climate change effects including sea level rise and increased storm intensity",
+    "Removal of mangrove trees for coastal engineering projects",
+    "Disease and pest infestations affecting mangrove health"
+  ],
+  "ecosystem_role": "Black mangroves are foundational species in coastal ecosystems, providing critical nursery habitats for juvenile marine species including fish and crustaceans. Their complex root systems stabilize sediments and prevent coastal erosion, protecting shorelines from storm surges by reducing wave energy. The trees contribute to water filtration by trapping sediments and pollutants, improving water quality in coastal areas. They serve as carbon sinks, sequestering significant amounts of carbon in their biomass and the soils they occupy. Additionally, black mangroves support biodiversity by providing food sources through their foliage and flowers, and creating habitats for numerous bird, fish, and invertebrate species.",
+  "human_connection": "Black mangroves provide numerous benefits to human communities, including coastal protection from storms and erosion, water filtration services, and support for fisheries. They are economically important through honey production, as their flowers attract the honey mangrove bee, resulting in unique mangrove honey. Black mangrove wood has been traditionally used for construction, fuel, and various crafts. In many coastal communities, mangroves hold cultural significance and are valued for their aesthetic beauty and recreational value. However, their importance is often overlooked, leading to their removal for development without proper consideration of their ecological and economic value.",
+  "what_students_can_do": [
+    "Participate in local mangrove restoration projects and volunteer events",
+    "Learn about sustainable coastal development practices that protect mangroves",
+    "Support organizations working on mangrove conservation and education",
+    "Reduce personal carbon footprint to help mitigate climate change impacts",
+    "Educate others about the importance of mangroves for coastal ecosystems"
+  ],
+  "fun_fact": [
+    "Black mangroves have a unique adaptation called salt excretion - they push excess salt out through their leaves, which is why you often see white salt crystals on their leaf surfaces",
+    "Unlike other mangrove species, black mangrove seeds cannot grow while floating in water - they must wash ashore and establish in suitable substrate",
+    "The pneumatophore roots of black mangroves act like natural snorkels, allowing the trees to 'breathe' underwater by projecting above oxygen-poor sediments",
+    "Black mangroves are known to be some of the most effective coastal protectors, reducing storm surge energy by up to 66% in some areas",
+    "Bermuda is the most northerly location on Earth where black mangroves naturally grow, thanks to the warming effects of the nearby Gulf Stream"
+  ],
+  "population_estimate_source_uri": "https://angari.org/black-mangrove-deep-dive/",
+  "habitat_tags": [
+    "mangrove",
+    "coastal",
+    "tropical",
+    "subtropical",
+    "americas",
+    "estuary"
+  ]
+}

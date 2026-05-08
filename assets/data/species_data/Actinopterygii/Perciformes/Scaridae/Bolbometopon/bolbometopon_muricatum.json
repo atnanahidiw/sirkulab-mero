@@ -1,0 +1,39 @@
+{
+  "common_name": "Bumphead Parrotfish",
+  "latin_name": "Bolbometopon muricatum",
+  "kingdom": "Animalia",
+  "class": "Actinopterygii",
+  "order": "Perciformes",
+  "family": "Scaridae",
+  "genus": "Bolbometopon",
+  "visual_features": "The bumphead parrotfish is the largest species of parrotfish, growing to lengths of 1.3-1.5 meters (4.3-4.9 ft) and weighing up to 46-75 kg (101-165 lb). It has a distinctive bulbous forehead or 'ossified ridge' and unlike other parrotfishes, is uniformly covered with scales except for the leading edge of the head, which is often light green to pink. Primary phase coloration is a dull gray with scattered white spots, gradually becoming uniformly dark green. Adults develop a prominent hump on the foreheads and have exposed tooth plates only partly covered by lips. The species is sexually monochromatic with no initial or terminal phase in the adult life cycle.",
+  "description": "The bumphead parrotfish is a gregarious species that usually occurs in small schools, though group size can exceed 75 individuals on seaward reefs, with historical records of schools up to 250 fish. They feed on benthic algae and live corals, sometimes ramming their heads against corals to facilitate feeding. Each adult fish ingests over five tons of structural reef carbonates per year, contributing significantly to bioerosion of reefs and making them a keystone species. They sleep among corals, in caves and shipwrecks at night, usually in large groups. Males engage in ritualized headbutting contests during spawning seasons. The fish spawn pelagically near outer reef slopes, typically just before the new moon.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Listed as Vulnerable with a decreasing population trend. Significant declines documented across six Indo-Pacific locations. Now considered rare globally due to fishing pressure and habitat loss. Population declines of 50% or more have been estimated in heavily fished areas. The species is slow-growing, long-lived (up to 40 years), with delayed reproduction and low replenishment rates, making it highly susceptible to overfishing.",
+  "habitat": "Found throughout the Indo-Pacific region, including the Red Sea and East Africa to the Line Islands and Samoa, north to the Yaeyama Islands (Taiwan) and south to the Great Barrier Reef and New Caledonia. Juveniles inhabit branching coral habitats (primarily Acropora) in sheltered lagoons and seagrass beds. Adults inhabit clear outer lagoon and seaward reefs at depths of 1-30 m, with preference for areas of abundant coral cover.",
+  "habitat_tags": ["coral_reef", "tropical", "subtropical", "lagoon", "outer_reef_slope", "indo_pacific", "seagrass_beds", "keystone_species"],
+  "threats": [
+    "Overexploitation for food, valued as a delicacy across the Indo-Pacific",
+    "Night-time spearfishing of sleeping adults at predictable aggregation sites",
+    "Destructive fishing including cyanide and dynamite fishing",
+    "Habitat degradation and coral reef loss from climate change and pollution",
+    "Degradation of juvenile nursery habitats from sediment runoff",
+    "Slow growth and late maturity make recovery from overfishing extremely slow"
+  ],
+  "ecosystem_role": "As the largest parrotfish species, bumpheads play a disproportionate role in reef ecosystems. Each adult consumes over five tons of reef carbonates per year, creating sand through digestion and controlling algal overgrowth on corals. Their bioerosion activities create microhabitats and shelter for other marine organisms. They are considered a keystone species because their feeding behavior fundamentally shapes reef structure. Their selective consumption of different coral types helps maintain coral species diversity. They also disperse coral fragments that can regenerate.",
+  "human_connection": "Bumphead parrotfish are highly valued as a food source in many Pacific Island communities and are considered a delicacy. They are also targeted in the live reef fish trade and the aquarium trade. Traditional management practices in some regions used to include seasonal fishing bans and protection of spawning aggregations, but enforcement has weakened in many areas. Two Marine Protected Areas were established in the Solomon Islands in 2002 specifically to protect this species. Their cultural significance and ecological importance have driven conservation efforts across several countries.",
+  "what_students_can_do": [
+    "Support marine protected areas that protect critical reef habitats",
+    "Raise awareness about sustainable fishing practices and seasonal bans",
+    "Learn about coral reef ecology and the vital role of parrotfish in sand production",
+    "Advocate for protection of spawning aggregation sites",
+    "Support organizations working on coral reef conservation in the Indo-Pacific"
+  ],
+  "fun_fact": [
+    "Bumpheads can live up to 40 years, making them among the longest-lived reef fish",
+    "Each adult fish ingests over five tons of structural reef carbonates per year, producing much of the white sand on tropical beaches",
+    "Males engage in ritualized headbutting contests during spawning, colliding head-on with enough force to make loud jarring sounds",
+    "Unlike most parrotfish, bumpheads do not change sex or color patterns as they mature"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/197253/155309189"
+}

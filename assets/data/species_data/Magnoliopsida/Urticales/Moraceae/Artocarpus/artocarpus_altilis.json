@@ -1,0 +1,46 @@
+{
+  "common_name": "Breadfruit",
+  "latin_name": "Artocarpus altilis",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Urticales",
+  "family": "Moraceae",
+  "genus": "Artocarpus",
+  "visual_features": "Breadfruit is a large, evergreen tree that can reach heights of 25-30 meters with a dense, spreading crown. The leaves are deeply lobed, bright green, and can grow up to 90 cm long. The tree produces distinctive, oval-shaped fruit that can weigh up to 4 kg, with a rough green skin and starchy, yellow flesh. The tree has smooth, gray bark and produces a milky sap when cut. The overall appearance is impressive with its large leaves and substantial fruit, making it a significant presence in tropical landscapes.",
+  "description": "Breadfruit is a culturally and ecologically significant tropical tree that has been a staple food source in Pacific Island nations for centuries. Native to the islands of Southeast Asia and the western Pacific, this remarkable tree produces nutritious, starchy fruit that can be prepared in numerous ways - boiled, roasted, fried, or fermented. The tree is not only valued for its food production but also for its lightweight wood, which has been traditionally used for building canoes and surfboards in Polynesian cultures. Breadfruit is also highly efficient at sequestering carbon through its rapid growth rate, making it an important species for climate change mitigation efforts.",
+  "conservation_status": "Least Concern",
+  "population_estimate": "Widespread cultivation throughout tropical regions; wild populations stable but facing localized threats",
+  "habitat": "Breadfruit thrives in tropical lowland areas with warm, humid climates and well-distributed rainfall. It grows best in fertile, well-drained soils and is commonly found in home gardens, agricultural systems, and occasionally in secondary forests. The tree is typically cultivated rather than wild in most regions, though it naturally occurs in the original range of Southeast Asia and the western Pacific. It has been widely introduced throughout tropical regions worldwide as a food source.",
+  "threats": [
+    "Loss of traditional varieties through genetic erosion",
+    "Climate change affecting suitable growing regions",
+    "Pests and diseases threatening cultivated varieties",
+    "Habitat loss in areas where wild populations exist",
+    "Limited genetic diversity in widespread cultivation"
+  ],
+  "ecosystem_role": "Breadfruit plays multiple important roles in tropical ecosystems. As a large canopy tree, it provides habitat and food for various bird and insect species. The tree's dense foliage offers shade and helps regulate microclimates. Its root systems help prevent soil erosion in tropical regions. Additionally, breadfruit contributes to food security and sustainable agriculture in tropical communities, reducing pressure on other food production systems.",
+  "human_connection": "Breadfruit has deep cultural significance throughout the Pacific and tropical regions. It has been a staple food source for centuries, with hundreds of traditional varieties developed by Pacific Islanders. The tree features prominently in Pacific Island cultures, mythology, and traditional practices. Modern initiatives like The Breadfruit Institute at the National Tropical Botanical Garden in Hawaii promote conservation and sustainable use of breadfruit. In recent years, breadfruit has gained global attention as a climate-resilient crop that could help address food security challenges in a changing climate.",
+  "what_students_can_do": [
+    "Learn about traditional breadfruit cultivation methods and varieties",
+    "Support sustainable agriculture initiatives in tropical regions",
+    "Raise awareness about climate-resilient food crops",
+    "Participate in conservation efforts for traditional crop varieties",
+    "Support local food sovereignty movements"
+  ],
+  "fun_fact": [
+    "A single mature breadfruit tree can produce up to 200-300 fruits per year, providing food for an entire family",
+    "Breadfruit trees can live for decades, with some specimens estimated to be over 100 years old",
+    "The tree was first brought to the Caribbean in 1793 on HMS Bounty by Captain Bligh, leading to the famous mutiny",
+    "There are over 100 named varieties of breadfruit in the Pacific, each with unique characteristics and uses",
+    "Breadfruit trees can grow from sea level up to about 600 meters in elevation, adapting to various tropical environments"
+  ],
+  "population_estimate_source_uri": "http://www.hear.org/species/artocarpus_altilis/",
+  "habitat_tags": [
+    "tropical",
+    "forest",
+    "lowland",
+    "pacific_islands",
+    "cultivated",
+    "southeast_asia"
+  ]
+}
