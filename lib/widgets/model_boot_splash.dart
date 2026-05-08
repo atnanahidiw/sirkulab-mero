@@ -1,11 +1,16 @@
+import 'dart:io';
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../services/model_boot_state.dart';
 import '../services/model_download_notification_service.dart';
 
-// Minimal splash layout inspired by quex-flutter splash
-
-typedef DownloadCallback = void Function({String? customUrl});
+typedef DownloadCallback = void Function({
+  String? customUrl,
+  bool preferDownloadsFolder,
+});
 
 class ModelBootSplash extends StatelessWidget {
   final String status;
@@ -14,7 +19,9 @@ class ModelBootSplash extends StatelessWidget {
   final bool isLoading;
   final ModelBootPhase phase;
   final String? modelSize;
+  final String? downloadFilePath;
   final DownloadCallback? onConfirmDownload;
+  final Future<void> Function()? onLoadExistingModel;
   final VoidCallback? onRetry;
   final VoidCallback? onCancel;
 
@@ -26,7 +33,9 @@ class ModelBootSplash extends StatelessWidget {
     required this.isLoading,
     required this.phase,
     this.modelSize,
+    this.downloadFilePath,
     this.onConfirmDownload,
+    this.onLoadExistingModel,
     this.onRetry,
     this.onCancel,
   });
@@ -45,27 +54,6 @@ class ModelBootSplash extends StatelessWidget {
       ModelBootPhase.failed => 'Needs attention',
       ModelBootPhase.ready => 'Ready',
       ModelBootPhase.analyzing => 'Working',
-    };
-  }
-
-  String _phaseSubtitle() {
-    return switch (phase) {
-      ModelBootPhase.idle => 'Checking the model setup.',
-      ModelBootPhase.checking =>
-        'Looking for an existing model before we download anything.',
-      ModelBootPhase.needsDownload =>
-        'A machine learning model is needed to identify species.',
-      ModelBootPhase.starting => 'Getting the download ready.',
-      ModelBootPhase.downloading =>
-        'Downloading the model in the background.',
-      ModelBootPhase.resuming => '',
-      ModelBootPhase.paused => 'The download is paused. You can resume it.',
-      ModelBootPhase.canceled =>
-        'The download was canceled. Start it again when you are ready.',
-      ModelBootPhase.installing => 'Finishing local setup.',
-      ModelBootPhase.failed => 'The download failed. You can try again here.',
-      ModelBootPhase.ready => 'The model is ready and the app will open next.',
-      ModelBootPhase.analyzing => 'Processing an image with the local model.',
     };
   }
 
@@ -94,33 +82,25 @@ class ModelBootSplash extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: theme.textTheme.displaySmall?.copyWith(
                         color: colorScheme.onSurface,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.6,
                       ),
                     ),
-                    const SizedBox(height: 10),
+                    const SizedBox(height: 6),
                     Text(
                       'Gotta Snap Them All!',
                       textAlign: TextAlign.center,
-                      style: theme.textTheme.headlineSmall?.copyWith(
+                      style: theme.textTheme.labelLarge?.copyWith(
                         color: colorScheme.primary,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.5,
+                        letterSpacing: 0.5,
                       ),
                     ),
-                    const SizedBox(height: 8),
-                    AnimatedOpacity(
-                      duration: const Duration(seconds: 2),
-                      curve: Curves.easeInOut,
-                      opacity: 0.7,
-                      child: Text(
-                        'Don\'t let them fade unseen..',
-                        textAlign: TextAlign.center,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.onSurfaceVariant,
-                          fontStyle: FontStyle.italic,
-                          height: 1.4,
-                        ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Don\'t let them fade unseen.',
+                      textAlign: TextAlign.center,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.onSurfaceVariant,
+                        fontStyle: FontStyle.italic,
+                        height: 1.4,
                       ),
                     ),
                     // Balance padding for visual centering
@@ -133,7 +113,12 @@ class ModelBootSplash extends StatelessWidget {
               Center(
                 child: _DownloadConfirmationCard(
                   modelSize: modelSize,
-                  onDownload: onConfirmDownload ?? ({String? customUrl}) {},
+                  downloadFilePath: downloadFilePath,
+                  onDownload: onConfirmDownload ??
+                      (
+                          {String? customUrl,
+                          bool preferDownloadsFolder = false}) {},
+                  onLoadExistingModel: onLoadExistingModel,
                   onCancel: onCancel,
                 ),
               ),
@@ -163,7 +148,8 @@ class ModelBootSplash extends StatelessWidget {
     );
   }
 
-  Widget _buildStateIndicator(BuildContext context, ColorScheme scheme, int? percent) {
+  Widget _buildStateIndicator(
+      BuildContext context, ColorScheme scheme, int? percent) {
     // Ready state
     if (phase == ModelBootPhase.ready) {
       return Center(
@@ -197,12 +183,15 @@ class ModelBootSplash extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             if (onRetry != null)
-              TextButton.icon(
+              FilledButton.tonal(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh, size: 18),
-                label: Text(phase == ModelBootPhase.paused ? 'Resume' : 'Retry'),
-                style: TextButton.styleFrom(
-                  foregroundColor: scheme.primary,
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.refresh, size: 18),
+                    const SizedBox(width: 8),
+                    Text(phase == ModelBootPhase.paused ? 'Resume' : 'Retry'),
+                  ],
                 ),
               ),
           ],
@@ -259,45 +248,63 @@ class _BrandMark extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      width: 96,
-      height: 96,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        gradient: RadialGradient(
-          colors: [
-            colorScheme.primaryContainer.withValues(alpha: 0.92),
-            colorScheme.primary.withValues(alpha: 0.18),
-          ],
-        ),
-        border: Border.all(
-          color: colorScheme.primary.withValues(alpha: 0.18),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: colorScheme.primary.withValues(alpha: 0.12),
-            blurRadius: 28,
-            offset: const Offset(0, 14),
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        // Outer circle — surface container
+        Container(
+          width: 96,
+          height: 96,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colorScheme.surfaceContainerHigh,
+            boxShadow: [
+              BoxShadow(
+                color: colorScheme.primary.withValues(alpha: 0.18),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
+              ),
+            ],
           ),
-        ],
-      ),
-      child: Icon(
-        Icons.eco_outlined,
-        size: 44,
-        color: colorScheme.primary,
-      ),
+        ),
+        // Inner circle — gradient fill
+        Container(
+          width: 72,
+          height: 72,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                colorScheme.primary,
+                colorScheme.primaryContainer,
+              ],
+            ),
+          ),
+          child: Icon(
+            Icons.eco_outlined,
+            size: 36,
+            color: colorScheme.onPrimary,
+          ),
+        ),
+      ],
     );
   }
 }
 
 class _DownloadConfirmationCard extends StatefulWidget {
   final String? modelSize;
+  final String? downloadFilePath;
   final DownloadCallback onDownload;
+  final Future<void> Function()? onLoadExistingModel;
   final VoidCallback? onCancel;
 
   const _DownloadConfirmationCard({
     this.modelSize,
+    this.downloadFilePath,
     required this.onDownload,
+    this.onLoadExistingModel,
     this.onCancel,
   });
 
@@ -306,18 +313,89 @@ class _DownloadConfirmationCard extends StatefulWidget {
       _DownloadConfirmationCardState();
 }
 
-class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
+class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
+    with WidgetsBindingObserver {
   bool _showAdvanced = false;
+  bool _storageGranted = false;
   final _urlController = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    if (_isAndroid) {
+      _checkStoragePermission();
+    }
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed && _isAndroid) {
+      _checkStoragePermission();
+      _maybeLoadExistingDownloadedModel();
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _urlController.dispose();
     super.dispose();
   }
 
+  Future<void> _checkStoragePermission() async {
+    final granted = await Permission.storage.isGranted ||
+        await Permission.manageExternalStorage.isGranted;
+    if (!mounted) return;
+    setState(() => _storageGranted = granted);
+  }
+
+  bool get _isAndroid => defaultTargetPlatform == TargetPlatform.android;
+
+  Future<void> _requestStoragePermission() async {
+    // manageExternalStorage.request() on Android 11+ opens the dedicated
+    // "Allow access to manage all files" page directly instead of generic app settings.
+    // On older Android it shows the standard permission dialog.
+    var status = await Permission.manageExternalStorage.request();
+    if (!status.isGranted) {
+      status = await Permission.storage.request();
+    }
+    if (!mounted) return;
+    final granted = status.isGranted ||
+        await Permission.storage.isGranted ||
+        await Permission.manageExternalStorage.isGranted;
+    setState(() => _storageGranted = granted);
+    if (!granted) {
+      return;
+    }
+
+    if (!mounted) return;
+    await _maybeLoadExistingDownloadedModel();
+  }
+
+  Future<bool> _hasStoragePermission() async {
+    return await Permission.storage.isGranted ||
+        await Permission.manageExternalStorage.isGranted;
+  }
+
+  Future<void> _maybeLoadExistingDownloadedModel() async {
+    if (!mounted || widget.onLoadExistingModel == null) {
+      return;
+    }
+
+    final filePath = widget.downloadFilePath;
+    if (filePath == null || !await File(filePath).exists()) {
+      return;
+    }
+
+    if (!await _hasStoragePermission()) {
+      return;
+    }
+
+    await widget.onLoadExistingModel!();
+  }
+
   Future<void> _handleDownload() async {
-    // Request notification permission (optional - can skip)
     if (mounted) {
       await ModelDownloadNotificationService.requestPermission(context);
     }
@@ -325,6 +403,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
     final customUrl = _urlController.text.trim();
     widget.onDownload(
       customUrl: customUrl.isNotEmpty ? customUrl : null,
+      preferDownloadsFolder: Platform.isAndroid,
     );
   }
 
@@ -332,6 +411,8 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+
+    final bool needsPermission = _isAndroid && !_storageGranted;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16),
@@ -407,9 +488,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
                   children: [
                     Text(_showAdvanced ? 'Hide Advanced' : 'Advanced'),
                     Icon(
-                      _showAdvanced
-                        ? Icons.expand_less
-                        : Icons.expand_more,
+                      _showAdvanced ? Icons.expand_less : Icons.expand_more,
                     ),
                   ],
                 ),
@@ -427,11 +506,18 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard> {
                 ),
                 const SizedBox(height: 16),
               ],
-              FilledButton.icon(
-                onPressed: _handleDownload,
-                icon: const Icon(Icons.download),
-                label: const Text('Download Model'),
-              ),
+              if (needsPermission) ...[
+                FilledButton.icon(
+                  onPressed: _requestStoragePermission,
+                  icon: const Icon(Icons.lock_open_outlined),
+                  label: const Text('Grant Permission'),
+                ),
+              ] else
+                FilledButton.icon(
+                  onPressed: _handleDownload,
+                  icon: const Icon(Icons.download),
+                  label: const Text('Download Model'),
+                ),
               if (widget.onCancel != null) ...[
                 const SizedBox(height: 8),
                 TextButton(

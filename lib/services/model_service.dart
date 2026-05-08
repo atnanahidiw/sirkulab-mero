@@ -3,12 +3,13 @@ import 'dart:io';
 
 import 'package:flutter/foundation.dart';
 import 'package:background_downloader/background_downloader.dart';
-import 'package:permission_handler/permission_handler.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import 'model_boot_state.dart';
 import 'species_service.dart';
+import '../models/chat_prompts.dart';
 import '../utils/image_utils.dart';
 
 @visibleForTesting
@@ -203,11 +204,13 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     try {
       // Add timeout to prevent hanging
       await Future.any([
-        FlutterGemma.installModel(modelType: modelType)
+        FlutterGemma.installModel(
+                modelType: modelType, fileType: ModelFileType.litertlm)
             .fromFile(filePath)
             .install(),
         Future.delayed(const Duration(minutes: 5), () {
-          throw TimeoutException('Model installation timed out after 5 minutes');
+          throw TimeoutException(
+              'Model installation timed out after 5 minutes');
         }),
       ]);
 
@@ -226,12 +229,16 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     String prompt, {
     String? systemInstruction,
     Uint8List? imageBytes,
-    int maxTokens = 200,
+    int maxTokens = 2048,
     double temperature = 0.7,
     int topK = 40,
     double topP = 0.9,
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
   }) async {
     try {
+      onProgress?.call('Preparing session...', 0.15);
+
       // Use the existing API with optimized parameters
       final session = await model.createSession(
         enableVisionModality: true,
@@ -241,23 +248,35 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         systemInstruction: systemInstruction,
       );
 
-      // Add query chunk with image if provided
-      if (imageBytes != null) {
-        await session.addQueryChunk(Message.withImage(
-          text: prompt,
-          imageBytes: imageBytes,
-          isUser: true,
-        ));
-      } else {
-        await session.addQueryChunk(Message.text(
-          text: prompt,
-          isUser: true,
-        ));
-      }
+      try {
+        onProgress?.call('Sending question...', 0.35);
 
-      // Generate response with tuned parameters
-      final response = await session.getResponse();
-      return response;
+        if (imageBytes != null) {
+          await session.addQueryChunk(Message.withImage(
+            text: prompt,
+            imageBytes: imageBytes,
+            isUser: true,
+          ));
+        } else {
+          await session.addQueryChunk(Message.text(
+            text: prompt,
+            isUser: true,
+          ));
+        }
+
+        onProgress?.call('Generating answer...', 0.55);
+
+        final buffer = StringBuffer();
+        await for (final token in session.getResponseAsync()) {
+          buffer.write(token);
+          onToken?.call(token);
+        }
+
+        onProgress?.call('Complete', 1.0);
+        return buffer.toString();
+      } finally {
+        await session.close();
+      }
     } catch (e) {
       debugPrint('Optimized generation failed: $e');
       rethrow;
@@ -295,10 +314,12 @@ class ModelService extends ChangeNotifier {
   String? _pendingModelSize;
 
   // Model configuration - Gemma 4 2B Instruct (quantized)
+  static const String _modelRevision =
+      '7fa1d78473894f7e736a21d920c3aa80f950c0db';
   final String modelUrl =
-      'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm';
+      'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';
   final ModelType modelType = ModelType.gemmaIt;
-  final int maxTokens = 200;
+  final int maxTokens = 2048;
 
   // Species database
   final SpeciesService _speciesService = SpeciesService();
@@ -379,7 +400,7 @@ class ModelService extends ChangeNotifier {
 
       if (response.statusCode == 200) {
         final contentLength = response.headers.contentLength;
-        if (contentLength != null && contentLength > 0) {
+        if (contentLength > 0) {
           return _formatBytes(contentLength);
         }
       }
@@ -406,8 +427,83 @@ class ModelService extends ChangeNotifier {
     }
   }
 
-  Future<DownloadTask> _buildDownloadTask({String? customUrl}) async {
-    final persistentPath = await _getDownloadDestination();
+  bool _isAndroidDownloadPath(String filePath) {
+    if (!Platform.isAndroid) {
+      return false;
+    }
+
+    final normalized = filePath.replaceAll('\\', '/').toLowerCase();
+    return normalized.startsWith('/storage/emulated/0/download') ||
+        normalized.startsWith('/sdcard/download');
+  }
+
+  Future<bool> _hasDownloadFolderAccess() async {
+    return await Permission.storage.isGranted ||
+        await Permission.manageExternalStorage.isGranted;
+  }
+
+  Future<bool> _deferModelSetupUntilDownloadPermission(
+    String filePath, {
+    String? status,
+  }) async {
+    if (!_isAndroidDownloadPath(filePath)) {
+      return false;
+    }
+
+    if (await _hasDownloadFolderAccess()) {
+      return false;
+    }
+
+    _commitState(
+      _state.copyWith(
+        isInitialized: true,
+        isLoading: false,
+        isModelLoaded: false,
+        status: status ?? 'Model download required',
+        error: null,
+        phase: ModelBootPhase.needsDownload,
+        downloadProgress: null,
+        downloadFilePath: filePath,
+      ),
+    );
+    return true;
+  }
+
+  /// Get the destination path for persistent model storage.
+  /// On Android, the model must live in the public Downloads folder so it can
+  /// be reused across launches and loaded when storage access is granted.
+  Future<String> _getDownloadDestination({
+    bool preferDownloadsFolder = false,
+  }) async {
+    String dirPath;
+    if (Platform.isAndroid) {
+      dirPath = '/storage/emulated/0/Download';
+    } else {
+      try {
+        final downloadsDir = await getDownloadsDirectory();
+        dirPath = downloadsDir?.path ??
+            (await getApplicationDocumentsDirectory()).path;
+      } catch (e) {
+        dirPath = (await getApplicationDocumentsDirectory()).path;
+      }
+    }
+
+    // Ensure directory exists
+    final dir = Directory(dirPath);
+    if (!await dir.exists()) {
+      await dir.create(recursive: true);
+    }
+
+    return '$dirPath/.gemma-4-E2B-it.litertlm';
+  }
+
+  Future<DownloadTask> _buildDownloadTask({
+    String? customUrl,
+    bool preferDownloadsFolder = false,
+  }) async {
+    final persistentPath = await _getDownloadDestination(
+      preferDownloadsFolder: preferDownloadsFolder,
+    );
 
     // Ensure the persistent directory exists
     final persistentDir = Directory(persistentPath).parent;
@@ -445,6 +541,12 @@ class ModelService extends ChangeNotifier {
   }
 
   Future<void> _installDownloadedModel(String filePath) async {
+    if (await _deferModelSetupUntilDownloadPermission(
+      filePath,
+    )) {
+      return;
+    }
+
     _commitState(
       _state.copyWith(
         isInitialized: false,
@@ -603,7 +705,8 @@ class ModelService extends ChangeNotifier {
             break;
 
           case TaskStatus.notFound:
-            await _markError('Model file not found on server.', phase: ModelBootPhase.failed);
+            await _markError('Model file not found on server.',
+                phase: ModelBootPhase.failed);
             break;
 
           case TaskStatus.canceled:
@@ -708,6 +811,12 @@ class ModelService extends ChangeNotifier {
     final filePath = _state.downloadFilePath ?? await _getDownloadDestination();
     final fileExists = await _isDownloadedModelPresent(filePath);
     if (fileExists) {
+      if (await _deferModelSetupUntilDownloadPermission(
+        filePath,
+      )) {
+        return;
+      }
+
       await _installDownloadedModel(filePath);
       return;
     }
@@ -830,6 +939,12 @@ class ModelService extends ChangeNotifier {
         return;
       case TaskStatus.complete:
         if (await File(filePath).exists()) {
+          if (await _deferModelSetupUntilDownloadPermission(
+            filePath,
+          )) {
+            return;
+          }
+
           await _installDownloadedModel(filePath);
           return;
         }
@@ -929,6 +1044,12 @@ class ModelService extends ChangeNotifier {
         return;
       case TaskStatus.complete:
         if (await File(filePath).exists()) {
+          if (await _deferModelSetupUntilDownloadPermission(
+            filePath,
+          )) {
+            return;
+          }
+
           await _installDownloadedModel(filePath);
           return;
         }
@@ -1071,7 +1192,10 @@ class ModelService extends ChangeNotifier {
     );
   }
 
-  Future<void> confirmDownload({String? customUrl}) async {
+  Future<void> confirmDownload({
+    String? customUrl,
+    bool preferDownloadsFolder = false,
+  }) async {
     if (_state.phase != ModelBootPhase.needsDownload &&
         _state.phase != ModelBootPhase.canceled) {
       return;
@@ -1086,6 +1210,7 @@ class ModelService extends ChangeNotifier {
     await _startModelDownload(
       resumed: false,
       customUrl: customUrl,
+      preferDownloadsFolder: preferDownloadsFolder,
     );
   }
 
@@ -1142,6 +1267,7 @@ class ModelService extends ChangeNotifier {
   Future<void> _startModelDownload({
     required bool resumed,
     String? customUrl,
+    bool preferDownloadsFolder = false,
   }) async {
     if (_isDownloading || _state.isModelLoaded) {
       return;
@@ -1149,7 +1275,10 @@ class ModelService extends ChangeNotifier {
 
     _isDownloading = true;
     try {
-      final task = await _buildDownloadTask(customUrl: customUrl);
+      final task = await _buildDownloadTask(
+        customUrl: customUrl,
+        preferDownloadsFolder: preferDownloadsFolder,
+      );
       final filePath = await task.filePath();
       _commitState(
         _state.copyWith(
@@ -1189,6 +1318,12 @@ class ModelService extends ChangeNotifier {
     // First check if model exists at the expected location
     final expectedFilePath = await _getDownloadDestination();
     if (await _isDownloadedModelPresent(expectedFilePath)) {
+      if (await _deferModelSetupUntilDownloadPermission(
+        expectedFilePath,
+      )) {
+        return;
+      }
+
       await _installDownloadedModel(expectedFilePath);
       return;
     }
@@ -1232,24 +1367,22 @@ class ModelService extends ChangeNotifier {
       }
 
       // 2. Common Android download path
-      searchPaths.add('/storage/emulated/0/Download');
-      debugPrint('Added Android download path');
-
-      // 3. AI Edge Gallery paths
-      searchPaths.add('/Android/media/com.google.ai.gallery/files/');
-      searchPaths.add('/storage/emulated/0/Android/media/com.google.ai.gallery/files/');
-      debugPrint('Added AI Edge Gallery paths');
-
-      // 4. App-specific documents directory
-      try {
-        final appDocDir = await getApplicationDocumentsDirectory();
-        searchPaths.add(appDocDir.path);
-        debugPrint('Added app documents directory: ${appDocDir.path}');
-      } catch (e) {
-        debugPrint('Could not get app documents directory: $e');
+      if (Platform.isAndroid) {
+        searchPaths.add('/storage/emulated/0/Download');
+        debugPrint('Added Android download path');
+      } else {
+        // 3. App-specific documents directory for non-Android platforms
+        try {
+          final appDocDir = await getApplicationDocumentsDirectory();
+          searchPaths.add(appDocDir.path);
+          debugPrint('Added app documents directory: ${appDocDir.path}');
+        } catch (e) {
+          debugPrint('Could not get app documents directory: $e');
+        }
       }
 
-      debugPrint('Searching ${searchPaths.length} locations for model files...');
+      debugPrint(
+          'Searching ${searchPaths.length} locations for model files...');
 
       int filesChecked = 0;
       for (final basePath in searchPaths) {
@@ -1262,7 +1395,8 @@ class ModelService extends ChangeNotifier {
               filesChecked++;
               if (file is File) {
                 final fileName = file.path.toLowerCase();
-                if (fileName.endsWith('.litertlm') && fileName.contains('gemma')) {
+                if (fileName.endsWith('.litertlm') &&
+                    fileName.contains('gemma')) {
                   debugPrint('✓ Found model file: ${file.path}');
                   return file.path;
                 }
@@ -1277,157 +1411,12 @@ class ModelService extends ChangeNotifier {
           continue;
         }
       }
-      debugPrint('Model search complete. Checked $filesChecked files across ${searchPaths.length} locations.');
+      debugPrint(
+          'Model search complete. Checked $filesChecked files across ${searchPaths.length} locations.');
     } catch (e) {
       debugPrint('Error checking local model: $e');
     }
     return null;
-  }
-
-  Future<String> identifySpecies(
-    Uint8List imageBytes,
-    String imageFormat,
-  ) async {
-    if (_model == null) {
-      throw Exception('Model not loaded. Please wait for model to download.');
-    }
-
-    try {
-      _commitState(
-        _state.copyWith(
-          status: 'Analyzing image...',
-          phase: ModelBootPhase.analyzing,
-        ),
-      );
-
-      // Compress image with memory-aware processing
-      final compressedBytes = await ImageUtils.compressImage(
-        imageBytes,
-        maxWidth: 800,
-        maxHeight: 800,
-        quality: 85,
-      );
-
-      final speciesLatinNames = _speciesList.map((s) => s.latinName).toList();
-
-      final systemInstruction = '''
-You are an expert wildlife biologist specializing in Indonesian wildlife identification.
-Your task is to analyze images and identify ANY animal or plant species visible in the image.
-
-First, identify the species using COMMON ENGLISH NAME only (e.g., "Tiger" instead of "Panthera tigris"). Then determine if it is in the following endangered list:
-${speciesLatinNames.join(', ')}.
-
-Respond in this exact format:
-[COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
-
-Where ENDANGERED_STATUS is either "endangered" (if in the list above) or "not listed" (if not in the list or unsure).
-
-Do not add any additional text or explanations outside this format.
-
-IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant", "Orchid") not Latin/scientific names.
-''';
-
-      final inputPrompt = 'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.';
-
-      _commitState(
-        _state.copyWith(
-          status: 'Generating analysis...',
-          phase: ModelBootPhase.analyzing,
-        ),
-      );
-
-      // Use optimized generation method
-      final response = await (_runtime as FlutterGemmaModelRuntime).generateOptimizedResponse(
-        _model!,
-        inputPrompt,
-        systemInstruction: systemInstruction,
-        imageBytes: compressedBytes,
-        temperature: 0.7,
-        topK: 32,
-        topP: 0.9,
-      );
-
-      _commitState(
-        _state.copyWith(
-          status: 'Analysis complete',
-          phase: ModelBootPhase.ready,
-        ),
-      );
-
-      final cleanedResponse = response.trim();
-      return await _speciesService.parseLatinName(cleanedResponse) ?? '';
-    } catch (e) {
-      final errorMessage = 'Identification failed: $e';
-      await _markError(errorMessage, phase: ModelBootPhase.failed);
-      rethrow;
-    }
-  }
-
-  /// Request storage permission for Android
-  Future<bool> _requestStoragePermission() async {
-    if (!Platform.isAndroid) return true;
-
-    // Keep asking until permission is granted or user cancels
-    while (true) {
-      // Check if we already have permission
-      if (await Permission.manageExternalStorage.isGranted) return true;
-      if (await Permission.storage.isGranted) return true;
-
-      // Request permissions with explanation
-      final status = await Permission.storage.request();
-      if (status.isGranted) return true;
-
-      final manageStatus = await Permission.manageExternalStorage.request();
-      if (manageStatus.isGranted) return true;
-
-      // If permanently denied, open settings and loop back
-      if (status.isPermanentlyDenied || manageStatus.isPermanentlyDenied) {
-        await openAppSettings();
-        // Wait a bit for user to interact with settings
-        await Future.delayed(const Duration(seconds: 2));
-        continue;
-      }
-
-      // If user denied (not permanently), wait and ask again
-      if (status.isDenied || manageStatus.isDenied) {
-        // Wait 2 seconds before asking again
-        await Future.delayed(const Duration(seconds: 2));
-        continue;
-      }
-
-      // If anything else, break and return false
-      break;
-    }
-
-    return false;
-  }
-
-  /// Get the destination path for persistent model storage
-  Future<String> _getDownloadDestination() async {
-    String dirPath;
-    if (Platform.isAndroid) {
-      final isGranted = await _requestStoragePermission();
-      if (!isGranted) {
-        throw Exception(
-            'Storage permission denied. The model MUST be saved to public storage to persist across reinstalls. Please grant permission.');
-      }
-      dirPath = '/storage/emulated/0/Download';
-    } else {
-      try {
-        final downloadsDir = await getDownloadsDirectory();
-        dirPath = downloadsDir?.path ?? (await getApplicationDocumentsDirectory()).path;
-      } catch (e) {
-        dirPath = (await getApplicationDocumentsDirectory()).path;
-      }
-    }
-
-    // Ensure directory exists
-    final dir = Directory(dirPath);
-    if (!await dir.exists()) {
-      await dir.create(recursive: true);
-    }
-
-    return '$dirPath/.gemma-4-E2B-it.litertlm';
   }
 
   Future<void> clearModel() async {
@@ -1457,6 +1446,126 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
         downloadFilePath: null,
       ),
     );
+  }
+
+  Future<String> identifySpecies(
+    Uint8List imageBytes,
+    String imageFormat,
+  ) async {
+    if (_model == null) {
+      throw Exception('Model not loaded. Please wait for model to download.');
+    }
+
+    try {
+      _commitState(
+        _state.copyWith(
+          status: 'Analyzing image...',
+          phase: ModelBootPhase.analyzing,
+        ),
+      );
+
+      // Compress image with memory-aware processing
+      final compressedBytes = await ImageUtils.compressImage(
+        imageBytes,
+        maxWidth: 336,
+        maxHeight: 336,
+        quality: 85,
+      );
+
+      final speciesLatinNames = _speciesList.map((s) => s.latinName).toList();
+
+      final systemInstruction =
+          ChatPrompts.buildIdentifySystemInstruction(speciesLatinNames);
+
+      const inputPrompt = ChatPrompts.identifyInputPrompt;
+
+      _commitState(
+        _state.copyWith(
+          status: 'Generating analysis...',
+          phase: ModelBootPhase.analyzing,
+        ),
+      );
+
+      // Use optimized generation method
+      final response = await (_runtime as FlutterGemmaModelRuntime)
+          .generateOptimizedResponse(
+        _model!,
+        inputPrompt,
+        systemInstruction: systemInstruction,
+        imageBytes: compressedBytes,
+        temperature: 0.7,
+        topK: 32,
+        topP: 0.9,
+      );
+
+      _commitState(
+        _state.copyWith(
+          status: 'Analysis complete',
+          phase: ModelBootPhase.ready,
+        ),
+      );
+
+      final cleanedResponse = response.trim();
+      return await _speciesService.parseLatinName(cleanedResponse) ?? '';
+    } catch (e) {
+      final errorMessage = 'Identification failed: $e';
+      await _markError(errorMessage, phase: ModelBootPhase.failed);
+      rethrow;
+    }
+  }
+
+  /// Ask a question about a previously analyzed species
+  Future<String> askQuestion(
+    String question, {
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
+  }) async {
+    if (_model == null) {
+      throw Exception('Model not loaded. Please wait for model to download.');
+    }
+
+    try {
+      _commitState(
+        _state.copyWith(
+          status: 'Answering question...',
+          phase: ModelBootPhase.analyzing,
+        ),
+      );
+
+      onProgress?.call('Starting...', 0.0);
+
+      // Use optimized generation method for text-based question
+      final response = await (_runtime as FlutterGemmaModelRuntime)
+          .generateOptimizedResponse(
+        _model!,
+        question,
+        systemInstruction: ChatPrompts.answerSystemInstruction,
+        temperature: 0.7,
+        topK: 32,
+        topP: 0.9,
+        onProgress: onProgress,
+        onToken: onToken,
+      );
+
+      _commitState(
+        _state.copyWith(
+          status: 'Question answered',
+          phase: ModelBootPhase.ready,
+        ),
+      );
+
+      return response.trim();
+    } catch (e) {
+      final errorMessage = 'Question answering failed: $e';
+      _commitState(
+        _state.copyWith(
+          status: errorMessage,
+          phase: ModelBootPhase.failed,
+          error: errorMessage,
+        ),
+      );
+      rethrow;
+    }
   }
 
   @override

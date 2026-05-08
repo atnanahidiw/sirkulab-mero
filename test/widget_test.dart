@@ -30,9 +30,7 @@ void main() {
       ),
     );
 
-    expect(find.byType(LinearProgressIndicator), findsOneWidget);
-    expect(find.textContaining('42%'), findsOneWidget);
-    expect(find.text('Cancel download'), findsOneWidget);
+    expect(find.text('Downloading… 42%'), findsOneWidget);
     expect(find.byKey(const Key('home-ready')), findsNothing);
 
     service.markReady();
@@ -169,7 +167,8 @@ class FakeModelService extends ModelService {
   }
 
   @override
-  Future<String> identifySpecies(Uint8List imageBytes, String imageFormat) async {
+  Future<String> identifySpecies(
+      Uint8List imageBytes, String imageFormat) async {
     return '';
   }
 

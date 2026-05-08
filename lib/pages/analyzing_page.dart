@@ -3,12 +3,11 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import '../core/navigation/app_page_route.dart';
 import '../services/model_service.dart';
 import '../utils/image_utils.dart';
 import 'result_page.dart';
 
-/// A dedicated loading page that displays a captured image with animated
-/// effects and funny rotating messages while the AI model analyzes the photo.
 class AnalyzingPage extends StatefulWidget {
   final Uint8List rawImageBytes;
 
@@ -20,8 +19,7 @@ class AnalyzingPage extends StatefulWidget {
 
 class _AnalyzingPageState extends State<AnalyzingPage>
     with TickerProviderStateMixin {
-  // Fallback messages used while waiting or if model message generation fails.
-  static const List<String> _fallbackMessages = [
+  static const List<String> _messages = [
     'Consulting the wildlife encyclopedia... 📚',
     'Asking the AI to put on its glasses... 🤓',
     'Cross-referencing with 10,000 species... 🔍',
@@ -39,8 +37,9 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   ];
 
   late AnimationController _pulseController;
-  late AnimationController _dotController;
+  late AnimationController _glowController;
   late Animation<double> _pulseAnimation;
+  late Animation<double> _glowAnimation;
 
   String _currentMessage = '';
   int _messageIndex = 0;
@@ -57,29 +56,30 @@ class _AnalyzingPageState extends State<AnalyzingPage>
       duration: const Duration(milliseconds: 1500),
     )..repeat(reverse: true);
 
-    _dotController = AnimationController(
+    _glowController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 800),
-    )..repeat();
+      duration: const Duration(milliseconds: 2000),
+    )..repeat(reverse: true);
 
-    _pulseAnimation = Tween<double>(begin: 0.95, end: 1.05).animate(
+    _pulseAnimation = Tween<double>(begin: 0.97, end: 1.03).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    _currentMessage =
-        _fallbackMessages[Random().nextInt(_fallbackMessages.length)];
+    _glowAnimation = Tween<double>(begin: 0.1, end: 0.3).animate(
+      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
+    );
 
-    // Rotate messages every 12 seconds
+    _currentMessage = _messages[Random().nextInt(_messages.length)];
+
     _messageTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       if (mounted) {
         setState(() {
-          _messageIndex = (_messageIndex + 1) % _fallbackMessages.length;
-          _currentMessage = _fallbackMessages[_messageIndex];
+          _messageIndex = (_messageIndex + 1) % _messages.length;
+          _currentMessage = _messages[_messageIndex];
         });
       }
     });
 
-    // Start analysis
     _startAnalysis();
   }
 
@@ -87,32 +87,26 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
 
-      // Compress in background isolate while showing loading UI
       final compressedBytes = await ImageUtils.compressImage(
         widget.rawImageBytes,
-        maxWidth: 800,
-        maxHeight: 800,
+        maxWidth: 336,
+        maxHeight: 336,
+        quality: 85,
       );
 
-      // Run species identification on compressed image
       final result =
           await modelService.identifySpecies(compressedBytes, 'jpeg');
 
       if (!mounted) return;
 
-      // Navigate to result page, replacing this page in the stack
-      await Future.delayed(const Duration(milliseconds: 100)); // Small delay to ensure stability
+      await Future.delayed(const Duration(milliseconds: 100));
       Navigator.pushReplacement(
         context,
-        PageRouteBuilder(
-          pageBuilder: (context, animation, secondaryAnimation) => ResultPage(
+        AppPageRoute.slideUp(
+          (_) => ResultPage(
             imageBytes: compressedBytes,
             analysisResult: result,
           ),
-          transitionsBuilder: (context, animation, secondaryAnimation, child) {
-            return FadeTransition(opacity: animation, child: child);
-          },
-          transitionDuration: const Duration(milliseconds: 300), // Faster transition
         ),
       );
     } catch (e) {
@@ -128,83 +122,100 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   @override
   void dispose() {
     _pulseController.dispose();
-    _dotController.dispose();
+    _glowController.dispose();
     _messageTimer?.cancel();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
+
     return Scaffold(
-      backgroundColor: const Color(0xFF0D1117),
+      backgroundColor: colorScheme.surface,
       body: SafeArea(
         child: Column(
           children: [
             const SizedBox(height: 24),
 
-            // Title
-            const Text(
+            Text(
               'Analyzing...',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 28,
-                fontWeight: FontWeight.bold,
-                letterSpacing: 1.2,
+              style: textTheme.headlineSmall?.copyWith(
+                color: colorScheme.onSurface,
+                fontWeight: FontWeight.w600,
               ),
             ),
 
             const SizedBox(height: 32),
 
-            // Animated image preview
+            // Animated image with glow ring
             Expanded(
               flex: 3,
               child: Center(
-                child: ScaleTransition(
-                  scale: _pulseAnimation,
-                  child: Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 32),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(20),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.tealAccent.withAlpha(80),
-                          blurRadius: 30,
-                          spreadRadius: 4,
+                child: AnimatedBuilder(
+                  animation: Listenable.merge([_pulseAnimation, _glowAnimation]),
+                  builder: (context, child) {
+                    return Stack(
+                      alignment: Alignment.center,
+                      children: [
+                        // Glow ring
+                        Container(
+                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(24),
+                            boxShadow: [
+                              BoxShadow(
+                                color: colorScheme.primary
+                                    .withValues(alpha: _glowAnimation.value),
+                                blurRadius: 40,
+                                spreadRadius: 8,
+                              ),
+                            ],
+                          ),
+                          child: const SizedBox.shrink(),
+                        ),
+                        // Image card
+                        Transform.scale(
+                          scale: _pulseAnimation.value,
+                          child: Card(
+                            margin: const EdgeInsets.symmetric(horizontal: 32),
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(20),
+                              child: Image.memory(
+                                widget.rawImageBytes,
+                                fit: BoxFit.cover,
+                              ),
+                            ),
+                          ),
                         ),
                       ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: Image.memory(
-                        widget.rawImageBytes,
-                        fit: BoxFit.cover,
-                      ),
-                    ),
-                  ),
+                    );
+                  },
                 ),
               ),
             ),
 
             const SizedBox(height: 32),
 
-            // Scanning animation bar
+            // Progress bar
             if (_isAnalyzing)
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 48),
                 child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
+                  borderRadius: BorderRadius.circular(8),
                   child: LinearProgressIndicator(
                     minHeight: 6,
-                    backgroundColor: Colors.white10,
+                    backgroundColor: colorScheme.surfaceContainerHighest,
                     valueColor:
-                        const AlwaysStoppedAnimation<Color>(Colors.tealAccent),
+                        AlwaysStoppedAnimation<Color>(colorScheme.primary),
                   ),
                 ),
               ),
 
             const SizedBox(height: 32),
 
-            // Funny message with fade transition
+            // Message / error
             Expanded(
               flex: 1,
               child: Padding(
@@ -213,33 +224,26 @@ class _AnalyzingPageState extends State<AnalyzingPage>
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          const Icon(Icons.error_outline,
-                              color: Colors.redAccent, size: 40),
+                          Icon(Icons.error_outline,
+                              color: colorScheme.error, size: 40),
                           const SizedBox(height: 12),
                           Text(
                             'Analysis failed',
-                            style: TextStyle(
-                              color: Colors.redAccent.shade100,
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
+                            style: textTheme.titleMedium?.copyWith(
+                              color: colorScheme.error,
                             ),
                           ),
                           const SizedBox(height: 8),
                           Text(
                             _error!,
                             textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              color: Colors.white54,
-                              fontSize: 14,
+                            style: textTheme.bodySmall?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
                             ),
                           ),
                           const SizedBox(height: 16),
-                          ElevatedButton(
+                          FilledButton.tonal(
                             onPressed: () => Navigator.pop(context),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.tealAccent,
-                              foregroundColor: Colors.black,
-                            ),
                             child: const Text('Go Back'),
                           ),
                         ],
@@ -262,9 +266,8 @@ class _AnalyzingPageState extends State<AnalyzingPage>
                           _currentMessage,
                           key: ValueKey<String>(_currentMessage),
                           textAlign: TextAlign.center,
-                          style: const TextStyle(
-                            color: Colors.white70,
-                            fontSize: 18,
+                          style: textTheme.bodyLarge?.copyWith(
+                            color: colorScheme.onSurfaceVariant,
                             fontStyle: FontStyle.italic,
                             height: 1.4,
                           ),

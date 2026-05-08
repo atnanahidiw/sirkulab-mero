@@ -1,11 +1,13 @@
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
+import 'package:flutter/foundation.dart';
+import '../core/navigation/app_page_route.dart';
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
 import 'analyzing_page.dart';
+import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -25,21 +27,17 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     _initializeCamera();
-    // ModelService auto-initializes itself - no need to call it here
   }
 
   Future<void> _initializeCamera() async {
-    // Capture context before async gap
     final currentContext = context;
 
     try {
-      // Dispose existing controller if already initialized
       if (_controller != null && _controller!.value.isInitialized) {
         await _controller!.dispose();
         _controller = null;
       }
 
-      // Small delay to prevent race conditions
       await Future.delayed(const Duration(milliseconds: 100));
 
       _cameras = await availableCameras();
@@ -76,18 +74,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<bool> _checkAndRequestCameraPermission() async {
-    // Check if already granted
     final hasPermission = await PermissionService.hasCameraPermission();
     if (hasPermission) return true;
 
-    // Check if permanently denied
     final isPermanentlyDenied =
         await PermissionService.isPermissionPermanentlyDenied(Permission.camera);
 
     if (!mounted) return false;
 
     if (isPermanentlyDenied) {
-      // Show settings dialog
       final shouldOpenSettings = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
@@ -115,7 +110,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       return false;
     }
 
-    // Show rationale dialog before requesting
     final shouldRequest = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -136,7 +130,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     if (shouldRequest != true) return false;
 
-    // Request permission
     final result = await PermissionService.requestCameraPermission();
     return result.isGranted;
   }
@@ -146,12 +139,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final modelService =
         Provider.of<ModelService>(currentContext, listen: false);
 
-    // Check and request camera permission with rationale
     final hasCameraPermission = await _checkAndRequestCameraPermission();
     if (!hasCameraPermission) {
       if (currentContext.mounted) {
         ScaffoldMessenger.of(currentContext).showSnackBar(
-          const SnackBar(content: Text('Camera permission is required to take photos')),
+          const SnackBar(
+              content: Text('Camera permission is required to take photos')),
         );
       }
       return;
@@ -177,7 +170,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     });
 
     try {
-      // Take picture with error handling
       XFile image;
       try {
         image = await _controller!.takePicture();
@@ -205,15 +197,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       }
 
       if (!currentContext.mounted) return;
-      
-    // Navigate to analyzing page
+
       Navigator.push(
         currentContext,
-        MaterialPageRoute(
-          builder: (context) => AnalyzingPage(rawImageBytes: bytes),
-        ),
+        AppPageRoute.fadeScale((_) => AnalyzingPage(rawImageBytes: bytes)),
       ).then((_) {
-        // When returning from analyzing page, reinitialize camera
         Future.delayed(const Duration(milliseconds: 200), () {
           if (mounted) {
             _initializeCamera();
@@ -222,7 +210,6 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       });
     } catch (e) {
       if (currentContext.mounted) {
-        Navigator.pop(currentContext); // Remove loader if present
         ScaffoldMessenger.of(currentContext).showSnackBar(
           SnackBar(content: Text('Failed to analyze image: $e')),
         );
@@ -236,104 +223,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  Future<void> _downloadModel() async {
-    final currentContext = context;
-    final modelService =
-        Provider.of<ModelService>(currentContext, listen: false);
-
-    if (modelService.isLoading || modelService.isModelLoaded) return;
-
-    try {
-      await modelService.downloadModel(onProgress: (progress) {
-        // Progress updates handled by ModelService notifier
-      });
-    } catch (e) {
-      if (currentContext.mounted) {
-        ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(content: Text('Download could not start: $e')),
-        );
-      }
-    }
-  }
-
-  void _showInfoDialog() {
-    showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('About Picture That'),
-        content: const SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                'This app uses Gemma 4 AI model to identify endangered species from images.',
-                style: TextStyle(fontSize: 16),
-              ),
-              SizedBox(height: 16),
-              Text(
-                'Features:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text('• Works offline after initial model download'),
-              Text('• Uses on-device AI for privacy'),
-              Text('• Identifies species and conservation status'),
-              Text('• Provides conservation information'),
-              SizedBox(height: 16),
-              Text(
-                'Note:',
-                style: TextStyle(fontWeight: FontWeight.bold),
-              ),
-              Text('• First use requires downloading ~2.4GB model'),
-              Text('• Works best with clear animal/plant photos'),
-              Text('• Conservation data based on model knowledge'),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('OK'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  // Widget to handle camera error state
-  Widget _buildCameraErrorState() {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.error_outline, color: Colors.white, size: 64),
-          SizedBox(height: 16),
-          Text(
-            'Camera Error',
-            style: TextStyle(color: Colors.white, fontSize: 18),
-          ),
-          SizedBox(height: 8),
-          Text(
-            'Unable to initialize camera',
-            style: TextStyle(color: Colors.white70),
-          ),
-          SizedBox(height: 16),
-          ElevatedButton(
-            onPressed: _initializeCamera,
-            child: Text('Retry'),
-          ),
-        ],
-      ),
-    );
-  }
   Widget _buildCameraPreview() {
-    if (_isCameraReady && 
-        _controller != null && 
+    if (_isCameraReady &&
+        _controller != null &&
         _controller!.value.isInitialized) {
       try {
         return SizedBox.expand(
           child: FittedBox(
-            fit: BoxFit.cover,
+            fit: BoxFit.contain,
             child: SizedBox(
               width: _controller!.value.previewSize!.height,
               height: _controller!.value.previewSize!.width,
@@ -343,41 +240,37 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
       } catch (e) {
         debugPrint('Camera preview error: $e');
-        // Return placeholder if camera preview fails
-        return Container(
-          color: Colors.black,
-          child: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Icon(Icons.camera_alt, color: Colors.white, size: 64),
-                SizedBox(height: 16),
-                Text(
-                  'Camera Preview Error',
-                  style: TextStyle(color: Colors.white, fontSize: 18),
-                ),
-              ],
-            ),
-          ),
-        );
+        return _buildCameraErrorState();
       }
     } else {
-      return Center(
+      return const Center(
+        child: CircularProgressIndicator(color: Colors.white),
+      );
+    }
+  }
+
+  Widget _buildCameraErrorState() {
+    return Container(
+      color: Colors.black,
+      child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            CircularProgressIndicator(color: Colors.white),
-            SizedBox(height: 16),
-            Text(
-              _isCameraReady 
-                  ? 'Initializing camera...'
-                  : 'Loading camera...',
-              style: TextStyle(color: Colors.white),
+            const Icon(Icons.camera_alt, color: Colors.white54, size: 64),
+            const SizedBox(height: 16),
+            const Text(
+              'Camera unavailable',
+              style: TextStyle(color: Colors.white70, fontSize: 18),
+            ),
+            const SizedBox(height: 16),
+            FilledButton(
+              onPressed: _initializeCamera,
+              child: const Text('Retry'),
             ),
           ],
         ),
-      );
-    }
+      ),
+    );
   }
 
   @override
@@ -389,28 +282,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     switch (state) {
       case AppLifecycleState.inactive:
-        // Pause camera when app is inactive
+      case AppLifecycleState.detached:
         cameraController.dispose();
-        setState(() {
-          _isCameraReady = false;
-        });
+        setState(() => _isCameraReady = false);
         break;
       case AppLifecycleState.resumed:
-        // Resume camera when app is active again
         _initializeCamera();
         break;
       case AppLifecycleState.paused:
-        // Camera can stay active when paused for brief periods
-        break;
-      case AppLifecycleState.detached:
-        // Clean up when app is detached
-        cameraController.dispose();
-        setState(() {
-          _isCameraReady = false;
-        });
-        break;
       case AppLifecycleState.hidden:
-        // Handle hidden state if needed
         break;
     }
   }
@@ -418,88 +298,60 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
-    
-    // Dispose camera controller and cancel any pending operations
     _controller?.dispose();
     _controller = null;
-    _isCameraReady = false;
-    
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final textTheme = Theme.of(context).textTheme;
     final modelService = Provider.of<ModelService>(context);
+    final topPadding = MediaQuery.of(context).padding.top;
 
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        title: const Text(
-          'Picture That',
-          style: TextStyle(color: Colors.white),
-        ),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.info_outline, color: Colors.white),
-            onPressed: _showInfoDialog,
-          ),
-        ],
-      ),
       body: Stack(
         children: [
-          // Camera preview
-          if (_isCameraReady)
-            _buildCameraPreview()
-          else
-            _buildCameraErrorState(),
+          // Full-screen camera
+          Positioned.fill(
+            child: _isCameraReady ? _buildCameraPreview() : _buildCameraErrorState(),
+          ),
 
-          // Model status indicator (top right)
+          // Top gradient overlay — status chip + settings button
           Positioned(
-            top: MediaQuery.of(context).padding.top + 10,
-            right: 20,
-            child: GestureDetector(
-              onTap: modelService.isModelLoaded ? null : _downloadModel,
-              child: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: modelService.isModelLoaded
-                      ? Colors.green
-                      : modelService.error != null
-                          ? Colors.red
-                          : modelService.isLoading
-                              ? Colors.orange
-                              : Colors.grey,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 2),
+            top: 0,
+            left: 0,
+            right: 0,
+            child: Container(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.55),
+                    Colors.transparent,
+                  ],
                 ),
-                child: Stack(
-                  alignment: Alignment.center,
+              ),
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(16, topPadding + 12, 8, 20),
+                child: Row(
                   children: [
-                    if (modelService.isLoading)
-                      SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          value: modelService.status.contains('%')
-                              ? double.tryParse(modelService.status
-                                      .replaceAll(RegExp(r'[^0-9.]'), '')) ??
-                                  0.0 / 100
-                              : null,
-                          strokeWidth: 2,
-                          color: Colors.white,
-                          backgroundColor: Colors.transparent,
-                        ),
+                    _ModelStatusChip(
+                      modelService: modelService,
+                      colorScheme: colorScheme,
+                      textTheme: textTheme,
+                    ),
+                    const Spacer(),
+                    IconButton(
+                      icon: const Icon(Icons.settings_outlined,
+                          color: Colors.white),
+                      onPressed: () => Navigator.push(
+                        context,
+                        AppPageRoute.slideRight((_) => const SettingsPage()),
                       ),
-                    Icon(
-                      modelService.isModelLoaded
-                          ? Icons.check
-                          : modelService.error != null
-                              ? Icons.error
-                              : Icons.download,
-                      color: Colors.white,
-                      size: 16,
                     ),
                   ],
                 ),
@@ -507,81 +359,264 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
             ),
           ),
 
-          // Capture button at bottom
-          if (_isCameraReady)
+          // Model download status overlay
+          if (modelService.status.isNotEmpty && !modelService.isModelLoaded)
             Positioned(
-              bottom: 40,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: FloatingActionButton(
-                  onPressed: _isProcessing || !modelService.isModelLoaded
-                      ? null
-                      : _takePhoto,
-                  backgroundColor: Colors.white,
-                  foregroundColor: Colors.black,
-                  shape: const CircleBorder(),
-                  child: _isProcessing
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(color: Colors.black),
-                        )
-                      : const Icon(Icons.camera_alt, size: 30),
-                ),
+              top: topPadding + 80,
+              left: 16,
+              right: 16,
+              child: _ModelStatusCard(
+                modelService: modelService,
+                colorScheme: colorScheme,
+                textTheme: textTheme,
+                onDownload: _downloadModel,
               ),
             ),
 
-          // Status message overlay
-          if (modelService.status.isNotEmpty && !modelService.isModelLoaded)
+          // Bottom gradient overlay — capture FAB
+          if (_isCameraReady)
             Positioned(
-              top: MediaQuery.of(context).padding.top + 70,
-              left: 20,
-              right: 20,
+              bottom: 0,
+              left: 0,
+              right: 0,
               child: Container(
-                padding: const EdgeInsets.all(12),
                 decoration: BoxDecoration(
-                  color: Color.fromRGBO(0, 0, 0, 0.7),
-                  borderRadius: BorderRadius.circular(8),
+                  gradient: LinearGradient(
+                    begin: Alignment.bottomCenter,
+                    end: Alignment.topCenter,
+                    colors: [
+                      Colors.black.withValues(alpha: 0.65),
+                      Colors.transparent,
+                    ],
+                  ),
                 ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Model Status',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      modelService.status,
-                      style: const TextStyle(color: Colors.white),
-                    ),
-                    if (modelService.error != null) ...[
-                      const SizedBox(height: 4),
-                      Text(
-                        modelService.error!,
-                        style: const TextStyle(color: Colors.red),
-                      ),
-                    ],
-                    if (!modelService.isModelLoaded &&
-                        !modelService.isLoading) ...[
-                      const SizedBox(height: 8),
-                      // We removed the manual start download action by making it start automatically
-                      // in ModelService._initialize(), but keeping the button as a manual override to redownload
-                      // if an error occurs.
-                      ElevatedButton(
-                        onPressed: _downloadModel,
-                        child: const Text('Download Model (2.4GB)'),
-                      ),
-                    ],
-                  ],
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).padding.bottom + 32,
+                  top: 40,
+                ),
+                child: Center(
+                  child: _ShutterButton(
+                    isProcessing: _isProcessing,
+                    isEnabled: !_isProcessing && modelService.isModelLoaded,
+                    onPressed: _takePhoto,
+                    primaryColor: colorScheme.primary,
+                  ),
                 ),
               ),
             ),
         ],
+      ),
+    );
+  }
+
+  Future<void> _downloadModel() async {
+    final currentContext = context;
+    final modelService =
+        Provider.of<ModelService>(currentContext, listen: false);
+
+    if (modelService.isLoading || modelService.isModelLoaded) return;
+
+    try {
+      await modelService.downloadModel(onProgress: (_) {});
+    } catch (e) {
+      if (currentContext.mounted) {
+        ScaffoldMessenger.of(currentContext).showSnackBar(
+          SnackBar(content: Text('Download could not start: $e')),
+        );
+      }
+    }
+  }
+}
+
+class _ModelStatusChip extends StatelessWidget {
+  final ModelService modelService;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+
+  const _ModelStatusChip({
+    required this.modelService,
+    required this.colorScheme,
+    required this.textTheme,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final isReady = modelService.isModelLoaded;
+    final isError = modelService.error != null;
+    final isLoading = modelService.isLoading;
+
+    Widget icon;
+    String label;
+
+    if (isReady) {
+      icon = Icon(Icons.check_circle_outline,
+          size: 16, color: colorScheme.onPrimaryContainer);
+      label = 'Model Ready';
+    } else if (isError) {
+      icon = Icon(Icons.error_outline,
+          size: 16, color: colorScheme.error);
+      label = 'Model Error';
+    } else if (isLoading) {
+      final percent = _extractPercent(modelService.status);
+      icon = SizedBox(
+        width: 14,
+        height: 14,
+        child: CircularProgressIndicator(
+          strokeWidth: 2,
+          value: percent != null ? percent / 100 : null,
+          color: colorScheme.onPrimaryContainer,
+        ),
+      );
+      label = percent != null ? '$percent%' : 'Loading…';
+    } else {
+      icon = Icon(Icons.download_outlined,
+          size: 16, color: colorScheme.onPrimaryContainer);
+      label = 'Tap to Download';
+    }
+
+    return GestureDetector(
+      onTap: isReady ? null : () {
+        final modelService = Provider.of<ModelService>(context, listen: false);
+        if (!modelService.isLoading) {
+          modelService.downloadModel(onProgress: (_) {});
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: colorScheme.primaryContainer.withValues(alpha: 0.9),
+          borderRadius: BorderRadius.circular(999),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            icon,
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: textTheme.labelMedium?.copyWith(
+                color: colorScheme.onPrimaryContainer,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  int? _extractPercent(String status) {
+    final match = RegExp(r'(\d+)%').firstMatch(status);
+    return match != null ? int.tryParse(match.group(1)!) : null;
+  }
+}
+
+class _ModelStatusCard extends StatelessWidget {
+  final ModelService modelService;
+  final ColorScheme colorScheme;
+  final TextTheme textTheme;
+  final VoidCallback onDownload;
+
+  const _ModelStatusCard({
+    required this.modelService,
+    required this.colorScheme,
+    required this.textTheme,
+    required this.onDownload,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: colorScheme.surfaceContainerHigh.withValues(alpha: 0.95),
+        borderRadius: BorderRadius.circular(16),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'AI Model',
+            style: textTheme.labelLarge?.copyWith(color: colorScheme.onSurface),
+          ),
+          const SizedBox(height: 4),
+          Text(
+            modelService.status,
+            style: textTheme.bodySmall?.copyWith(
+                color: colorScheme.onSurfaceVariant),
+          ),
+          if (modelService.error != null) ...[
+            const SizedBox(height: 4),
+            Text(
+              modelService.error!,
+              style: textTheme.bodySmall?.copyWith(color: colorScheme.error),
+            ),
+          ],
+          if (!modelService.isModelLoaded && !modelService.isLoading) ...[
+            const SizedBox(height: 8),
+            FilledButton.icon(
+              onPressed: onDownload,
+              icon: const Icon(Icons.download, size: 16),
+              label: const Text('Download Model (2.4GB)'),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _ShutterButton extends StatelessWidget {
+  final bool isProcessing;
+  final bool isEnabled;
+  final VoidCallback onPressed;
+  final Color primaryColor;
+
+  const _ShutterButton({
+    required this.isProcessing,
+    required this.isEnabled,
+    required this.onPressed,
+    required this.primaryColor,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: isEnabled ? onPressed : null,
+      child: Container(
+        width: 72,
+        height: 72,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: Colors.white.withValues(alpha: isEnabled ? 0.8 : 0.3),
+            width: 3,
+          ),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.all(5),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: isEnabled
+                  ? primaryColor
+                  : primaryColor.withValues(alpha: 0.4),
+            ),
+            child: isProcessing
+                ? const Center(
+                    child: SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.5,
+                        color: Colors.white,
+                      ),
+                    ),
+                  )
+                : null,
+          ),
+        ),
       ),
     );
   }
