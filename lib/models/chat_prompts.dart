@@ -1,20 +1,22 @@
+import '../l10n/app_localizations.dart';
+
 /// Holds hint questions and prompt templates for the Q&A and identification features.
 class ChatPrompts {
   ChatPrompts._();
 
-  static const List<String> endangeredHints = [
-    'Why is this species endangered?',
-    'How many individuals are left in the wild?',
-    'What are the main threats to this species?',
-    'What conservation efforts are being made?',
-  ];
+  static List<String> endangeredHints(AppLocalizations l10n) => [
+        l10n.hintWhyEndangered,
+        l10n.hintHowManyLeft,
+        l10n.hintMainThreats,
+        l10n.hintConservationEfforts,
+      ];
 
-  static const List<String> notEndangeredHints = [
-    'What does this species eat?',
-    'Where can this species be found in the wild?',
-    'How does this species reproduce?',
-    'What are its natural predators?',
-  ];
+  static List<String> notEndangeredHints(AppLocalizations l10n) => [
+        l10n.hintWhatEat,
+        l10n.hintWhereFound,
+        l10n.hintHowReproduce,
+        l10n.hintNaturalPredators,
+      ];
 
   /// Build the system instruction for species identification from an image.
   static String buildIdentifySystemInstruction(List<String> speciesLatinNames) {
@@ -40,7 +42,7 @@ IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant
       'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.';
 
   /// System instruction for Q&A after identification.
-  static const String answerSystemInstruction = '''
+  static String answerSystemInstruction(String languageName) => '''
 You are a friendly expert wildlife biologist guide who loves talking about and specializing in Indonesian wildlife identification.
 
 Based on the provided context, answer the user's question about the species.
@@ -51,6 +53,7 @@ Rules:
 - Conversational and warm tone — like chatting with a knowledgeable friend.
 - No bullet lists unless explicitly asked.
 - Do not restate the question or the species name unless necessary.
+- ALWAYS respond in $languageName.
 ''';
 
   /// Build the full query for Q&A, wrapping the original analysis and user question.

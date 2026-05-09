@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../l10n/app_localizations.dart';
 import '../services/model_boot_state.dart';
 import '../services/model_download_notification_service.dart';
 
@@ -41,20 +42,20 @@ class ModelBootSplash extends StatelessWidget {
     this.onCancel,
   });
 
-  String _phaseLabel() {
+  String _phaseLabel(AppLocalizations l10n) {
     return switch (phase) {
-      ModelBootPhase.idle => 'Preparing',
-      ModelBootPhase.checking => 'Checking',
-      ModelBootPhase.needsDownload => 'Download Required',
-      ModelBootPhase.starting => 'Starting download',
-      ModelBootPhase.downloading => 'Downloading',
-      ModelBootPhase.resuming => 'Resuming',
-      ModelBootPhase.paused => 'Paused',
-      ModelBootPhase.canceled => 'Canceled',
-      ModelBootPhase.installing => 'Installing',
-      ModelBootPhase.failed => 'Needs attention',
-      ModelBootPhase.ready => 'Ready',
-      ModelBootPhase.analyzing => 'Working',
+      ModelBootPhase.idle => l10n.bootPhasePreparing,
+      ModelBootPhase.checking => l10n.bootPhaseChecking,
+      ModelBootPhase.needsDownload => l10n.bootPhaseNeedsDownload,
+      ModelBootPhase.starting => l10n.bootPhaseStarting,
+      ModelBootPhase.downloading => l10n.bootPhaseDownloading,
+      ModelBootPhase.resuming => l10n.bootPhaseResuming,
+      ModelBootPhase.paused => l10n.bootPhasePaused,
+      ModelBootPhase.canceled => l10n.bootPhaseCanceled,
+      ModelBootPhase.installing => l10n.bootPhaseInstalling,
+      ModelBootPhase.failed => l10n.bootPhaseFailed,
+      ModelBootPhase.ready => l10n.bootPhaseReady,
+      ModelBootPhase.analyzing => l10n.bootPhaseAnalyzing,
     };
   }
 
@@ -62,6 +63,7 @@ class ModelBootSplash extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
     final percent =
         progress == null ? null : (progress!.clamp(0.0, 1.0) * 100).round();
 
@@ -79,7 +81,7 @@ class ModelBootSplash extends StatelessWidget {
                     _BrandMark(colorScheme: colorScheme),
                     const SizedBox(height: 24),
                     Text(
-                      'Mero',
+                      l10n.appTitle,
                       textAlign: TextAlign.center,
                       style: theme.textTheme.displaySmall?.copyWith(
                         color: colorScheme.onSurface,
@@ -90,7 +92,7 @@ class ModelBootSplash extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: AutoSizeText(
-                        'Empowering the Guardians of Tomorrow',
+                        l10n.appSubtitle,
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         minFontSize: 10,
@@ -107,7 +109,7 @@ class ModelBootSplash extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 8),
                       child: AutoSizeText(
-                        'we can\’t protect what we don\’t recognize',
+                        l10n.appTagline,
                         textAlign: TextAlign.center,
                         maxLines: 1,
                         minFontSize: 10,
@@ -155,7 +157,7 @@ class ModelBootSplash extends StatelessWidget {
                       ),
                     );
                   },
-                  child: _buildStateIndicator(context, colorScheme, percent),
+                  child: _buildStateIndicator(context, colorScheme, percent, l10n),
                 ),
               ),
           ],
@@ -165,13 +167,13 @@ class ModelBootSplash extends StatelessWidget {
   }
 
   Widget _buildStateIndicator(
-      BuildContext context, ColorScheme scheme, int? percent) {
+      BuildContext context, ColorScheme scheme, int? percent, AppLocalizations l10n) {
     // Ready state
     if (phase == ModelBootPhase.ready) {
       return Center(
         key: const ValueKey('ready'),
         child: Text(
-          'Ready!',
+          l10n.commonReady,
           style: Theme.of(context).textTheme.titleMedium?.copyWith(
                 color: scheme.primary,
                 fontWeight: FontWeight.w700,
@@ -183,8 +185,8 @@ class ModelBootSplash extends StatelessWidget {
     // Error/failed state
     if (error != null) {
       final errorLabel = phase == ModelBootPhase.canceled
-          ? 'Download canceled'
-          : 'Model setup failed';
+          ? l10n.bootDownloadCanceled
+          : l10n.bootSetupFailed;
       return Center(
         key: const ValueKey('error'),
         child: Column(
@@ -206,7 +208,7 @@ class ModelBootSplash extends StatelessWidget {
                   children: [
                     const Icon(Icons.refresh, size: 18),
                     const SizedBox(width: 8),
-                    Text(phase == ModelBootPhase.paused ? 'Resume' : 'Retry'),
+                    Text(phase == ModelBootPhase.paused ? l10n.bootResume : l10n.commonRetry),
                   ],
                 ),
               ),
@@ -245,7 +247,7 @@ class ModelBootSplash extends StatelessWidget {
           ),
           const SizedBox(height: 12),
           Text(
-            '${_phaseLabel()}… $displayPercent%',
+            '${_phaseLabel(l10n)}… $displayPercent%',
             style: Theme.of(context).textTheme.labelLarge?.copyWith(
                   color: scheme.onSurfaceVariant,
                   fontWeight: FontWeight.w600,
@@ -399,6 +401,11 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
       return;
     }
 
+    final filePath = widget.downloadFilePath;
+    if (filePath == null || !await File(filePath).exists()) {
+      return;
+    }
+
     if (!await _hasStoragePermission()) {
       return;
     }
@@ -422,6 +429,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
+    final l10n = AppLocalizations.of(context)!;
 
     final bool needsPermission = _isAndroid && !_storageGranted;
 
@@ -441,7 +449,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
               ),
               const SizedBox(height: 16),
               Text(
-                'Download Required',
+                l10n.bootPhaseNeedsDownload,
                 style: theme.textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -450,14 +458,14 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
               Column(
                 children: [
                   Text(
-                    'To identify species, the model',
+                    l10n.bootIdentifySpeciesModel,
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
                   Text(
-                    'needs to be downloaded${widget.modelSize != null ? ' (${widget.modelSize})' : ''}.',
+                    l10n.bootNeedsToBeDownloaded(widget.modelSize != null ? ' (${widget.modelSize})' : ''),
                     textAlign: TextAlign.center,
                     style: theme.textTheme.bodyMedium?.copyWith(
                       color: colorScheme.onSurfaceVariant,
@@ -482,7 +490,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
                     const SizedBox(width: 12),
                     Expanded(
                       child: Text(
-                        'Connect to WiFi before downloading to save mobile data.',
+                        l10n.bootWifiWarning,
                         style: theme.textTheme.bodySmall?.copyWith(
                           color: colorScheme.onSurfaceVariant,
                         ),
@@ -497,7 +505,7 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(_showAdvanced ? 'Hide Advanced' : 'Advanced'),
+                    Text(_showAdvanced ? l10n.bootHideAdvanced : l10n.bootAdvanced),
                     Icon(
                       _showAdvanced ? Icons.expand_less : Icons.expand_more,
                     ),
@@ -508,10 +516,10 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
                 const SizedBox(height: 12),
                 TextField(
                   controller: _urlController,
-                  decoration: const InputDecoration(
-                    labelText: 'Custom Model URL',
+                  decoration: InputDecoration(
+                    labelText: l10n.bootCustomModelUrl,
                     hintText: 'https://...',
-                    border: OutlineInputBorder(),
+                    border: const OutlineInputBorder(),
                   ),
                   keyboardType: TextInputType.url,
                 ),
@@ -521,19 +529,19 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
                 FilledButton.icon(
                   onPressed: _requestStoragePermission,
                   icon: const Icon(Icons.lock_open_outlined),
-                  label: const Text('Grant Permission'),
+                  label: Text(l10n.bootGrantPermission),
                 ),
               ] else
                 FilledButton.icon(
                   onPressed: _handleDownload,
                   icon: const Icon(Icons.download),
-                  label: const Text('Download Model'),
+                  label: Text(l10n.bootDownloadModel),
                 ),
               if (widget.onCancel != null) ...[
                 const SizedBox(height: 8),
                 TextButton(
                   onPressed: widget.onCancel,
-                  child: const Text('Cancel'),
+                  child: Text(l10n.commonCancel),
                 ),
               ],
             ],

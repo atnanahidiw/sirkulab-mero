@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 
+import '../l10n/app_localizations.dart';
+import '../services/locale_service.dart';
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
 
@@ -19,67 +21,111 @@ class SettingsPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final textTheme = Theme.of(context).textTheme;
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
+    final textTheme = theme.textTheme;
     final modelService = Provider.of<ModelService>(context);
+    final localeService = Provider.of<LocaleService>(context);
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l10n.settingsTitle),
       ),
       body: ListView(
         children: [
+          // Language section
+          _sectionHeader(l10n.settingsLanguage, colorScheme, textTheme),
+          Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            child: DropdownButtonFormField<String>(
+              initialValue: localeService.locale?.languageCode ?? 'auto',
+              decoration: InputDecoration(
+                filled: true,
+                fillColor: colorScheme.surfaceContainerHighest,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide.none,
+                ),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              ),
+              items: [
+                DropdownMenuItem(
+                  value: 'auto',
+                  child: Text('${l10n.commonNone} (Auto)'),
+                ),
+                const DropdownMenuItem(
+                  value: 'en',
+                  child: Text('English'),
+                ),
+                const DropdownMenuItem(
+                  value: 'id',
+                  child: Text('Bahasa Indonesia'),
+                ),
+              ],
+              onChanged: (value) {
+                if (value == 'auto') {
+                  localeService.setLocale(null);
+                } else if (value != null) {
+                  localeService.setLocale(Locale(value));
+                }
+              },
+            ),
+          ),
+
           // AI Model section
-          _sectionHeader('AI Model', colorScheme, textTheme),
+          _sectionHeader(l10n.homeAiModel, colorScheme, textTheme),
           _ModelInfoCard(
             modelService: modelService,
             colorScheme: colorScheme,
             textTheme: textTheme,
-            onTap: () => _showModelInfo(context, modelService),
+            l10n: l10n,
+            onTap: () => _showModelInfo(context, modelService, l10n),
           ),
           const SizedBox(height: 8),
           _iconTile(
             context: context,
             icon: Icons.storage_outlined,
-            title: 'Manage Model',
-            subtitle: modelService.isModelLoaded ? 'Loaded' : 'Not loaded',
+            title: l10n.settingsManageModel,
+            subtitle: modelService.isModelLoaded ? l10n.settingsModelLoaded : l10n.settingsModelNotLoaded,
             colorScheme: colorScheme,
             textTheme: textTheme,
-            onTap: () => _manageModel(context, modelService),
+            onTap: () => _manageModel(context, modelService, l10n),
           ),
 
           // Permissions section
-          _sectionHeader('Permissions', colorScheme, textTheme),
+          _sectionHeader(l10n.settingsPermissions, colorScheme, textTheme),
           FutureBuilder<bool>(
             future: PermissionService.hasCameraPermission(),
             builder: (context, snapshot) {
               final granted = snapshot.data ?? false;
               return _permissionTile(
                 context: context,
-                label: 'Camera',
+                label: l10n.settingsCamera,
                 isGranted: granted,
                 colorScheme: colorScheme,
                 textTheme: textTheme,
-                onTap: () => _manageCameraPermission(context),
+                l10n: l10n,
+                onTap: () => _manageCameraPermission(context, l10n),
               );
             },
           ),
 
           // App Information section
-          _sectionHeader('Information', colorScheme, textTheme),
+          _sectionHeader(l10n.settingsInformation, colorScheme, textTheme),
           _iconTile(
             context: context,
             icon: Icons.info_outlined,
-            title: 'About',
+            title: l10n.settingsAbout,
             subtitle: 'Mero v1.0.0',
             colorScheme: colorScheme,
             textTheme: textTheme,
-            onTap: () => _showAboutDialog(context),
+            onTap: () => _showAboutDialog(context, l10n),
           ),
           _iconTile(
             context: context,
             icon: Icons.privacy_tip_outlined,
-            title: 'Privacy Policy',
+            title: l10n.settingsPrivacyPolicy,
             colorScheme: colorScheme,
             textTheme: textTheme,
             onTap: () => _launchUrl('https://example.com/privacy'),
@@ -87,7 +133,7 @@ class SettingsPage extends StatelessWidget {
           _iconTile(
             context: context,
             icon: Icons.description_outlined,
-            title: 'Terms of Service',
+            title: l10n.settingsTermsOfService,
             colorScheme: colorScheme,
             textTheme: textTheme,
             onTap: () => _launchUrl('https://example.com/terms'),
@@ -95,14 +141,14 @@ class SettingsPage extends StatelessWidget {
           _iconTile(
             context: context,
             icon: Icons.code_outlined,
-            title: 'GitHub Repository',
+            title: l10n.settingsGithubRepository,
             colorScheme: colorScheme,
             textTheme: textTheme,
             onTap: () => _launchUrl('https://github.com/example/mero'),
           ),
 
           // Conservation Resources section
-          _sectionHeader('Conservation Resources', colorScheme, textTheme),
+          _sectionHeader(l10n.settingsConservationResources, colorScheme, textTheme),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: Column(
@@ -177,6 +223,7 @@ class SettingsPage extends StatelessWidget {
     required bool isGranted,
     required ColorScheme colorScheme,
     required TextTheme textTheme,
+    required AppLocalizations l10n,
     required VoidCallback onTap,
   }) {
     return ListTile(
@@ -195,7 +242,7 @@ class SettingsPage extends StatelessWidget {
       ),
       title: Text(label),
       trailing: Chip(
-        label: Text(isGranted ? 'Granted' : 'Denied'),
+        label: Text(isGranted ? l10n.settingsPermissionGranted : l10n.settingsPermissionDenied),
         backgroundColor: isGranted
             ? colorScheme.tertiaryContainer
             : colorScheme.errorContainer,
@@ -212,30 +259,30 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _showModelInfo(BuildContext context, ModelService modelService) {
+  void _showModelInfo(BuildContext context, ModelService modelService, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Model Information'),
+        title: Text(l10n.settingsModelInfo),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('Gemma 4 E2B (2.4GB)',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
+              Text(l10n.settingsModelName,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
               const SizedBox(height: 8),
-              Text('Status: ${modelService.status}'),
+              Text(l10n.settingsStatus(modelService.status)),
               const SizedBox(height: 8),
-              const Text('Capabilities:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const Text('• Multimodal (text + image)'),
-              const Text('• 1024 token context window'),
-              const Text('• On-device inference'),
+              Text(l10n.settingsCapabilities,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(l10n.settingsCapabilityMultimodal),
+              Text(l10n.settingsCapabilityContext),
+              Text(l10n.settingsCapabilityInference),
               const SizedBox(height: 8),
-              const Text('Note:',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              const Text('Model works offline after initial download.'),
+              Text(l10n.settingsNote,
+                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(l10n.settingsOfflineNote),
             ],
           ),
         ),
@@ -249,23 +296,23 @@ class SettingsPage extends StatelessWidget {
     );
   }
 
-  void _manageModel(BuildContext context, ModelService modelService) {
+  void _manageModel(BuildContext context, ModelService modelService, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Manage Model'),
+        title: Text(l10n.settingsManageModel),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Current status: ${modelService.status}'),
+            Text(l10n.settingsCurrentStatus(modelService.status)),
             const SizedBox(height: 16),
             if (modelService.isModelLoaded) ...[
-              const Text('The model is currently loaded and ready for use.'),
+              Text(l10n.settingsModelLoadedDescription),
               const SizedBox(height: 8),
             ],
             if (!modelService.isModelLoaded && modelService.isInitialized) ...[
-              const Text('Model needs to be downloaded before use.'),
+              Text(l10n.settingsModelNeedsDownloadDescription),
               const SizedBox(height: 8),
             ],
           ],
@@ -277,10 +324,10 @@ class SettingsPage extends StatelessWidget {
                 Navigator.pop(context);
                 modelService.clearModel();
                 ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(content: Text('Model cleared')),
+                  SnackBar(content: Text(l10n.settingsClearModel)), // Reusing Clear Model label for snackbar
                 );
               },
-              child: const Text('Clear Model'),
+              child: Text(l10n.settingsClearModel),
             ),
           if (!modelService.isModelLoaded && modelService.isInitialized)
             TextButton(
@@ -288,18 +335,18 @@ class SettingsPage extends StatelessWidget {
                 Navigator.pop(context);
                 modelService.downloadModel();
               },
-              child: const Text('Download Model'),
+              child: Text(l10n.bootDownloadModel),
             ),
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('Close'),
+            child: Text(l10n.settingsClose),
           ),
         ],
       ),
     );
   }
 
-  Future<void> _manageCameraPermission(BuildContext context) async {
+  Future<void> _manageCameraPermission(BuildContext context, AppLocalizations l10n) async {
     final isPermanentlyDenied =
         await PermissionService.isPermissionPermanentlyDenied(Permission.camera);
 
@@ -309,22 +356,22 @@ class SettingsPage extends StatelessWidget {
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Camera Permission Required'),
+          title: Text(l10n.homeCameraPermissionRequired),
           content: Text(
             '${PermissionService.getPermissionRationale('camera')}\n\n'
-            'This permission has been permanently denied. Please enable it in app settings.',
+            '${l10n.homeCameraPermissionDeniedPermanently}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: const Text('Cancel'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () {
                 Navigator.pop(context);
                 PermissionService.openPermissionSettings();
               },
-              child: const Text('Open Settings'),
+              child: Text(l10n.homeOpenSettings),
             ),
           ],
         ),
@@ -338,38 +385,34 @@ class SettingsPage extends StatelessWidget {
         SnackBar(
           content: Text(
             status.isGranted
-                ? 'Camera permission granted'
-                : 'Camera permission denied',
+                ? l10n.settingsCameraPermissionGranted
+                : l10n.settingsCameraPermissionDenied,
           ),
         ),
       );
     }
   }
 
-  void _showAboutDialog(BuildContext context) {
+  void _showAboutDialog(BuildContext context, AppLocalizations l10n) {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('About Mero'),
+        title: Text(l10n.settingsAboutMero),
         content: SingleChildScrollView(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text(
-                'Empowering the Guardians of Tomorrow',
-                style: TextStyle(fontWeight: FontWeight.bold),
+              Text(
+                l10n.appSubtitle,
+                style: const TextStyle(fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 8),
-              const Text('Version: 1.0.0'),
+              Text(l10n.settingsVersion('1.0.0')),
               const SizedBox(height: 16),
-              const Text(
-                'This app uses Gemma 4 AI model to identify endangered species from images.',
-              ),
+              Text(l10n.settingsAppDescription),
               const SizedBox(height: 8),
-              const Text(
-                'All processing happens on your device for privacy. No images are uploaded to servers.',
-              ),
+              Text(l10n.settingsPrivacyDescription),
             ],
           ),
         ),
@@ -399,12 +442,14 @@ class _ModelInfoCard extends StatelessWidget {
   final ModelService modelService;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
+  final AppLocalizations l10n;
   final VoidCallback onTap;
 
   const _ModelInfoCard({
     required this.modelService,
     required this.colorScheme,
     required this.textTheme,
+    required this.l10n,
     required this.onTap,
   });
 
@@ -439,7 +484,7 @@ class _ModelInfoCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Gemma 4 E2B',
+                        l10n.settingsModelName,
                         style: textTheme.titleMedium?.copyWith(
                           color: colorScheme.onPrimaryContainer,
                         ),
@@ -456,7 +501,7 @@ class _ModelInfoCard extends StatelessWidget {
                 ),
                 Chip(
                   label: Text(
-                    modelService.isModelLoaded ? 'Ready' : 'Not loaded',
+                    modelService.isModelLoaded ? l10n.settingsModelLoaded : l10n.settingsModelNotLoaded,
                   ),
                   backgroundColor: colorScheme.secondaryContainer,
                   labelStyle: TextStyle(
