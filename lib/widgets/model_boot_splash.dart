@@ -399,11 +399,6 @@ class _DownloadConfirmationCardState extends State<_DownloadConfirmationCard>
       return;
     }
 
-    final filePath = widget.downloadFilePath;
-    if (filePath == null || !await File(filePath).exists()) {
-      return;
-    }
-
     if (!await _hasStoragePermission()) {
       return;
     }
