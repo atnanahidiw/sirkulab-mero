@@ -277,12 +277,15 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 
       onProgress?.call('Sending prompt...', 0.35);
       await chat.addQueryChunk(Message.text(
-        text: prompt,             // instruction text always follows last
+        text: prompt,            // instruction text always follows last
         isUser: true,
       ));
 
       // ── 3. Agentic loop: generate → dispatch tools → repeat until no more tool calls ──
-      onProgress?.call(useToolCalling ? 'Identifying species...' : 'Generating answer...', 0.45);
+      onProgress?.call(
+        useToolCalling ? 'Identifying species...' : 'Generating answer...',
+        0.45
+      );
       int pass = 0;
 
       while (true) {
@@ -379,10 +382,11 @@ class ModelService extends ChangeNotifier {
   // Model configuration - Gemma 4 2B Instruct (quantized)
   static const String _modelRevision =
       '7fa1d78473894f7e736a21d920c3aa80f950c0db';
+  static const ModelType modelType = ModelType.gemma4;
+  static const int maxTokens = 2048;
+
   final String modelUrl =
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';
-  final ModelType modelType = ModelType.gemma4;
-  final int maxTokens = 2048;
 
   // Species database service
   final SpeciesService _speciesService = SpeciesService();
@@ -395,7 +399,7 @@ class ModelService extends ChangeNotifier {
   })  : _downloader = downloader ?? BackgroundModelDownloadBackend(),
         _runtime = runtime ??
             FlutterGemmaModelRuntime(
-              modelType: ModelType.gemmaIt,
+              modelType: modelType,
             ),
         _stateStoreOverride = stateStore {
     if (autoInitialize) {
@@ -539,7 +543,7 @@ class ModelService extends ChangeNotifier {
   }) async {
     String dirPath;
     if (Platform.isAndroid) {
-        dirPath = '/storage/emulated/0/Download';
+      dirPath = '/storage/emulated/0/Download';
     } else {
       try {
         final downloadsDir = await getDownloadsDirectory();

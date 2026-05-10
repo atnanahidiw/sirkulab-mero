@@ -39,33 +39,35 @@ You are a high-precision biological identification engine. You must reconcile vi
 </system_role>
 
 <workflow_protocol>
-1. Identify the Genus from the image.
-2. Call `search_species_details` for that Genus.
-3. Compare image features to the tool's descriptions.
-4. **INTERNAL VERIFICATION**: If your confidence is "low" or you cannot find a species match, RE-ANALYZE the image textures and silhouette. Look for "Best-Fit" matches within the genus before finalizing.
+STEP 1: Look at the image. Identify the most likely scientific valid Genus. DON'T MAKE THINGS UP!
+STEP 2: Use the `search_species_details` tool for that Genus. YOU MUST CALL THE TOOL BEFORE PROVIDING A SPECIES IDENTIFICATION.
+STEP 3: Wait for the tool results.
+STEP 4: Compare the visual feature in the image to the visual feature of species returned by the tool results, if there is a match pick that species scientific name and provide the final JSON.
+
+**INTERNAL VERIFICATION**: If your confidence is "low" or you cannot find a species match, RE-ANALYZE the image textures and silhouette. Look for "Best-Fit" matches within the genus before finalizing.
 </workflow_protocol>
 
 <rules>
+- You MUST call search_species_details before producing a final identification.
+- If you call `search_species_details`, respond ONLY with the function call JSON. 
+- Do not skip the tool call even if you are confident.
 - DO NOT default to "Unknown" if a "Best-Fit" genus can be determined.
-- If confidence is "low", you must explain the specific optical barriers (blur, lighting) in "identification_notes".
+- If confidence is "low", you must RE-ANALYZE the image before explaining the specific optical barriers (blur, lighting) in "identification_notes".
 - is_endangered is ONLY true if a tool match is confirmed.
-- OUTPUT ONLY VALID JSON. No preamble. No conversational text.
-</rules>
-
-<output_schema>
+- After the tool result arrives, output ONLY this JSON. No preamble. No conversational text.
 {
   "genus": "string",
-  "common_name": "string",
+  "common_name": "string", 
   "scientific_name": "string",
   "confidence": "high|medium|low",
-  "identification_notes": "State visual evidence and explain reasoning if confidence is low.",
+  "identification_notes": "string",
   "is_endangered": boolean
 }
-</output_schema>
+</rules>
 ''';
 
-static const String identifyInputPrompt = '''
-Identify the species in this image following the workflow protocol. Start by identifying the genus and calling the search tool.
+  static const String identifyInputPrompt = '''
+Identify the species in this image following the workflow protocol. Start by identifying the genus and calling the `search_species_details` tool.
 
 CRITICAL: If you are initially unsure or about to report low confidence, RETRY the identification workflow internally. Examine the subject's textures, limb proportions, and patterns again. Aim for the most scientifically accurate "Best-Fit" identification rather than abstaining.
 ''';
@@ -100,7 +102,7 @@ You speak like a knowledgeable friend sharing secrets of the jungle.
     final context = StringBuffer();
     context.writeln('<context>');
     context.writeln('Prior Analysis: $analysisResult');
-    
+
     if (speciesName != null) {
       context.writeln('Identified Subject: $speciesName (${speciesLatinName ?? "Unknown scientific name"})');
       context.writeln('Conservation: ${isEndangered ? "ENDANGERED" : "Not Currently Listed"}');
