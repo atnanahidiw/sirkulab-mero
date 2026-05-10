@@ -54,9 +54,6 @@ class _ResultPageState extends State<ResultPage>
           parent: _typingAnimationController, curve: Curves.easeInOut),
     );
     _parseResultJson();
-    _remainingHints = List.from(
-      _isNotListed ? ChatPrompts.notEndangeredHints : ChatPrompts.endangeredHints,
-    );
     _loadSpeciesData();
     _addInitialMessage();
   }
@@ -85,74 +82,77 @@ class _ResultPageState extends State<ResultPage>
     }
   }
 
+  /// True when the species was found in the endangered species DB.
+  /// This means _species has a non-empty conservationStatus.
+  bool get _isListed {
+    if (_species == null) return false;
+    return _species!.conservationStatus.isNotEmpty;
+  }
+
+  /// Common name from JSON, used when species not in DB.
+  String? get _jsonCommonName {
+    if (_parsedJson == null) return null;
+    return _parsedJson!['common_name'] as String?;
+  }
+
+  /// Scientific name from JSON, used when species not in DB.
+  String? get _jsonScientificName {
+    if (_parsedJson == null) return null;
+    return _parsedJson!['scientific_name'] as String?;
+  }
+
+  /// Chat is enabled when we have a species (either from DB or JSON fallback).
+  bool get _chatEnabled => _species != null;
+
   void _addInitialMessage() {
-    final content = _isNotListed
-        ? 'Great job spotting the ${_notListedName ?? 'creature'}! What would you like to know about this species? Feel free to ask anything!'
+    final content = _species != null
+        ? 'Great job spotting the ${_species!.commonName ?? 'creature'}! What would you like to know about this species? Feel free to ask anything!'
         : '';
     setState(() {
       _chatMessages.add({'role': 'assistant', 'content': content});
     });
   }
 
-  bool get _chatEnabled => _species != null || _isNotListed;
-
-  bool get _isNotListed {
-    if (_parsedJson == null) return false;
-    final isEndangered = _parsedJson!['is_endangered'] as bool? ?? false;
-    return !isEndangered;
-  }
-
-  String? get _notListedName {
-    if (!_isNotListed || _parsedJson == null) return null;
-    return _parsedJson!['common_name'] as String?;
-  }
-
-  String? get _notListedScientificName {
-    if (!_isNotListed || _parsedJson == null) return null;
-    return _parsedJson!['scientific_name'] as String?;
-  }
-
   Future<void> _loadSpeciesData() async {
     try {
       if (_parsedJson == null) return;
 
-      final isEndangered = _parsedJson!['is_endangered'] as bool? ?? false;
       final scientificName = _parsedJson!['scientific_name'] as String? ?? '';
       final commonName = _parsedJson!['common_name'] as String? ?? '';
 
-      if (isEndangered && scientificName.isNotEmpty) {
+      if (scientificName.isNotEmpty) {
         final service = SpeciesService();
         final matched = await service.findSpeciesByLatinName(scientificName);
 
         SpeciesDetail? displaySpecies = matched;
-        if (displaySpecies == null) {
-          // Fallback: create a SpeciesDetail from the JSON so the card shows
-          // the identification even if the exact species isn't in the DB
-          displaySpecies = SpeciesDetail(
-            scientificName: scientificName,
-            commonName: commonName,
-            visualFeatures: _parsedJson!['identification_notes'] as String? ?? '',
-            description: '',
-            conservationStatus: 'Endangered',
-            habitat: '',
-            threats: const [],
-            ecosystemRole: '',
-            humanConnection: '',
-            whatStudentsCanDo: const [],
-            funFacts: const [],
-            habitatTags: const [],
-            taxonomy: {
-              'genus': _parsedJson!['genus'] as String? ?? '',
-            },
-          );
-        }
+        displaySpecies ??= SpeciesDetail(
+          scientificName: scientificName,
+          commonName: commonName,
+          visualFeatures: '',
+          description: _parsedJson!['identification_notes'] as String? ?? '',
+          conservationStatus: '',
+          habitat: '',
+          threats: const [],
+          ecosystemRole: '',
+          humanConnection: '',
+          whatStudentsCanDo: const [],
+          funFacts: const [],
+          habitatTags: const [],
+          taxonomy: {
+            'genus': _parsedJson!['genus'] as String? ?? '',
+          },
+        );
 
         setState(() {
           _species = displaySpecies;
-          _remainingHints = List.from(ChatPrompts.endangeredHints);
+          _remainingHints = List.from(
+            _isListed
+                ? ChatPrompts.endangeredHints
+                : ChatPrompts.notEndangeredHints,
+          );
           if (_chatMessages.isNotEmpty) {
             final name = _species!.commonName;
-            final body = _species!.description.isNotEmpty
+            final body = _isListed && _species!.description.isNotEmpty
                 ? 'Great job spotting the $name! Do you know, ${_species!.description}\n\nWhat would you like to know about this amazing species? Feel free to ask anything!'
                 : 'Great job spotting the $name! What would you like to know about this amazing species? Feel free to ask anything!';
             _chatMessages[0] = {'role': 'assistant', 'content': body};
@@ -187,9 +187,9 @@ class _ResultPageState extends State<ResultPage>
       final query = ChatPrompts.buildQuery(
         analysisResult: widget.analysisResult,
         userQuestion: text,
-        speciesName: _species?.commonName ?? _notListedName,
-        speciesLatinName: _species?.scientificName ?? _notListedScientificName,
-        isEndangered: _species != null,
+        speciesName: _species?.commonName ?? _jsonCommonName,
+        speciesLatinName: _species?.scientificName ?? _jsonScientificName,
+        isEndangered: _isListed,
         populationEstimate: _species?.populationEstimate,
         description: _species?.description,
         facts: _species?.funFacts,
@@ -286,7 +286,6 @@ class _ResultPageState extends State<ResultPage>
 
   String _speciesDisplayName() {
     if (_species != null) return _species!.commonName;
-    if (_isNotListed) return _notListedName ?? 'Species';
     return 'Analysis Result';
   }
 
@@ -411,9 +410,9 @@ class _ResultPageState extends State<ResultPage>
               padding: const EdgeInsets.all(16),
               child: _SpeciesInfoCard(
                 species: _species,
-                isNotListed: _isNotListed,
-                notListedName: _notListedName,
-                notListedLatinName: _notListedScientificName,
+                isListed: _isListed,
+                notListedName: _jsonCommonName,
+                notListedLatinName: _jsonScientificName,
                 colorScheme: colorScheme,
                 textTheme: textTheme,
                 onSourceTap: _launchUrl,
@@ -537,12 +536,12 @@ class _ResultPageState extends State<ResultPage>
 
   Future<void> _copyToClipboard(BuildContext context) async {
     String text;
-    if (_species != null) {
+    if (_isListed) {
       text =
           '${_species!.commonName}\n${_species!.scientificName}\n\n${_species!.description}';
-    } else if (_isNotListed) {
+    } else if (_species != null) {
       text =
-          '$_notListedName\n$_notListedScientificName\n\nNot listed as endangered species';
+          '${_jsonCommonName}\n${_jsonScientificName}\n\nNot listed as endangered species';
     } else {
       text = widget.analysisResult;
     }
@@ -566,7 +565,7 @@ class _ResultPageState extends State<ResultPage>
 
 class _SpeciesInfoCard extends StatelessWidget {
   final SpeciesDetail? species;
-  final bool isNotListed;
+  final bool isListed;
   final String? notListedName;
   final String? notListedLatinName;
   final ColorScheme colorScheme;
@@ -576,7 +575,7 @@ class _SpeciesInfoCard extends StatelessWidget {
 
   const _SpeciesInfoCard({
     required this.species,
-    required this.isNotListed,
+    required this.isListed,
     required this.notListedName,
     required this.notListedLatinName,
     required this.colorScheme,
@@ -594,7 +593,7 @@ class _SpeciesInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (species == null && !isNotListed) ...[
+            if (species == null) ...[
               Icon(
                 Icons.image_search_outlined,
                 size: 36,
@@ -622,7 +621,8 @@ class _SpeciesInfoCard extends StatelessWidget {
                 label: const Text('Retake Photo'),
               ),
             ]
-            else if (isNotListed) ...[
+            else if (!isListed) ...[
+              // Model identified the species but not in endangered DB
               Text(
                 notListedName ?? 'Unknown',
                 style: textTheme.headlineSmall?.copyWith(
@@ -642,7 +642,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               ],
               const SizedBox(height: 10),
               Chip(
-                label: const Text('Not Endangered'),
+                label: const Text('Not Listed as Endangered'),
                 backgroundColor: colorScheme.tertiaryContainer,
                 labelStyle: TextStyle(
                   color: colorScheme.onTertiaryContainer,
@@ -653,6 +653,7 @@ class _SpeciesInfoCard extends StatelessWidget {
                     size: 16, color: colorScheme.onTertiaryContainer),
               ),
             ] else ...[
+              // Species found in endangered DB
               Text(
                 species!.commonName,
                 style: textTheme.headlineSmall?.copyWith(

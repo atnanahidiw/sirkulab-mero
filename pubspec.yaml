@@ -43,7 +43,7 @@ dev_dependencies:
 flutter:
   uses-material-design: true
   assets:
-    - assets/data/species_data/
+    - assets/data/species_data.zip
     - .env
 
   # For iOS, need to set minimum version

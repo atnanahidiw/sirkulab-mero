@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
@@ -68,14 +70,13 @@ class SpeciesDetail {
 }
 
 class SpeciesService {
-  static const String _speciesPrefix = 'species_data/';
+  static const String _zipPath = 'assets/data/species_data.zip';
 
   // Genus-indexed in-memory cache (built on first access)
   Map<String, List<SpeciesDetail>>? _genusDb;
 
-  /// Build the genus index from individual JSON files under [species_data/]
-  /// using AssetManifest to discover all files at runtime.
-  /// Add a new .json file to the folder and it appears automatically.
+  /// Load the genus index from the bundled [species_data.zip] file.
+  /// Extracts all JSON files, parses them, and indexes by genus.
   /// Cached in memory after first load.
   Future<Map<String, List<SpeciesDetail>>> loadGenusDb() async {
     if (_genusDb != null) return _genusDb!;
@@ -83,24 +84,16 @@ class SpeciesService {
     _genusDb = {};
 
     try {
-      final AssetManifest manifest =
-          await AssetManifest.loadFromAssetBundle(rootBundle);
+      final ByteData raw = await rootBundle.load(_zipPath);
+      final Uint8List bytes = raw.buffer.asUint8List(
+        raw.offsetInBytes,
+        raw.lengthInBytes,
+      );
+      final Archive archive = ZipDecoder().decodeBytes(bytes);
 
-      final List<String> assets = manifest.listAssets();
-      print('--- BUNDLED ASSETS ---');
-      for (var asset in assets) {
-        print(asset);
-      }
-      print('----------------------');
- 
-      final speciesFiles = manifest.listAssets().where(
-            (path) =>
-                path.contains(_speciesPrefix) && path.endsWith('.json'),
-          );
-
-      for (final assetPath in speciesFiles) {
-        try {
-          final content = await rootBundle.loadString(assetPath);
+      for (final archiveFile in archive) {
+        if (archiveFile.isFile && archiveFile.name.endsWith('.json')) {
+          final content = utf8.decode(archiveFile.content);
           final data = json.decode(content) as Map<String, dynamic>;
           final detail = SpeciesDetail.fromJson(data);
           final genus = detail.genus.toLowerCase();
@@ -108,18 +101,16 @@ class SpeciesService {
           if (genus.isNotEmpty) {
             _genusDb!.putIfAbsent(genus, () => []).add(detail);
           }
-        } catch (e) {
-          debugPrint('Error parsing $assetPath: $e');
         }
       }
 
       final totalSpecies =
           _genusDb!.values.fold(0, (sum, list) => sum + list.length);
       debugPrint(
-          'Built genus database from species_data/: '
-          '${_genusDb!.length} genera, $totalSpecies species');
+          'Loaded genus database from zip: ${_genusDb!.length} genera, '
+          '$totalSpecies species');
     } catch (e) {
-      debugPrint('Error building genus database: $e');
+      debugPrint('Error loading genus database from zip: $e');
       _genusDb = {};
     }
 
@@ -129,21 +120,21 @@ class SpeciesService {
   /// Tool implementation: look up all species in a genus and return a
   /// compact list of scientific names paired with their visual features.
   Future<String> searchSpeciesByTaxonomy(
-    String taxon_class,
-    String taxon_order,
-    String taxon_family,
-    String taxon_genus,
+    String taxonClass,
+    String taxonOrder,
+    String taxonFamily,
+    String taxonGenus,
   ) async {
     final db = await loadGenusDb();
-    final key = taxon_genus.trim().toLowerCase();
+    final key = taxonGenus.trim().toLowerCase();
     final species = db[key];
 
     debugPrint(
-      'Finding species in: class=$taxon_class, order=$taxon_order, family=$taxon_family, genus=$taxon_genus'
+      'Finding species in: class=$taxonClass, order=$taxonOrder, family=$taxonFamily, genus=$taxonGenus'
     );
 
     if (species == null || species.isEmpty) {
-      return 'No endangered species found in the genus "$taxon_genus".';
+      return 'No endangered species found in the genus "$taxonGenus".';
     }
 
     final buffer = StringBuffer();
