@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -225,12 +226,17 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     }
   }
 
-  /// Generate response with tuned parameters
+  /// Generate response with tuned parameters.
+  /// When [tools] is provided, uses InferenceChat with tool calling.
+  /// [onToolCall] is invoked for each tool call and must return the tool result text.
   Future<String> generateOptimizedResponse(
     InferenceModel model,
     String prompt, {
     String? systemInstruction,
     Uint8List? imageBytes,
+    List<Tool>? tools,
+    Future<String> Function(String toolName, Map<String, dynamic> args)?
+        onToolCall,
     int maxTokens = 2048,
     double temperature = 0.7,
     int topK = 40,
@@ -238,49 +244,104 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     void Function(String phase, double progress)? onProgress,
     void Function(String token)? onToken,
   }) async {
-    try {
-      onProgress?.call('Preparing session...', 0.15);
+    final bool useToolCalling = tools != null && tools.isNotEmpty;
 
-      // Use the existing API with optimized parameters
-      final session = await model.createSession(
-        enableVisionModality: true,
+    try {
+      // ── 1. Initialize InferenceChat for all flows ──
+      onProgress?.call('Preparing chat...', 0.15);
+
+      final chat = await model.createChat(
+        tools: tools ?? const [],
+        supportsFunctionCalls: useToolCalling,
+        systemInstruction: systemInstruction,
+        supportImage: imageBytes != null,
         temperature: temperature,
         topK: topK,
         topP: topP,
-        systemInstruction: systemInstruction,
+        modelType: modelType,
+        toolChoice: useToolCalling ? ToolChoice.auto : ToolChoice.none,
       );
 
-      try {
-        onProgress?.call('Sending question...', 0.35);
+      // ── 2. Build message chunks: image first (if any), then prompt text ──
+      // Gemma 4 best practice: image content must come BEFORE text in the
+      // prompt for optimal multimodal attention.
+      // https://huggingface.co/google/gemma-4-31B-it
+      if (imageBytes != null) {
+        onProgress?.call('Sending image...', 0.30);
+        await chat.addQueryChunk(Message.withImage(
+          text: '',               // image-only chunk comes first
+          imageBytes: imageBytes,
+          isUser: true,
+        ));
+      }
 
-        if (imageBytes != null) {
-          await session.addQueryChunk(Message.withImage(
-            text: prompt,
-            imageBytes: imageBytes,
-            isUser: true,
-          ));
-        } else {
-          await session.addQueryChunk(Message.text(
-            text: prompt,
-            isUser: true,
-          ));
+      onProgress?.call('Sending prompt...', 0.35);
+      await chat.addQueryChunk(Message.text(
+        text: prompt,             // instruction text always follows last
+        isUser: true,
+      ));
+
+      // ── 3. Agentic loop: generate → dispatch tools → repeat until no more tool calls ──
+      onProgress?.call(useToolCalling ? 'Identifying species...' : 'Generating answer...', 0.45);
+      int pass = 0;
+
+      while (true) {
+        pass++;
+        debugPrint('── Generation pass $pass ──');
+
+        final responseBuffer = StringBuffer();
+        bool toolWasCalled = false;
+
+        await for (final response in chat.generateChatResponseAsync()) {
+          if (response is TextResponse) {
+            responseBuffer.write(response.token);
+            if (!useToolCalling) onToken?.call(response.token);
+          } else if (response is ThinkingResponse) {
+            debugPrint('[Pass $pass] Thinking: ${response.content}');
+          } else if (response is FunctionCallResponse) {
+            toolWasCalled = true;
+            debugPrint('[Pass $pass] Tool call: ${response.name}(${response.args})');
+            if (onToolCall != null) {
+              onProgress?.call('Running tool: ${response.name}...', 0.55);
+              final result = await onToolCall(response.name, response.args);
+              debugPrint('[Pass $pass] Tool result (${response.name}): $result');
+              await chat.addQueryChunk(Message.toolResponse(
+                toolName: response.name,
+                response: {'result': result},
+              ));
+            }
+          } else if (response is ParallelFunctionCallResponse) {
+            toolWasCalled = true;
+            debugPrint('[Pass $pass] Parallel tool calls: ${response.calls.map((c) => '${c.name}(${c.args})').join(', ')}');
+            for (final call in response.calls) {
+              if (onToolCall != null) {
+                onProgress?.call('Running tool: ${call.name}...', 0.55);
+                final result = await onToolCall(call.name, call.args);
+                debugPrint('[Pass $pass] Tool result (${call.name}): $result');
+                await chat.addQueryChunk(Message.toolResponse(
+                  toolName: call.name,
+                  response: {'result': result},
+                ));
+              }
+            }
+          }
         }
 
-        onProgress?.call('Generating answer...', 0.55);
+        debugPrint('[Pass $pass] Output: ${responseBuffer.toString().trim()}');
 
-        final buffer = StringBuffer();
-        await for (final token in session.getResponseAsync()) {
-          buffer.write(token);
-          onToken?.call(token);
+        // No tool calls this pass — the model is done, return its text response
+        if (!toolWasCalled) {
+          debugPrint('[Pass $pass] No tool calls — final answer returned after $pass pass(es)');
+          onProgress?.call('Complete', 1.0);
+          return responseBuffer.toString().trim();
         }
 
-        onProgress?.call('Complete', 1.0);
-        return buffer.toString();
-      } finally {
-        await session.close();
+        // Tools were called — loop back for another generation pass
+        debugPrint('[Pass $pass] Tool(s) dispatched — starting pass ${pass + 1}');
+        onProgress?.call('Generating result...', 0.75);
       }
     } catch (e) {
-      debugPrint('Optimized generation failed: $e');
+      debugPrint('Generation failed: $e');
       rethrow;
     }
   }
@@ -323,9 +384,8 @@ class ModelService extends ChangeNotifier {
   final ModelType modelType = ModelType.gemma4;
   final int maxTokens = 2048;
 
-  // Species database
+  // Species database service
   final SpeciesService _speciesService = SpeciesService();
-  List<Species> _speciesList = [];
 
   ModelService({
     ModelDownloadBackend? downloader,
@@ -1129,16 +1189,16 @@ class ModelService extends ChangeNotifier {
     }
   }
 
+  /// Pre-load the genus-indexed species database (warm the cache)
   Future<void> _loadSpeciesData() async {
     if (_speciesLoaded) {
       return;
     }
 
     try {
-      final speciesList = await _speciesService.loadSpecies();
-      _speciesList = speciesList;
+      await _speciesService.loadGenusDb();
       _speciesLoaded = true;
-      debugPrint('Loaded ${_speciesList.length} species');
+      debugPrint('Loaded species genus database');
     } catch (e) {
       debugPrint('Failed to load species data: $e');
     }
@@ -1498,6 +1558,13 @@ class ModelService extends ChangeNotifier {
     }
 
     try {
+      final tool = Tool(
+        name: ChatPrompts.speciesSearchToolDef['name'] as String,
+        description: ChatPrompts.speciesSearchToolDef['description'] as String,
+        parameters: ChatPrompts.speciesSearchToolDef['parameters']
+            as Map<String, dynamic>,
+      );
+
       _commitState(
         _state.copyWith(
           status: 'Analyzing image...',
@@ -1505,30 +1572,24 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      final speciesLatinNames = _speciesList.map((s) => s.latinName).toList();
-
-      final systemInstruction =
-          ChatPrompts.buildIdentifySystemInstruction(speciesLatinNames);
-
-      const inputPrompt = ChatPrompts.identifyInputPrompt;
-
-      _commitState(
-        _state.copyWith(
-          status: 'Generating analysis...',
-          phase: ModelBootPhase.analyzing,
-        ),
-      );
-
-      // Use optimized generation method
-      final response = await (_runtime as FlutterGemmaModelRuntime)
+      final result = await (_runtime as FlutterGemmaModelRuntime)
           .generateOptimizedResponse(
         _model!,
-        inputPrompt,
-        systemInstruction: systemInstruction,
+        ChatPrompts.identifyInputPrompt,
+        systemInstruction: ChatPrompts.identifySystemInstruction,
         imageBytes: imageBytes,
-        temperature: 0.7,
-        topK: 32,
-        topP: 0.9,
+        tools: [tool],
+        onToolCall: (name, args) async {
+          final genus = args['genus'] as String? ?? '';
+          debugPrint('Tool call: search_species_details(genus="$genus")');
+          return _speciesService.searchSpeciesByGenus(genus);
+        },
+        temperature: 0.1,  // Lower temperature for factual/JSON consistency
+        topK: 20,          // Reduced to prioritize most likely tokens
+        topP: 0.85,
+        onProgress: (phase, progress) {
+          debugPrint('Progress: $phase ($progress)');
+        },
       );
 
       _commitState(
@@ -1538,8 +1599,7 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      final cleanedResponse = response.trim();
-      return await _speciesService.parseLatinName(cleanedResponse) ?? '';
+      return result;
     } catch (e) {
       final errorMessage = 'Identification failed: $e';
       await _markError(errorMessage, phase: ModelBootPhase.failed);

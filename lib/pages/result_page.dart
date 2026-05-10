@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -26,7 +27,7 @@ class ResultPage extends StatefulWidget {
 
 class _ResultPageState extends State<ResultPage>
     with SingleTickerProviderStateMixin {
-  Species? _species;
+  SpeciesDetail? _species;
   final TextEditingController _questionController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<Map<String, dynamic>> _chatMessages = [];
@@ -37,6 +38,9 @@ class _ResultPageState extends State<ResultPage>
 
   late AnimationController _typingAnimationController;
   late Animation<double> _typingAnimation;
+
+  // Parsed JSON from analysisResult
+  Map<String, dynamic>? _parsedJson;
 
   @override
   void initState() {
@@ -49,6 +53,7 @@ class _ResultPageState extends State<ResultPage>
       CurvedAnimation(
           parent: _typingAnimationController, curve: Curves.easeInOut),
     );
+    _parseResultJson();
     _remainingHints = List.from(
       _isNotListed ? ChatPrompts.notEndangeredHints : ChatPrompts.endangeredHints,
     );
@@ -64,6 +69,22 @@ class _ResultPageState extends State<ResultPage>
     super.dispose();
   }
 
+  /// Parse the JSON result from the model.
+  void _parseResultJson() {
+    try {
+      String jsonStr = widget.analysisResult;
+      final jsonMatch = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```')
+          .firstMatch(widget.analysisResult);
+      if (jsonMatch != null) {
+        jsonStr = jsonMatch.group(1)!.trim();
+      }
+      _parsedJson = jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Failed to parse analysis JSON: $e');
+      _parsedJson = null;
+    }
+  }
+
   void _addInitialMessage() {
     final content = _isNotListed
         ? 'Great job spotting the ${_notListedName ?? 'creature'}! What would you like to know about this species? Feel free to ask anything!'
@@ -75,48 +96,72 @@ class _ResultPageState extends State<ResultPage>
 
   bool get _chatEnabled => _species != null || _isNotListed;
 
+  bool get _isNotListed {
+    if (_parsedJson == null) return false;
+    final isEndangered = _parsedJson!['is_endangered'] as bool? ?? false;
+    return !isEndangered;
+  }
+
+  String? get _notListedName {
+    if (!_isNotListed || _parsedJson == null) return null;
+    return _parsedJson!['common_name'] as String?;
+  }
+
+  String? get _notListedScientificName {
+    if (!_isNotListed || _parsedJson == null) return null;
+    return _parsedJson!['scientific_name'] as String?;
+  }
+
   Future<void> _loadSpeciesData() async {
     try {
-      final speciesName = _extractSpeciesName(widget.analysisResult);
-      if (speciesName.isNotEmpty) {
+      if (_parsedJson == null) return;
+
+      final isEndangered = _parsedJson!['is_endangered'] as bool? ?? false;
+      final scientificName = _parsedJson!['scientific_name'] as String? ?? '';
+      final commonName = _parsedJson!['common_name'] as String? ?? '';
+
+      if (isEndangered && scientificName.isNotEmpty) {
         final service = SpeciesService();
-        final matched = await service.findSpeciesByLatinName(speciesName);
-        if (matched?.latinName.isNotEmpty == true) {
-          setState(() {
-            _species = matched;
-            _remainingHints = List.from(ChatPrompts.endangeredHints);
-            if (_chatMessages.isNotEmpty) {
-              final name = matched!.name;
-              final body = matched.description.isNotEmpty
-                  ? 'Great job spotting the $name! Do you know, ${matched.description}\n\nWhat would you like to know about this amazing species? Feel free to ask anything!'
-                  : 'Great job spotting the $name! What would you like to know about this amazing species? Feel free to ask anything!';
-              _chatMessages[0] = {'role': 'assistant', 'content': body};
-            }
-          });
+        final matched = await service.findSpeciesByLatinName(scientificName);
+
+        SpeciesDetail? displaySpecies = matched;
+        if (displaySpecies == null) {
+          // Fallback: create a SpeciesDetail from the JSON so the card shows
+          // the identification even if the exact species isn't in the DB
+          displaySpecies = SpeciesDetail(
+            scientificName: scientificName,
+            commonName: commonName,
+            visualFeatures: _parsedJson!['identification_notes'] as String? ?? '',
+            description: '',
+            conservationStatus: 'Endangered',
+            habitat: '',
+            threats: const [],
+            ecosystemRole: '',
+            humanConnection: '',
+            whatStudentsCanDo: const [],
+            funFacts: const [],
+            habitatTags: const [],
+            taxonomy: {
+              'genus': _parsedJson!['genus'] as String? ?? '',
+            },
+          );
         }
+
+        setState(() {
+          _species = displaySpecies;
+          _remainingHints = List.from(ChatPrompts.endangeredHints);
+          if (_chatMessages.isNotEmpty) {
+            final name = _species!.commonName;
+            final body = _species!.description.isNotEmpty
+                ? 'Great job spotting the $name! Do you know, ${_species!.description}\n\nWhat would you like to know about this amazing species? Feel free to ask anything!'
+                : 'Great job spotting the $name! What would you like to know about this amazing species? Feel free to ask anything!';
+            _chatMessages[0] = {'role': 'assistant', 'content': body};
+          }
+        });
       }
     } catch (e) {
       debugPrint('Error loading species data: $e');
     }
-  }
-
-  String _extractSpeciesName(String result) {
-    if (result.startsWith('NOT_LISTED|')) return result;
-    return result.replaceAll('**', '').replaceAll('*', '').trim();
-  }
-
-  bool get _isNotListed => widget.analysisResult.startsWith('NOT_LISTED|');
-
-  String? get _notListedName {
-    if (!_isNotListed) return null;
-    final parts = widget.analysisResult.split('|');
-    return parts.length >= 2 ? parts[1] : null;
-  }
-
-  String? get _notListedLatinName {
-    if (!_isNotListed) return null;
-    final parts = widget.analysisResult.split('|');
-    return parts.length >= 3 ? parts[2] : null;
   }
 
   List<String> get _currentHintBatch => _remainingHints.take(3).toList();
@@ -142,12 +187,12 @@ class _ResultPageState extends State<ResultPage>
       final query = ChatPrompts.buildQuery(
         analysisResult: widget.analysisResult,
         userQuestion: text,
-        speciesName: _species?.name ?? _notListedName,
-        speciesLatinName: _species?.latinName ?? _notListedLatinName,
+        speciesName: _species?.commonName ?? _notListedName,
+        speciesLatinName: _species?.scientificName ?? _notListedScientificName,
         isEndangered: _species != null,
         populationEstimate: _species?.populationEstimate,
         description: _species?.description,
-        facts: _species?.facts,
+        facts: _species?.funFacts,
       );
 
       setState(() {
@@ -240,7 +285,7 @@ class _ResultPageState extends State<ResultPage>
   }
 
   String _speciesDisplayName() {
-    if (_species != null) return _species!.name;
+    if (_species != null) return _species!.commonName;
     if (_isNotListed) return _notListedName ?? 'Species';
     return 'Analysis Result';
   }
@@ -368,7 +413,7 @@ class _ResultPageState extends State<ResultPage>
                 species: _species,
                 isNotListed: _isNotListed,
                 notListedName: _notListedName,
-                notListedLatinName: _notListedLatinName,
+                notListedLatinName: _notListedScientificName,
                 colorScheme: colorScheme,
                 textTheme: textTheme,
                 onSourceTap: _launchUrl,
@@ -494,10 +539,10 @@ class _ResultPageState extends State<ResultPage>
     String text;
     if (_species != null) {
       text =
-          '${_species!.name}\n${_species!.latinName}\n\n${_species!.description}';
+          '${_species!.commonName}\n${_species!.scientificName}\n\n${_species!.description}';
     } else if (_isNotListed) {
       text =
-          '$_notListedName\n$_notListedLatinName\n\nNot listed as endangered species';
+          '$_notListedName\n$_notListedScientificName\n\nNot listed as endangered species';
     } else {
       text = widget.analysisResult;
     }
@@ -520,7 +565,7 @@ class _ResultPageState extends State<ResultPage>
 // ─── Species Info Card ───────────────────────────────────────────────────────
 
 class _SpeciesInfoCard extends StatelessWidget {
-  final Species? species;
+  final SpeciesDetail? species;
   final bool isNotListed;
   final String? notListedName;
   final String? notListedLatinName;
@@ -609,22 +654,22 @@ class _SpeciesInfoCard extends StatelessWidget {
               ),
             ] else ...[
               Text(
-                species!.name,
+                species!.commonName,
                 style: textTheme.headlineSmall?.copyWith(
                   color: colorScheme.onSecondaryContainer,
                 ),
               ),
-              if (species!.latinName.isNotEmpty) ...[
+              if (species!.scientificName.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  species!.latinName,
+                  species!.scientificName,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSecondaryContainer,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
               ],
-              if (species!.populationEstimate != null) ...[
+              if (species!.populationEstimate.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Chip(
                   label: const Text('Endangered'),
@@ -645,12 +690,12 @@ class _SpeciesInfoCard extends StatelessWidget {
                         .withValues(alpha: 0.8),
                   ),
                 ),
-                if (species!.sourceUri != null) ...[
+                if (species!.sourceUri.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () => onSourceTap(species!.sourceUri!),
+                      onTap: () => onSourceTap(species!.sourceUri),
                       child: Text(
                         'source',
                         style: textTheme.labelSmall?.copyWith(
