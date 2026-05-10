@@ -23,12 +23,24 @@ class ChatPrompts {
     'parameters': {
       'type': 'object',
       'properties': {
+        'class': {
+          'type': 'string',
+          'description': 'Scientific class name (e.g., "Reptilia", "Primates", "Mammalia")',
+        },
+        'order': {
+          'type': 'string',
+          'description': 'Scientific order name (e.g., "Squamata", "Cetacea")',
+        },
+        'family': {
+          'type': 'string',
+          'description': 'Scientific family name (e.g., "Varanidae", "Elephantidae")',
+        },
         'genus': {
           'type': 'string',
           'description': 'Scientific genus name (e.g., "Varanus", "Pongo", "Elephas")',
         }
       },
-      'required': ['genus'],
+      'required': ['class', 'order', 'family', 'genus'],
     },
   };
 
@@ -39,7 +51,7 @@ You are a high-precision biological identification engine. You must reconcile vi
 </system_role>
 
 <workflow_protocol>
-STEP 1: Look at the image. Identify the most likely scientific valid Genus. DON'T MAKE THINGS UP!
+STEP 1: Look at the image. Identify the most likely scientific valid Class, Order, Family, and Genus. DON'T MAKE THINGS UP!
 STEP 2: Use the `search_species_details` tool for that Genus. YOU MUST CALL THE TOOL BEFORE PROVIDING A SPECIES IDENTIFICATION.
 STEP 3: Wait for the tool results.
 STEP 4: Compare the visual feature in the image to the visual feature of species returned by the tool results, if there is a match pick that species scientific name and provide the final JSON.

@@ -1584,9 +1584,12 @@ class ModelService extends ChangeNotifier {
         imageBytes: imageBytes,
         tools: [tool],
         onToolCall: (name, args) async {
-          final genus = args['genus'] as String? ?? '';
-          debugPrint('Tool call: search_species_details(genus="$genus")');
-          return _speciesService.searchSpeciesByGenus(genus);
+          return _speciesService.searchSpeciesByTaxonomy(
+            args['class'] as String? ?? '',
+            args['order'] as String? ?? '',
+            args['family'] as String? ?? '',
+            args['genus'] as String? ?? '',
+          );
         },
         temperature: 0.1,  // Lower temperature for factual/JSON consistency
         topK: 20,          // Reduced to prioritize most likely tokens

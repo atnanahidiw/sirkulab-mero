@@ -68,7 +68,7 @@ class SpeciesDetail {
 }
 
 class SpeciesService {
-  static const String _speciesPrefix = 'assets/data/species_data/';
+  static const String _speciesPrefix = 'species_data/';
 
   // Genus-indexed in-memory cache (built on first access)
   Map<String, List<SpeciesDetail>>? _genusDb;
@@ -86,9 +86,16 @@ class SpeciesService {
       final AssetManifest manifest =
           await AssetManifest.loadFromAssetBundle(rootBundle);
 
+      final List<String> assets = manifest.listAssets();
+      print('--- BUNDLED ASSETS ---');
+      for (var asset in assets) {
+        print(asset);
+      }
+      print('----------------------');
+ 
       final speciesFiles = manifest.listAssets().where(
             (path) =>
-                path.startsWith(_speciesPrefix) && path.endsWith('.json'),
+                path.contains(_speciesPrefix) && path.endsWith('.json'),
           );
 
       for (final assetPath in speciesFiles) {
@@ -121,13 +128,22 @@ class SpeciesService {
 
   /// Tool implementation: look up all species in a genus and return a
   /// compact list of scientific names paired with their visual features.
-  Future<String> searchSpeciesByGenus(String genus) async {
+  Future<String> searchSpeciesByTaxonomy(
+    String taxon_class,
+    String taxon_order,
+    String taxon_family,
+    String taxon_genus,
+  ) async {
     final db = await loadGenusDb();
-    final key = genus.trim().toLowerCase();
+    final key = taxon_genus.trim().toLowerCase();
     final species = db[key];
 
+    debugPrint(
+      'Finding species in: class=$taxon_class, order=$taxon_order, family=$taxon_family, genus=$taxon_genus'
+    );
+
     if (species == null || species.isEmpty) {
-      return 'No endangered species found in the genus "$genus".';
+      return 'No endangered species found in the genus "$taxon_genus".';
     }
 
     final buffer = StringBuffer();
