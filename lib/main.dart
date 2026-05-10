@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
+import 'l10n/app_localizations.dart';
+import 'services/locale_service.dart';
 import 'services/model_service.dart';
 import 'widgets/startup_gate.dart';
 
@@ -21,32 +24,41 @@ void main() async {
   );
 
   final modelService = ModelService();
+  final localeService = LocaleService();
 
   runApp(
-    MeroApp(modelService: modelService),
+    MultiProvider(
+      providers: [
+        ChangeNotifierProvider<ModelService>.value(value: modelService),
+        ChangeNotifierProvider<LocaleService>.value(value: localeService),
+      ],
+      child: const MeroApp(),
+    ),
   );
 }
 
 class MeroApp extends StatelessWidget {
-  final ModelService modelService;
-
-  const MeroApp({
-    super.key,
-    required this.modelService,
-  });
+  const MeroApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return ChangeNotifierProvider<ModelService>.value(
-      value: modelService,
-      child: MaterialApp(
-        title: 'Mero - Empowering the Guardians of Tomorrow',
-        theme: AppTheme.light(),
-        darkTheme: AppTheme.dark(),
-        themeMode: ThemeMode.system,
-        home: const StartupGate(),
-        debugShowCheckedModeBanner: false,
-      ),
+    final localeService = Provider.of<LocaleService>(context);
+
+    return MaterialApp(
+      onGenerateTitle: (context) => AppLocalizations.of(context)!.appTitle,
+      theme: AppTheme.light(),
+      darkTheme: AppTheme.dark(),
+      themeMode: ThemeMode.system,
+      locale: localeService.locale,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      home: const StartupGate(),
+      debugShowCheckedModeBanner: false,
     );
   }
 }

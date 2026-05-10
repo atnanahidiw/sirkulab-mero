@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../services/model_service.dart';
 import '../services/species_service.dart';
 import '../models/chat_prompts.dart';
+import '../l10n/app_localizations.dart';
 
 class ResultPage extends StatefulWidget {
   final Uint8List imageBytes;
@@ -32,6 +33,7 @@ class _ResultPageState extends State<ResultPage>
   final List<Map<String, dynamic>> _chatMessages = [];
   bool _isAnalyzing = false;
   List<String> _remainingHints = [];
+  bool _hintsInitialized = false;
   String? _activeHint;
   static const double _expandedHeight = 340.0;
 
@@ -49,11 +51,20 @@ class _ResultPageState extends State<ResultPage>
       CurvedAnimation(
           parent: _typingAnimationController, curve: Curves.easeInOut),
     );
-    _remainingHints = List.from(
-      _isNotListed ? ChatPrompts.notEndangeredHints : ChatPrompts.endangeredHints,
-    );
     _loadSpeciesData();
-    _addInitialMessage();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hintsInitialized) {
+      final l10n = AppLocalizations.of(context)!;
+      _remainingHints = List.from(
+        _isNotListed ? ChatPrompts.notEndangeredHints(l10n) : ChatPrompts.endangeredHints(l10n),
+      );
+      _addInitialMessage(l10n);
+      _hintsInitialized = true;
+    }
   }
 
   @override
@@ -64,9 +75,11 @@ class _ResultPageState extends State<ResultPage>
     super.dispose();
   }
 
-  void _addInitialMessage() {
+  void _addInitialMessage(AppLocalizations l10n) {
+    if (_chatMessages.isNotEmpty) return;
+    
     final content = _isNotListed
-        ? 'Great job spotting the ${_notListedName ?? 'creature'}! What would you like to know about this species? Feel free to ask anything!'
+        ? l10n.resultInitialMsgNotListed(_notListedName ?? l10n.commonNone)
         : '';
     setState(() {
       _chatMessages.add({'role': 'assistant', 'content': content});
@@ -82,14 +95,14 @@ class _ResultPageState extends State<ResultPage>
         final service = SpeciesService();
         final matched = await service.findSpeciesByLatinName(speciesName);
         if (matched?.latinName.isNotEmpty == true) {
+          if (!mounted) return;
+          final l10n = AppLocalizations.of(context)!;
           setState(() {
             _species = matched;
-            _remainingHints = List.from(ChatPrompts.endangeredHints);
+            _remainingHints = List.from(ChatPrompts.endangeredHints(l10n));
             if (_chatMessages.isNotEmpty) {
               final name = matched!.name;
-              final body = matched.description.isNotEmpty
-                  ? 'Great job spotting the $name! Do you know, ${matched.description}\n\nWhat would you like to know about this amazing species? Feel free to ask anything!'
-                  : 'Great job spotting the $name! What would you like to know about this amazing species? Feel free to ask anything!';
+              final body = l10n.resultInitialMsgEndangered(name, matched.description);
               _chatMessages[0] = {'role': 'assistant', 'content': body};
             }
           });
@@ -139,6 +152,7 @@ class _ResultPageState extends State<ResultPage>
 
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
+      final languageName = Localizations.localeOf(context).languageCode == 'id' ? 'Indonesian' : 'English';
       final query = ChatPrompts.buildQuery(
         analysisResult: widget.analysisResult,
         userQuestion: text,
@@ -159,6 +173,7 @@ class _ResultPageState extends State<ResultPage>
 
       await modelService.askQuestion(
         query,
+        systemInstruction: ChatPrompts.answerSystemInstruction(languageName),
         onProgress: (_, __) {},
         onToken: (token) {
           if (!mounted) return;
@@ -176,11 +191,11 @@ class _ResultPageState extends State<ResultPage>
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
     } catch (e) {
+      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _chatMessages.add({
           'role': 'assistant',
-          'content':
-              'I apologize, but I encountered an error while processing your question. Please try again.',
+          'content': l10n.resultErrorProcessing,
         });
         _isAnalyzing = false;
       });
@@ -239,16 +254,17 @@ class _ResultPageState extends State<ResultPage>
     );
   }
 
-  String _speciesDisplayName() {
+  String _speciesDisplayName(AppLocalizations l10n) {
     if (_species != null) return _species!.name;
-    if (_isNotListed) return _notListedName ?? 'Species';
-    return 'Analysis Result';
+    if (_isNotListed) return _notListedName ?? l10n.resultSpecies;
+    return l10n.resultAnalysisResult;
   }
 
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       bottomNavigationBar: _chatEnabled ? _ChatInputBar(
@@ -257,6 +273,7 @@ class _ResultPageState extends State<ResultPage>
         hintBatch: _currentHintBatch,
         colorScheme: colorScheme,
         textTheme: textTheme,
+        l10n: l10n,
         onSend: _askQuestion,
         onHintTap: (hint) {
           setState(() => _activeHint = hint);
@@ -297,7 +314,7 @@ class _ResultPageState extends State<ResultPage>
                     _scrollController.offset >
                         (_expandedHeight - kToolbarHeight);
                 return Text(
-                  _speciesDisplayName(),
+                  _speciesDisplayName(l10n),
                   style: textTheme.titleLarge?.copyWith(
                     color: collapsed ? colorScheme.onSurface : Colors.white,
                   ),
@@ -371,6 +388,7 @@ class _ResultPageState extends State<ResultPage>
                 notListedLatinName: _notListedLatinName,
                 colorScheme: colorScheme,
                 textTheme: textTheme,
+                l10n: l10n,
                 onSourceTap: _launchUrl,
                 onRetake: () => Navigator.pop(context),
               ),
@@ -491,13 +509,14 @@ class _ResultPageState extends State<ResultPage>
   }
 
   Future<void> _copyToClipboard(BuildContext context) async {
+    final l10n = AppLocalizations.of(context)!;
     String text;
     if (_species != null) {
       text =
           '${_species!.name}\n${_species!.latinName}\n\n${_species!.description}';
     } else if (_isNotListed) {
       text =
-          '$_notListedName\n$_notListedLatinName\n\nNot listed as endangered species';
+          '$_notListedName\n$_notListedLatinName\n\n${l10n.resultNotEndangered}';
     } else {
       text = widget.analysisResult;
     }
@@ -506,12 +525,12 @@ class _ResultPageState extends State<ResultPage>
       await Clipboard.setData(ClipboardData(text: text));
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Analysis copied to clipboard')),
+        SnackBar(content: Text(l10n.resultCopied)),
       );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to copy: $e')),
+        SnackBar(content: Text(l10n.resultFailedToCopy(e.toString()))),
       );
     }
   }
@@ -526,6 +545,7 @@ class _SpeciesInfoCard extends StatelessWidget {
   final String? notListedLatinName;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
+  final AppLocalizations l10n;
   final void Function(String url) onSourceTap;
   final VoidCallback? onRetake;
 
@@ -536,6 +556,7 @@ class _SpeciesInfoCard extends StatelessWidget {
     required this.notListedLatinName,
     required this.colorScheme,
     required this.textTheme,
+    required this.l10n,
     required this.onSourceTap,
     this.onRetake,
   });
@@ -557,7 +578,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Species not recognized',
+                l10n.resultNotRecognized,
                 style: textTheme.titleMedium?.copyWith(
                   color: colorScheme.onSecondaryContainer,
                   fontWeight: FontWeight.w600,
@@ -565,7 +586,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try taking the photo from a different angle or with adequate lighting for better results.',
+                l10n.resultTryDifferentAngle,
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
                 ),
@@ -574,12 +595,12 @@ class _SpeciesInfoCard extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetake,
                 icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                label: const Text('Retake Photo'),
+                label: Text(l10n.resultRetakePhoto),
               ),
             ]
             else if (isNotListed) ...[
               Text(
-                notListedName ?? 'Unknown',
+                notListedName ?? l10n.commonNone,
                 style: textTheme.headlineSmall?.copyWith(
                   color: colorScheme.onSecondaryContainer,
                 ),
@@ -597,7 +618,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               ],
               const SizedBox(height: 10),
               Chip(
-                label: const Text('Not Endangered'),
+                label: Text(l10n.resultNotEndangered),
                 backgroundColor: colorScheme.tertiaryContainer,
                 labelStyle: TextStyle(
                   color: colorScheme.onTertiaryContainer,
@@ -627,7 +648,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               if (species!.populationEstimate != null) ...[
                 const SizedBox(height: 10),
                 Chip(
-                  label: const Text('Endangered'),
+                  label: Text(l10n.resultEndangered),
                   backgroundColor: colorScheme.errorContainer,
                   labelStyle: TextStyle(
                     color: colorScheme.onErrorContainer,
@@ -639,7 +660,7 @@ class _SpeciesInfoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Remaining: ${species!.populationEstimate}',
+                  l10n.resultRemaining(species!.populationEstimate!),
                   style: textTheme.labelMedium?.copyWith(
                     color: colorScheme.onSecondaryContainer
                         .withValues(alpha: 0.8),
@@ -652,7 +673,7 @@ class _SpeciesInfoCard extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () => onSourceTap(species!.sourceUri!),
                       child: Text(
-                        'source',
+                        l10n.resultSource,
                         style: textTheme.labelSmall?.copyWith(
                           color: colorScheme.tertiary,
                           decoration: TextDecoration.underline,
@@ -678,6 +699,7 @@ class _ChatInputBar extends StatelessWidget {
   final List<String> hintBatch;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
+  final AppLocalizations l10n;
   final VoidCallback onSend;
   final void Function(String hint) onHintTap;
 
@@ -687,6 +709,7 @@ class _ChatInputBar extends StatelessWidget {
     required this.hintBatch,
     required this.colorScheme,
     required this.textTheme,
+    required this.l10n,
     required this.onSend,
     required this.onHintTap,
   });
@@ -738,7 +761,7 @@ class _ChatInputBar extends StatelessWidget {
                   enabled: !isAnalyzing,
                   onSubmitted: (_) => onSend(),
                   decoration: InputDecoration(
-                    hintText: 'Ask about this species...',
+                    hintText: l10n.resultAskAboutSpecies,
                     hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                     suffixIcon: isAnalyzing
                         ? Padding(
