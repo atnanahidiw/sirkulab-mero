@@ -259,7 +259,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         topK: topK,
         topP: topP,
         modelType: modelType,
-        toolChoice: useToolCalling ? ToolChoice.auto : ToolChoice.none,
+        toolChoice: useToolCalling ? ToolChoice.required : ToolChoice.none,
       );
 
       // ── 2. Build message chunks: image first (if any), then prompt text ──

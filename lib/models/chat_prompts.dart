@@ -48,7 +48,7 @@ STEP 4: Compare the visual feature in the image to the visual feature of species
 </workflow_protocol>
 
 <rules>
-- You MUST call search_species_details before producing a final identification.
+- You are FORBIDDEN from providing a final JSON identification until AFTER you have received data from search_species_details.
 - If you call `search_species_details`, respond ONLY with the function call JSON. 
 - Do not skip the tool call even if you are confident.
 - DO NOT default to "Unknown" if a "Best-Fit" genus can be determined.
