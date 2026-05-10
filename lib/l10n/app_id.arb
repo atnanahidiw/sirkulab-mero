@@ -1,0 +1,218 @@
+{
+  "@@locale": "id",
+  "appTitle": "Mero",
+  "appSubtitle": "Memberdayakan Penjaga Masa Depan",
+  "appTagline": "kita tidak bisa melindungi apa yang tidak kita kenali",
+
+  "commonSave": "Simpan",
+  "commonCancel": "Batal",
+  "commonRetry": "Coba Lagi",
+  "commonError": "Kesalahan",
+  "commonLoading": "Memuat...",
+  "commonReady": "Siap!",
+  "commonNone": "Tidak ada",
+
+  "bootPhasePreparing": "Menyiapkan",
+  "bootPhaseChecking": "Memeriksa",
+  "bootPhaseNeedsDownload": "Unduhan Diperlukan",
+  "bootPhaseStarting": "Memulai unduhan",
+  "bootPhaseDownloading": "Mengunduh",
+  "bootPhaseResuming": "Melanjutkan",
+  "bootPhasePaused": "Ditangguhkan",
+  "bootPhaseCanceled": "Dibatalkan",
+  "bootPhaseInstalling": "Menginstall",
+  "bootPhaseFailed": "Butuh perhatian",
+  "bootPhaseReady": "Siap",
+  "bootPhaseAnalyzing": "Bekerja",
+
+  "bootDownloadCanceled": "Unduhan dibatalkan",
+  "bootSetupFailed": "Penyetelan model gagal",
+  "bootResume": "Lanjutkan",
+  "bootIdentifySpeciesModel": "Untuk mengidentifikasi spesies, model",
+  "bootNeedsToBeDownloaded": "perlu diunduh{size}.",
+  "@bootNeedsToBeDownloaded": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "bootWifiWarning": "Hubungkan ke WiFi sebelum mengunduh untuk menghemat data seluler.",
+  "bootAdvanced": "Lanjutan",
+  "bootHideAdvanced": "Sembunyikan Lanjutan",
+  "bootCustomModelUrl": "URL Model Kustom",
+  "bootGrantPermission": "Berikan Izin",
+  "bootDownloadModel": "Unduh Model",
+
+  "homeNoCameras": "Kamera tidak tersedia",
+  "homeCameraInitError": "Gagal menginisialisasi kamera: {error}",
+  "@homeCameraInitError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCameraPermissionRequired": "Izin Kamera Diperlukan",
+  "homeCameraPermissionDeniedPermanently": "Izin ini telah ditolak secara permanen. Harap aktifkan di pengaturan aplikasi.",
+  "homeOpenSettings": "Buka Pengaturan",
+  "homeCameraAccess": "Akses Kamera",
+  "homeNotNow": "Nanti Saja",
+  "homeAllow": "Izinkan",
+  "homeCameraPermissionRequiredToTakePhotos": "Izin kamera diperlukan untuk mengambil foto",
+  "homeDownloadModelFirst": "Harap unduh model terlebih dahulu",
+  "homeFailedToReadImage": "Gagal membaca gambar: {error}",
+  "@homeFailedToReadImage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "homeFailedToAnalyzeImage": "Gagal menganalisis gambar: {error}",
+  "@homeFailedToAnalyzeImage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCameraUnavailable": "Kamera tidak tersedia",
+  "homeModelStatusReady": "Model Siap",
+  "homeModelStatusError": "Kesalahan Model",
+  "homeModelStatusLoading": "Memuat…",
+  "homeModelStatusTapToDownload": "Ketuk untuk Mengunduh",
+  "homeAiModel": "Model AI",
+  "homeDownloadModelWithButton": "Unduh Model (2.4GB)",
+
+  "settingsTitle": "Pengaturan",
+  "settingsManageModel": "Kelola Model",
+  "settingsModelLoaded": "Dimuat",
+  "settingsModelNotLoaded": "Tidak dimuat",
+  "settingsPermissions": "Izin",
+  "settingsCamera": "Kamera",
+  "settingsPermissionGranted": "Diberikan",
+  "settingsPermissionDenied": "Ditolak",
+  "settingsInformation": "Informasi",
+  "settingsAbout": "Tentang",
+  "settingsPrivacyPolicy": "Kebijakan Privasi",
+  "settingsTermsOfService": "Ketentuan Layanan",
+  "settingsGithubRepository": "Repositori GitHub",
+  "settingsConservationResources": "Sumber Daya Konservasi",
+  "settingsLanguage": "Bahasa",
+
+  "settingsModelInfo": "Informasi Model",
+  "settingsModelName": "Gemma 4 E2B (2.4GB)",
+  "settingsStatus": "Status: {status}",
+  "@settingsStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCapabilities": "Kemampuan:",
+  "settingsCapabilityMultimodal": "• Multimodal (teks + gambar)",
+  "settingsCapabilityContext": "• Jendela konteks 1024 token",
+  "settingsCapabilityInference": "• Inferensi pada perangkat",
+  "settingsNote": "Catatan:",
+  "settingsOfflineNote": "Model bekerja secara offline setelah unduhan awal.",
+  "settingsCurrentStatus": "Status saat ini: {status}",
+  "@settingsCurrentStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelLoadedDescription": "Model saat ini dimuat dan siap digunakan.",
+  "settingsModelNeedsDownloadDescription": "Model perlu diunduh sebelum digunakan.",
+  "settingsClearModel": "Hapus Model",
+  "settingsClose": "Tutup",
+  "settingsCameraPermissionGranted": "Izin kamera diberikan",
+  "settingsCameraPermissionDenied": "Izin kamera ditolak",
+  "settingsAboutMero": "Tentang Mero",
+  "settingsVersion": "Versi: {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppDescription": "Aplikasi ini menggunakan model AI Gemma 4 untuk mengidentifikasi spesies terancam punah dari gambar.",
+  "settingsPrivacyDescription": "Semua pemrosesan terjadi di perangkat Anda untuk privasi. Tidak ada gambar yang diunggah ke server.",
+
+  "analyzeTitle": "Menganalisis...",
+  "analyzeFailed": "Analisis gagal",
+  "analyzeGoBack": "Kembali",
+  "analyzeMsg1": "Berkonsultasi dengan ensiklopedia satwa liar... 📚",
+  "analyzeMsg2": "Meminta AI untuk memakai kacamatanya... 🤓",
+  "analyzeMsg3": "Referansi silang dengan 10.000 spesies... 🔍",
+  "analyzeMsg4": "AI sedang menyipitkan mata dengan keras... 👀",
+  "analyzeMsg5": "Meningkatkan... meningkatkan... 🔬",
+  "analyzeMsg6": "Menelusuri basis data hutan... 🌿",
+  "analyzeMsg7": "Mengajari AI seperti apa rupa bulu... 🐾",
+  "analyzeMsg8": "Membandingkan piksel dengan cakar... 🐾",
+  "analyzeMsg9": "Membalik-balik majalah alam... 📰",
+  "analyzeMsg10": "Mempertajam neuron AI... 🧠",
+  "analyzeMsg11": "Mengunduh lebih banyak RAM... cuma bercanda! 😄",
+  "analyzeMsg12": "Mengkalibrasi pengukur spesies... 📡",
+  "analyzeMsg13": "Memastikan itu bukan hanya kucing mewah... 🐱",
+  "analyzeMsg14": "Memeriksa ulang dengan teman botani... 🌺",
+
+  "resultSpecies": "Spesies",
+  "resultAnalysisResult": "Hasil Analisis",
+  "resultErrorProcessing": "Saya minta maaf, tetapi saya mengalami kesalahan saat memproses pertanyaan Anda. Silakan coba lagi.",
+  "resultCopied": "Analisis disalin ke papan klip",
+  "resultFailedToCopy": "Gagal menyalin: {error}",
+  "@resultFailedToCopy": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "resultNotRecognized": "Spesies tidak dikenali",
+  "resultTryDifferentAngle": "Coba ambil foto dari sudut yang berbeda atau dengan pencahayaan yang memadai untuk hasil yang lebih baik.",
+  "resultRetakePhoto": "Ambil Ulang Foto",
+  "resultNotEndangered": "Tidak Ada di Daftar Terancam Punah",
+  "resultEndangered": "Terancam Punah",
+  "resultRemaining": "Tersisa: {count}",
+  "@resultRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "resultSource": "sumber",
+  "resultAskAboutSpecies": "Tanya tentang spesies ini...",
+  "resultInitialMsgNotListed": "Kerja bagus menemukan {name}! Apa yang ingin Anda ketahui tentang spesies ini? Jangan ragu untuk bertanya apa pun!",
+  "@resultInitialMsgNotListed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "resultInitialMsgEndangered": "Kerja bagus menemukan {name}! {description}\n\nApa yang ingin Anda ketahui tentang spesies luar biasa ini? Jangan ragu untuk bertanya apa pun!",
+  "@resultInitialMsgEndangered": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      }
+    }
+  },
+  "hintWhyEndangered": "Mengapa spesies ini terancam punah?",
+  "hintHowManyLeft": "Berapa banyak individu yang tersisa di alam liar?",
+  "hintMainThreats": "Apa ancaman utama bagi spesies ini?",
+  "hintConservationEfforts": "Upaya konservasi apa yang sedang dilakukan?",
+  "hintWhatEat": "Apa yang dimakan spesies ini?",
+  "hintWhereFound": "Di mana spesies ini dapat ditemukan di alam liar?",
+  "hintHowReproduce": "Bagaimana spesies ini berkembang biak?",
+  "hintNaturalPredators": "Apa pemangsa alaminya?"
+}

@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import '../services/model_service.dart';
 import '../services/species_service.dart';
 import '../models/chat_prompts.dart';
+import '../l10n/app_localizations.dart';
 
 class ResultPage extends StatefulWidget {
   final Uint8List imageBytes;
@@ -39,8 +40,9 @@ class _ResultPageState extends State<ResultPage>
   late AnimationController _typingAnimationController;
   late Animation<double> _typingAnimation;
 
-  // Parsed JSON from analysisResult
+  // Parsed JSON from analysisResult (for name/scientific_name fallback)
   Map<String, dynamic>? _parsedJson;
+  bool _hintsInitialized = false;
 
   @override
   void initState() {
@@ -55,7 +57,15 @@ class _ResultPageState extends State<ResultPage>
     );
     _parseResultJson();
     _loadSpeciesData();
-    _addInitialMessage();
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_hintsInitialized) {
+      _initHintsAndMessage();
+      _hintsInitialized = true;
+    }
   }
 
   @override
@@ -65,6 +75,8 @@ class _ResultPageState extends State<ResultPage>
     _typingAnimationController.dispose();
     super.dispose();
   }
+
+  // ── Parsing ──────────────────────────────────────────────────────────────
 
   /// Parse the JSON result from the model.
   void _parseResultJson() {
@@ -82,36 +94,62 @@ class _ResultPageState extends State<ResultPage>
     }
   }
 
+  // ── Reliable state (based on DB conservationStatus, NOT model JSON) ──────
+
   /// True when the species was found in the endangered species DB.
-  /// This means _species has a non-empty conservationStatus.
+  /// Only reliable AFTER _loadSpeciesData completes (sets _species).
   bool get _isListed {
     if (_species == null) return false;
     return _species!.conservationStatus.isNotEmpty;
   }
 
-  /// Common name from JSON, used when species not in DB.
-  String? get _jsonCommonName {
-    if (_parsedJson == null) return null;
-    return _parsedJson!['common_name'] as String?;
-  }
+  /// Common name from JSON (fallback when species not in DB).
+  String? get _jsonCommonName =>
+      _parsedJson?['common_name'] as String?;
 
-  /// Scientific name from JSON, used when species not in DB.
-  String? get _jsonScientificName {
-    if (_parsedJson == null) return null;
-    return _parsedJson!['scientific_name'] as String?;
-  }
+  /// Scientific name from JSON (fallback when species not in DB).
+  String? get _jsonScientificName =>
+      _parsedJson?['scientific_name'] as String?;
 
-  /// Chat is enabled when we have a species (either from DB or JSON fallback).
+  /// Chat is enabled when we have a species (DB match or JSON fallback).
   bool get _chatEnabled => _species != null;
 
-  void _addInitialMessage() {
-    final content = _species != null
-        ? 'Great job spotting the ${_species!.commonName ?? 'creature'}! What would you like to know about this species? Feel free to ask anything!'
-        : '';
-    setState(() {
+  // ── Hints & welcome message ──────────────────────────────────────────────
+  // Initialized in didChangeDependencies with JSON-only info (DB not loaded yet).
+  // Updated by _loadSpeciesData after DB lookup completes.
+
+  void _initHintsAndMessage() {
+    final l10n = AppLocalizations.of(context)!;
+    // Use endangered hints by default until DB tells us otherwise
+    _remainingHints = List.from(ChatPrompts.endangeredHints(l10n));
+    final name = _jsonCommonName;
+    final content = name != null ? l10n.resultInitialMsgNotListed(name) : '';
+    if (content.isNotEmpty) {
       _chatMessages.add({'role': 'assistant', 'content': content});
-    });
+    }
   }
+
+  /// Refresh hints + welcome message after DB lookup completes.
+  void _updateHintsAndMessage(AppLocalizations l10n) {
+    final wasEndangered = _isListed;
+    _remainingHints = List.from(
+      _isListed
+          ? ChatPrompts.endangeredHints(l10n)
+          : ChatPrompts.notEndangeredHints(l10n),
+    );
+    // Replace initial message with the correct one based on DB result
+    if (_chatMessages.isNotEmpty) {
+      final name = _isListed ? _species!.commonName : (_jsonCommonName ?? '');
+      final body = _isListed && _species!.description.isNotEmpty
+          ? l10n.resultInitialMsgEndangered(name, _species!.description)
+          : (name.isNotEmpty
+              ? l10n.resultInitialMsgNotListed(name)
+              : '');
+      _chatMessages[0] = {'role': 'assistant', 'content': body};
+    }
+  }
+
+  // ── DB species data ──────────────────────────────────────────────────────
 
   Future<void> _loadSpeciesData() async {
     try {
@@ -126,43 +164,37 @@ class _ResultPageState extends State<ResultPage>
 
         SpeciesDetail? displaySpecies = matched;
         displaySpecies ??= SpeciesDetail(
-          scientificName: scientificName,
-          commonName: commonName,
-          visualFeatures: '',
-          description: _parsedJson!['identification_notes'] as String? ?? '',
-          conservationStatus: '',
-          habitat: '',
-          threats: const [],
-          ecosystemRole: '',
-          humanConnection: '',
-          whatStudentsCanDo: const [],
-          funFacts: const [],
-          habitatTags: const [],
-          taxonomy: {
-            'genus': _parsedJson!['genus'] as String? ?? '',
-          },
-        );
+            scientificName: scientificName,
+            commonName: commonName,
+            visualFeatures: '',
+            description: _parsedJson!['identification_notes'] as String? ?? '',
+            conservationStatus: '',
+            habitat: '',
+            threats: const [],
+            ecosystemRole: '',
+            humanConnection: '',
+            whatStudentsCanDo: const [],
+            funFacts: const [],
+            habitatTags: const [],
+            taxonomy: {
+              'genus': _parsedJson!['genus'] as String? ?? '',
+            },
+          );
 
+        if (!mounted) return;
+        final l10n = AppLocalizations.of(context)!;
         setState(() {
           _species = displaySpecies;
-          _remainingHints = List.from(
-            _isListed
-                ? ChatPrompts.endangeredHints
-                : ChatPrompts.notEndangeredHints,
-          );
-          if (_chatMessages.isNotEmpty) {
-            final name = _species!.commonName;
-            final body = _isListed && _species!.description.isNotEmpty
-                ? 'Great job spotting the $name! Do you know, ${_species!.description}\n\nWhat would you like to know about this amazing species? Feel free to ask anything!'
-                : 'Great job spotting the $name! What would you like to know about this amazing species? Feel free to ask anything!';
-            _chatMessages[0] = {'role': 'assistant', 'content': body};
-          }
+          _updateHintsAndMessage(l10n);
+          _hintsInitialized = true;
         });
       }
     } catch (e) {
       debugPrint('Error loading species data: $e');
     }
   }
+
+  // ── Chat ─────────────────────────────────────────────────────────────────
 
   List<String> get _currentHintBatch => _remainingHints.take(3).toList();
 
@@ -200,7 +232,6 @@ class _ResultPageState extends State<ResultPage>
       });
 
       final int streamingIndex = _chatMessages.length - 1;
-      int tokenCount = 0;
 
       await modelService.askQuestion(
         query,
@@ -210,13 +241,10 @@ class _ResultPageState extends State<ResultPage>
           setState(() {
             _chatMessages[streamingIndex]['content'] += token;
           });
-          tokenCount++;
-          if (tokenCount % 5 == 0) _scrollToBottom();
         },
       );
 
-      _scrollToBottom();
-
+      await _scrollToBottom();
       await Future.delayed(const Duration(milliseconds: 400));
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
@@ -253,6 +281,8 @@ class _ResultPageState extends State<ResultPage>
     }
   }
 
+  // ── UI helpers ───────────────────────────────────────────────────────────
+
   Widget _buildTypingDots(ColorScheme colorScheme) {
     return AnimatedBuilder(
       animation: _typingAnimation,
@@ -284,13 +314,15 @@ class _ResultPageState extends State<ResultPage>
     );
   }
 
-  String _speciesDisplayName() {
+  String _speciesDisplayName(AppLocalizations l10n) {
     if (_species != null) return _species!.commonName;
-    return 'Analysis Result';
+    if (_isListed) return _jsonCommonName ?? l10n.resultSpecies;
+    return l10n.resultAnalysisResult;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -341,7 +373,7 @@ class _ResultPageState extends State<ResultPage>
                     _scrollController.offset >
                         (_expandedHeight - kToolbarHeight);
                 return Text(
-                  _speciesDisplayName(),
+                  _speciesDisplayName(l10n),
                   style: textTheme.titleLarge?.copyWith(
                     color: collapsed ? colorScheme.onSurface : Colors.white,
                   ),
@@ -360,7 +392,7 @@ class _ResultPageState extends State<ResultPage>
                       Icons.copy_outlined,
                       color: collapsed ? colorScheme.onSurface : Colors.white,
                     ),
-                    onPressed: () => _copyToClipboard(context),
+                    onPressed: () => _copyToClipboard(context, l10n),
                   );
                 },
               ),
@@ -534,14 +566,14 @@ class _ResultPageState extends State<ResultPage>
     );
   }
 
-  Future<void> _copyToClipboard(BuildContext context) async {
+  Future<void> _copyToClipboard(BuildContext context, AppLocalizations l10n) async {
     String text;
     if (_isListed) {
       text =
           '${_species!.commonName}\n${_species!.scientificName}\n\n${_species!.description}';
     } else if (_species != null) {
       text =
-          '${_jsonCommonName}\n${_jsonScientificName}\n\nNot listed as endangered species';
+          '$_jsonCommonName\n$_jsonScientificName\n\n${l10n.resultNotEndangered}';
     } else {
       text = widget.analysisResult;
     }
@@ -550,12 +582,12 @@ class _ResultPageState extends State<ResultPage>
       await Clipboard.setData(ClipboardData(text: text));
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Analysis copied to clipboard')),
+        SnackBar(content: Text(l10n.resultCopied)),
       );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Failed to copy: $e')),
+        SnackBar(content: Text('${l10n.commonError}: $e')),
       );
     }
   }
@@ -586,6 +618,8 @@ class _SpeciesInfoCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Card(
       color: colorScheme.secondaryContainer,
       child: Padding(
@@ -601,7 +635,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                'Species not recognized',
+                l10n.resultNotRecognized,
                 style: textTheme.titleMedium?.copyWith(
                   color: colorScheme.onSecondaryContainer,
                   fontWeight: FontWeight.w600,
@@ -609,7 +643,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               ),
               const SizedBox(height: 8),
               Text(
-                'Try taking the photo from a different angle or with adequate lighting for better results.',
+                l10n.resultTryDifferentAngle,
                 style: textTheme.bodySmall?.copyWith(
                   color: colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
                 ),
@@ -618,11 +652,10 @@ class _SpeciesInfoCard extends StatelessWidget {
               FilledButton.icon(
                 onPressed: onRetake,
                 icon: const Icon(Icons.camera_alt_outlined, size: 18),
-                label: const Text('Retake Photo'),
+                label: Text(l10n.resultRetakePhoto),
               ),
             ]
             else if (!isListed) ...[
-              // Model identified the species but not in endangered DB
               Text(
                 notListedName ?? 'Unknown',
                 style: textTheme.headlineSmall?.copyWith(
@@ -642,7 +675,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               ],
               const SizedBox(height: 10),
               Chip(
-                label: const Text('Not Listed as Endangered'),
+                label: Text(l10n.resultNotEndangered),
                 backgroundColor: colorScheme.tertiaryContainer,
                 labelStyle: TextStyle(
                   color: colorScheme.onTertiaryContainer,
@@ -653,7 +686,6 @@ class _SpeciesInfoCard extends StatelessWidget {
                     size: 16, color: colorScheme.onTertiaryContainer),
               ),
             ] else ...[
-              // Species found in endangered DB
               Text(
                 species!.commonName,
                 style: textTheme.headlineSmall?.copyWith(
@@ -673,7 +705,7 @@ class _SpeciesInfoCard extends StatelessWidget {
               if (species!.populationEstimate.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Chip(
-                  label: const Text('Endangered'),
+                  label: Text(l10n.resultEndangered),
                   backgroundColor: colorScheme.errorContainer,
                   labelStyle: TextStyle(
                     color: colorScheme.onErrorContainer,
@@ -685,7 +717,7 @@ class _SpeciesInfoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  'Remaining: ${species!.populationEstimate}',
+                  species!.populationEstimate,
                   style: textTheme.labelMedium?.copyWith(
                     color: colorScheme.onSecondaryContainer
                         .withValues(alpha: 0.8),
@@ -698,7 +730,7 @@ class _SpeciesInfoCard extends StatelessWidget {
                     child: GestureDetector(
                       onTap: () => onSourceTap(species!.sourceUri),
                       child: Text(
-                        'source',
+                        l10n.resultSource,
                         style: textTheme.labelSmall?.copyWith(
                           color: colorScheme.tertiary,
                           decoration: TextDecoration.underline,
@@ -739,6 +771,8 @@ class _ChatInputBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       color: colorScheme.surfaceContainer,
       padding: EdgeInsets.only(
@@ -784,7 +818,7 @@ class _ChatInputBar extends StatelessWidget {
                   enabled: !isAnalyzing,
                   onSubmitted: (_) => onSend(),
                   decoration: InputDecoration(
-                    hintText: 'Ask about this species...',
+                    hintText: l10n.resultAskAboutSpecies,
                     hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
                     suffixIcon: isAnalyzing
                         ? Padding(

@@ -1617,6 +1617,7 @@ class ModelService extends ChangeNotifier {
   /// Ask a question about a previously analyzed species
   Future<String> askQuestion(
     String question, {
+    String? systemInstruction,
     void Function(String phase, double progress)? onProgress,
     void Function(String token)? onToken,
   }) async {
@@ -1639,7 +1640,7 @@ class ModelService extends ChangeNotifier {
           .generateOptimizedResponse(
         _model!,
         question,
-        systemInstruction: ChatPrompts.answerSystemInstruction,
+        systemInstruction: systemInstruction ?? ChatPrompts.answerSystemInstruction('English'),
         temperature: 0.7,
         topK: 32,
         topP: 0.9,

@@ -1,0 +1,218 @@
+{
+  "@@locale": "en",
+  "appTitle": "Mero",
+  "appSubtitle": "Empowering the Guardians of Tomorrow",
+  "appTagline": "we can’t protect what we don’t recognize",
+
+  "commonSave": "Save",
+  "commonCancel": "Cancel",
+  "commonRetry": "Retry",
+  "commonError": "Error",
+  "commonLoading": "Loading...",
+  "commonReady": "Ready!",
+  "commonNone": "None",
+
+  "bootPhasePreparing": "Preparing",
+  "bootPhaseChecking": "Checking",
+  "bootPhaseNeedsDownload": "Download Required",
+  "bootPhaseStarting": "Starting download",
+  "bootPhaseDownloading": "Downloading",
+  "bootPhaseResuming": "Resuming",
+  "bootPhasePaused": "Paused",
+  "bootPhaseCanceled": "Canceled",
+  "bootPhaseInstalling": "Installing",
+  "bootPhaseFailed": "Needs attention",
+  "bootPhaseReady": "Ready",
+  "bootPhaseAnalyzing": "Working",
+
+  "bootDownloadCanceled": "Download canceled",
+  "bootSetupFailed": "Model setup failed",
+  "bootResume": "Resume",
+  "bootIdentifySpeciesModel": "To identify species, the model",
+  "bootNeedsToBeDownloaded": "needs to be downloaded{size}.",
+  "@bootNeedsToBeDownloaded": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
+  "bootWifiWarning": "Connect to WiFi before downloading to save mobile data.",
+  "bootAdvanced": "Advanced",
+  "bootHideAdvanced": "Hide Advanced",
+  "bootCustomModelUrl": "Custom Model URL",
+  "bootGrantPermission": "Grant Permission",
+  "bootDownloadModel": "Download Model",
+
+  "homeNoCameras": "No cameras available",
+  "homeCameraInitError": "Failed to initialize camera: {error}",
+  "@homeCameraInitError": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCameraPermissionRequired": "Camera Permission Required",
+  "homeCameraPermissionDeniedPermanently": "This permission has been permanently denied. Please enable it in app settings.",
+  "homeOpenSettings": "Open Settings",
+  "homeCameraAccess": "Camera Access",
+  "homeNotNow": "Not Now",
+  "homeAllow": "Allow",
+  "homeCameraPermissionRequiredToTakePhotos": "Camera permission is required to take photos",
+  "homeDownloadModelFirst": "Please download the model first",
+  "homeFailedToReadImage": "Failed to read image: {error}",
+  "@homeFailedToReadImage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "homeFailedToAnalyzeImage": "Failed to analyze image: {error}",
+  "@homeFailedToAnalyzeImage": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "homeCameraUnavailable": "Camera unavailable",
+  "homeModelStatusReady": "Model Ready",
+  "homeModelStatusError": "Model Error",
+  "homeModelStatusLoading": "Loading…",
+  "homeModelStatusTapToDownload": "Tap to Download",
+  "homeAiModel": "AI Model",
+  "homeDownloadModelWithButton": "Download Model (2.4GB)",
+
+  "settingsTitle": "Settings",
+  "settingsManageModel": "Manage Model",
+  "settingsModelLoaded": "Loaded",
+  "settingsModelNotLoaded": "Not loaded",
+  "settingsPermissions": "Permissions",
+  "settingsCamera": "Camera",
+  "settingsPermissionGranted": "Granted",
+  "settingsPermissionDenied": "Denied",
+  "settingsInformation": "Information",
+  "settingsAbout": "About",
+  "settingsPrivacyPolicy": "Privacy Policy",
+  "settingsTermsOfService": "Terms of Service",
+  "settingsGithubRepository": "GitHub Repository",
+  "settingsConservationResources": "Conservation Resources",
+  "settingsLanguage": "Language",
+
+  "settingsModelInfo": "Model Information",
+  "settingsModelName": "Gemma 4 E2B (2.4GB)",
+  "settingsStatus": "Status: {status}",
+  "@settingsStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsCapabilities": "Capabilities:",
+  "settingsCapabilityMultimodal": "• Multimodal (text + image)",
+  "settingsCapabilityContext": "• 1024 token context window",
+  "settingsCapabilityInference": "• On-device inference",
+  "settingsNote": "Note:",
+  "settingsOfflineNote": "Model works offline after initial download.",
+  "settingsCurrentStatus": "Current status: {status}",
+  "@settingsCurrentStatus": {
+    "placeholders": {
+      "status": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsModelLoadedDescription": "The model is currently loaded and ready for use.",
+  "settingsModelNeedsDownloadDescription": "Model needs to be downloaded before use.",
+  "settingsClearModel": "Clear Model",
+  "settingsClose": "Close",
+  "settingsCameraPermissionGranted": "Camera permission granted",
+  "settingsCameraPermissionDenied": "Camera permission denied",
+  "settingsAboutMero": "About Mero",
+  "settingsVersion": "Version: {version}",
+  "@settingsVersion": {
+    "placeholders": {
+      "version": {
+        "type": "String"
+      }
+    }
+  },
+  "settingsAppDescription": "This app uses Gemma 4 AI model to identify endangered species from images.",
+  "settingsPrivacyDescription": "All processing happens on your device for privacy. No images are uploaded to servers.",
+
+  "analyzeTitle": "Analyzing...",
+  "analyzeFailed": "Analysis failed",
+  "analyzeGoBack": "Go Back",
+  "analyzeMsg1": "Consulting the wildlife encyclopedia... 📚",
+  "analyzeMsg2": "Asking the AI to put on its glasses... 🤓",
+  "analyzeMsg3": "Cross-referencing with 10,000 species... 🔍",
+  "analyzeMsg4": "The AI is squinting really hard... 👀",
+  "analyzeMsg5": "Enhancing... enhancing... 🔬",
+  "analyzeMsg6": "Running through the jungle database... 🌿",
+  "analyzeMsg7": "Teaching the AI what fur looks like... 🐾",
+  "analyzeMsg8": "Comparing pixels to paws... 🐾",
+  "analyzeMsg9": "Flipping through nature magazines... 📰",
+  "analyzeMsg10": "Sharpening AI neurons... 🧠",
+  "analyzeMsg11": "Downloading more RAM... just kidding! 😄",
+  "analyzeMsg12": "Calibrating the species-o-meter... 📡",
+  "analyzeMsg13": "Making sure it's not just a fancy cat... 🐱",
+  "analyzeMsg14": "Double-checking with a botanist friend... 🌺",
+
+  "resultSpecies": "Species",
+  "resultAnalysisResult": "Analysis Result",
+  "resultErrorProcessing": "I apologize, but I encountered an error while processing your question. Please try again.",
+  "resultCopied": "Analysis copied to clipboard",
+  "resultFailedToCopy": "Failed to copy: {error}",
+  "@resultFailedToCopy": {
+    "placeholders": {
+      "error": {
+        "type": "String"
+      }
+    }
+  },
+  "resultNotRecognized": "Species not recognized",
+  "resultTryDifferentAngle": "Try taking the photo from a different angle or with adequate lighting for better results.",
+  "resultRetakePhoto": "Retake Photo",
+  "resultNotEndangered": "Not Listed as Endangered",
+  "resultEndangered": "Endangered",
+  "resultRemaining": "Remaining: {count}",
+  "@resultRemaining": {
+    "placeholders": {
+      "count": {
+        "type": "String"
+      }
+    }
+  },
+  "resultSource": "source",
+  "resultAskAboutSpecies": "Ask about this species...",
+  "resultInitialMsgNotListed": "Great job spotting the {name}! What would you like to know about this species? Feel free to ask anything!",
+  "@resultInitialMsgNotListed": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      }
+    }
+  },
+  "resultInitialMsgEndangered": "Great job spotting the {name}! {description}\n\nWhat would you like to know about this amazing species? Feel free to ask anything!",
+  "@resultInitialMsgEndangered": {
+    "placeholders": {
+      "name": {
+        "type": "String"
+      },
+      "description": {
+        "type": "String"
+      }
+    }
+  },
+  "hintWhyEndangered": "Why is this species endangered?",
+  "hintHowManyLeft": "How many individuals are left in the wild?",
+  "hintMainThreats": "What are the main threats to this species?",
+  "hintConservationEfforts": "What conservation efforts are being made?",
+  "hintWhatEat": "What does this species eat?",
+  "hintWhereFound": "Where can this species be found in the wild?",
+  "hintHowReproduce": "How does this species reproduce?",
+  "hintNaturalPredators": "What are its natural predators?"
+}

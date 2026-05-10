@@ -1,20 +1,22 @@
+import '../l10n/app_localizations.dart';
+
 /// Holds hint questions and prompt templates for the Q&A and identification features.
 class ChatPrompts {
   ChatPrompts._();
 
-  static const List<String> endangeredHints = [
-    'Why is this species endangered?',
-    'How many individuals are left in the wild?',
-    'What are the main threats to this species?',
-    'What conservation efforts are being made?',
-  ];
+  static List<String> endangeredHints(AppLocalizations l10n) => [
+        l10n.hintWhyEndangered,
+        l10n.hintHowManyLeft,
+        l10n.hintMainThreats,
+        l10n.hintConservationEfforts,
+      ];
 
-  static const List<String> notEndangeredHints = [
-    'What does this species eat?',
-    'Where can this species be found in the wild?',
-    'How does this species reproduce?',
-    'What are its natural predators?',
-  ];
+  static List<String> notEndangeredHints(AppLocalizations l10n) => [
+        l10n.hintWhatEat,
+        l10n.hintWhereFound,
+        l10n.hintHowReproduce,
+        l10n.hintNaturalPredators,
+      ];
 
   /// Standardized tool definition for consistency across different model versions.
   static final Map<String, dynamic> speciesSearchToolDef = {
@@ -84,8 +86,8 @@ Identify the species in this image following the workflow protocol. Start by ide
 CRITICAL: If you are initially unsure or about to report low confidence, RETRY the identification workflow internally. Examine the subject's textures, limb proportions, and patterns again. Aim for the most scientifically accurate "Best-Fit" identification rather than abstaining.
 ''';
 
-  /// Refined for a warmer, expert Indonesian context.
-  static const String answerSystemInstruction = '''
+  /// System instruction for Q&A after identification.
+  static String answerSystemInstruction(String languageName) => '''
 <identity>
 You are a warm, expert wildlife biologist specializing in the rich biodiversity of the Indonesian archipelago. 
 You speak like a knowledgeable friend sharing secrets of the jungle.

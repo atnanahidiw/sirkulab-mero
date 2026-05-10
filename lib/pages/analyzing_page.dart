@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../core/navigation/app_page_route.dart';
+import '../l10n/app_localizations.dart';
 import '../services/model_service.dart';
 import '../utils/image_utils.dart';
 import 'result_page.dart';
@@ -19,22 +20,22 @@ class AnalyzingPage extends StatefulWidget {
 
 class _AnalyzingPageState extends State<AnalyzingPage>
     with TickerProviderStateMixin {
-  static const List<String> _messages = [
-    'Consulting the wildlife encyclopedia... 📚',
-    'Asking the AI to put on its glasses... 🤓',
-    'Cross-referencing with 10,000 species... 🔍',
-    'The AI is squinting really hard... 👀',
-    'Enhancing... enhancing... 🔬',
-    'Running through the jungle database... 🌿',
-    'Teaching the AI what fur looks like... 🐾',
-    'Comparing pixels to paws... 🐾',
-    'Flipping through nature magazines... 📰',
-    'Sharpening AI neurons... 🧠',
-    'Downloading more RAM... just kidding! 😄',
-    'Calibrating the species-o-meter... 📡',
-    'Making sure it\'s not just a fancy cat... 🐱',
-    'Double-checking with a botanist friend... 🌺',
-  ];
+  List<String> _getMessages(AppLocalizations l10n) => [
+        l10n.analyzeMsg1,
+        l10n.analyzeMsg2,
+        l10n.analyzeMsg3,
+        l10n.analyzeMsg4,
+        l10n.analyzeMsg5,
+        l10n.analyzeMsg6,
+        l10n.analyzeMsg7,
+        l10n.analyzeMsg8,
+        l10n.analyzeMsg9,
+        l10n.analyzeMsg10,
+        l10n.analyzeMsg11,
+        l10n.analyzeMsg12,
+        l10n.analyzeMsg13,
+        l10n.analyzeMsg14,
+      ];
 
   late AnimationController _pulseController;
   late AnimationController _glowController;
@@ -69,18 +70,23 @@ class _AnalyzingPageState extends State<AnalyzingPage>
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
-    _currentMessage = _messages[Random().nextInt(_messages.length)];
+    _startAnalysis();
+  }
+
+  void _setupMessageTimer(AppLocalizations l10n) {
+    if (_messageTimer != null) return;
+    
+    final messages = _getMessages(l10n);
+    _currentMessage = messages[Random().nextInt(messages.length)];
 
     _messageTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       if (mounted) {
         setState(() {
-          _messageIndex = (_messageIndex + 1) % _messages.length;
-          _currentMessage = _messages[_messageIndex];
+          _messageIndex = (_messageIndex + 1) % messages.length;
+          _currentMessage = messages[_messageIndex];
         });
       }
     });
-
-    _startAnalysis();
   }
 
   Future<void> _startAnalysis() async {
@@ -131,6 +137,9 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
+    final l10n = AppLocalizations.of(context)!;
+
+    _setupMessageTimer(l10n);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -140,7 +149,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
             const SizedBox(height: 24),
 
             Text(
-              'Analyzing...',
+              l10n.analyzeTitle,
               style: textTheme.headlineSmall?.copyWith(
                 color: colorScheme.onSurface,
                 fontWeight: FontWeight.w600,
@@ -228,7 +237,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
                               color: colorScheme.error, size: 40),
                           const SizedBox(height: 12),
                           Text(
-                            'Analysis failed',
+                            l10n.analyzeFailed,
                             style: textTheme.titleMedium?.copyWith(
                               color: colorScheme.error,
                             ),
@@ -244,7 +253,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
                           const SizedBox(height: 16),
                           FilledButton.tonal(
                             onPressed: () => Navigator.pop(context),
-                            child: const Text('Go Back'),
+                            child: Text(l10n.analyzeGoBack),
                           ),
                         ],
                       )

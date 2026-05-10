@@ -4,6 +4,7 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
 import '../core/navigation/app_page_route.dart';
+import '../l10n/app_localizations.dart';
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
 import 'analyzing_page.dart';
@@ -43,8 +44,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       _cameras = await availableCameras();
       if (_cameras.isEmpty) {
         if (currentContext.mounted) {
+          final l10n = AppLocalizations.of(currentContext)!;
           ScaffoldMessenger.of(currentContext).showSnackBar(
-            const SnackBar(content: Text('No cameras available')),
+            SnackBar(content: Text(l10n.homeNoCameras)),
           );
         }
         return;
@@ -63,8 +65,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     } catch (e) {
       debugPrint('Camera initialization error: $e');
       if (currentContext.mounted) {
+        final l10n = AppLocalizations.of(currentContext)!;
         ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(content: Text('Failed to initialize camera: $e')),
+          SnackBar(content: Text(l10n.homeCameraInitError(e.toString()))),
         );
       }
       setState(() {
@@ -82,23 +85,25 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     if (!mounted) return false;
 
+    final l10n = AppLocalizations.of(context)!;
+
     if (isPermanentlyDenied) {
       final shouldOpenSettings = await showDialog<bool>(
         context: context,
         builder: (context) => AlertDialog(
-          title: const Text('Camera Permission Required'),
+          title: Text(l10n.homeCameraPermissionRequired),
           content: Text(
             '${PermissionService.getPermissionRationale('camera')}\n\n'
-            'This permission has been permanently denied. Please enable it in app settings.',
+            '${l10n.homeCameraPermissionDeniedPermanently}',
           ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context, false),
-              child: const Text('Cancel'),
+              child: Text(l10n.commonCancel),
             ),
             FilledButton(
               onPressed: () => Navigator.pop(context, true),
-              child: const Text('Open Settings'),
+              child: Text(l10n.homeOpenSettings),
             ),
           ],
         ),
@@ -113,16 +118,16 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final shouldRequest = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Camera Access'),
+        title: Text(l10n.homeCameraAccess),
         content: Text(PermissionService.getPermissionRationale('camera')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('Not Now'),
+            child: Text(l10n.homeNotNow),
           ),
           FilledButton(
             onPressed: () => Navigator.pop(context, true),
-            child: const Text('Allow'),
+            child: Text(l10n.homeAllow),
           ),
         ],
       ),
@@ -142,9 +147,10 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final hasCameraPermission = await _checkAndRequestCameraPermission();
     if (!hasCameraPermission) {
       if (currentContext.mounted) {
+        final l10n = AppLocalizations.of(currentContext)!;
         ScaffoldMessenger.of(currentContext).showSnackBar(
-          const SnackBar(
-              content: Text('Camera permission is required to take photos')),
+          SnackBar(
+              content: Text(l10n.homeCameraPermissionRequiredToTakePhotos)),
         );
       }
       return;
@@ -158,8 +164,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
     if (!modelService.isModelLoaded) {
       if (currentContext.mounted) {
+        final l10n = AppLocalizations.of(currentContext)!;
         ScaffoldMessenger.of(currentContext).showSnackBar(
-          const SnackBar(content: Text('Please download the model first')),
+          SnackBar(content: Text(l10n.homeDownloadModelFirst)),
         );
       }
       return;
@@ -189,8 +196,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       } catch (readError) {
         debugPrint('Read error: $readError');
         if (currentContext.mounted) {
+          final l10n = AppLocalizations.of(currentContext)!;
           ScaffoldMessenger.of(currentContext).showSnackBar(
-            SnackBar(content: Text('Failed to read image: $readError')),
+            SnackBar(content: Text(l10n.homeFailedToReadImage(readError.toString()))),
           );
         }
         return;
@@ -211,8 +219,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       });
     } catch (e) {
       if (currentContext.mounted) {
+        final l10n = AppLocalizations.of(currentContext)!;
         ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(content: Text('Failed to analyze image: $e')),
+          SnackBar(content: Text(l10n.homeFailedToAnalyzeImage(e.toString()))),
         );
       }
     } finally {
@@ -224,7 +233,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  Widget _buildCameraPreview() {
+  Widget _buildCameraPreview(AppLocalizations l10n) {
     if (_isCameraReady &&
         _controller != null &&
         _controller!.value.isInitialized) {
@@ -241,7 +250,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
       } catch (e) {
         debugPrint('Camera preview error: $e');
-        return _buildCameraErrorState();
+        return _buildCameraErrorState(l10n);
       }
     } else {
       return const Center(
@@ -250,7 +259,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     }
   }
 
-  Widget _buildCameraErrorState() {
+  Widget _buildCameraErrorState(AppLocalizations l10n) {
     return Container(
       color: Colors.black,
       child: Center(
@@ -259,14 +268,14 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           children: [
             const Icon(Icons.camera_alt, color: Colors.white54, size: 64),
             const SizedBox(height: 16),
-            const Text(
-              'Camera unavailable',
-              style: TextStyle(color: Colors.white70, fontSize: 18),
+            Text(
+              l10n.homeCameraUnavailable,
+              style: const TextStyle(color: Colors.white70, fontSize: 18),
             ),
             const SizedBox(height: 16),
             FilledButton(
               onPressed: _initializeCamera,
-              child: const Text('Retry'),
+              child: Text(l10n.commonRetry),
             ),
           ],
         ),
@@ -314,6 +323,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final textTheme = Theme.of(context).textTheme;
     final modelService = Provider.of<ModelService>(context);
     final topPadding = MediaQuery.of(context).padding.top;
+    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       backgroundColor: Colors.black,
@@ -322,8 +332,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           // Full-screen camera
           Positioned.fill(
             child: _isCameraReady
-                ? _buildCameraPreview()
-                : _buildCameraErrorState(),
+                ? _buildCameraPreview(l10n)
+                : _buildCameraErrorState(l10n),
           ),
 
           // Top gradient overlay — status chip + settings button
@@ -350,6 +360,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                       modelService: modelService,
                       colorScheme: colorScheme,
                       textTheme: textTheme,
+                      l10n: l10n,
                     ),
                     const Spacer(),
                     IconButton(
@@ -376,6 +387,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
                 modelService: modelService,
                 colorScheme: colorScheme,
                 textTheme: textTheme,
+                l10n: l10n,
                 onDownload: _downloadModel,
               ),
             ),
@@ -427,8 +439,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       await modelService.downloadModel(onProgress: (_) {});
     } catch (e) {
       if (currentContext.mounted) {
+        final l10n = AppLocalizations.of(currentContext)!;
         ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(content: Text('Download could not start: $e')),
+          SnackBar(content: Text(l10n.homeFailedToAnalyzeImage(e.toString()))),
         );
       }
     }
@@ -439,11 +452,13 @@ class _ModelStatusChip extends StatelessWidget {
   final ModelService modelService;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
+  final AppLocalizations l10n;
 
   const _ModelStatusChip({
     required this.modelService,
     required this.colorScheme,
     required this.textTheme,
+    required this.l10n,
   });
 
   @override
@@ -458,10 +473,10 @@ class _ModelStatusChip extends StatelessWidget {
     if (isReady) {
       icon = Icon(Icons.check_circle_outline,
           size: 16, color: colorScheme.onPrimaryContainer);
-      label = 'Model Ready';
+      label = l10n.homeModelStatusReady;
     } else if (isError) {
       icon = Icon(Icons.error_outline, size: 16, color: colorScheme.error);
-      label = 'Model Error';
+      label = l10n.homeModelStatusError;
     } else if (isLoading) {
       final percent = _extractPercent(modelService.status);
       icon = SizedBox(
@@ -473,11 +488,11 @@ class _ModelStatusChip extends StatelessWidget {
           color: colorScheme.onPrimaryContainer,
         ),
       );
-      label = percent != null ? '$percent%' : 'Loading…';
+      label = percent != null ? '$percent%' : l10n.homeModelStatusLoading;
     } else {
       icon = Icon(Icons.download_outlined,
           size: 16, color: colorScheme.onPrimaryContainer);
-      label = 'Tap to Download';
+      label = l10n.homeModelStatusTapToDownload;
     }
 
     return GestureDetector(
@@ -523,12 +538,14 @@ class _ModelStatusCard extends StatelessWidget {
   final ModelService modelService;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
+  final AppLocalizations l10n;
   final VoidCallback onDownload;
 
   const _ModelStatusCard({
     required this.modelService,
     required this.colorScheme,
     required this.textTheme,
+    required this.l10n,
     required this.onDownload,
   });
 
@@ -545,7 +562,7 @@ class _ModelStatusCard extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Text(
-            'AI Model',
+            l10n.homeAiModel,
             style: textTheme.labelLarge?.copyWith(color: colorScheme.onSurface),
           ),
           const SizedBox(height: 4),
@@ -566,7 +583,7 @@ class _ModelStatusCard extends StatelessWidget {
             FilledButton.icon(
               onPressed: onDownload,
               icon: const Icon(Icons.download, size: 16),
-              label: const Text('Download Model (2.4GB)'),
+              label: Text(l10n.homeDownloadModelWithButton),
             ),
           ],
         ],
