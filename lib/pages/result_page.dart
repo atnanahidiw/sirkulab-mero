@@ -39,6 +39,7 @@ class _ResultPageState extends State<ResultPage>
 
   late AnimationController _typingAnimationController;
   late Animation<double> _typingAnimation;
+  final speciesService = SpeciesService();
 
   // Parsed JSON from analysisResult (for name/scientific_name fallback)
   Map<String, dynamic>? _parsedJson;
@@ -131,7 +132,6 @@ class _ResultPageState extends State<ResultPage>
 
   /// Refresh hints + welcome message after DB lookup completes.
   void _updateHintsAndMessage(AppLocalizations l10n) {
-    final wasEndangered = _isListed;
     _remainingHints = List.from(
       _isListed
           ? ChatPrompts.endangeredHints(l10n)
@@ -159,8 +159,7 @@ class _ResultPageState extends State<ResultPage>
       final commonName = _parsedJson!['common_name'] as String? ?? '';
 
       if (scientificName.isNotEmpty) {
-        final service = SpeciesService();
-        final matched = await service.findSpeciesByLatinName(scientificName);
+        final matched = await speciesService.findSpeciesByLatinName(scientificName);
 
         SpeciesDetail? displaySpecies = matched;
         displaySpecies ??= SpeciesDetail(
@@ -216,9 +215,10 @@ class _ResultPageState extends State<ResultPage>
 
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
-      final query = ChatPrompts.buildQuery(
+      
+      // Build context for the system instruction
+      final systemContext = ChatPrompts.buildQuestionContext(
         analysisResult: widget.analysisResult,
-        userQuestion: text,
         speciesName: _species?.commonName ?? _jsonCommonName,
         speciesLatinName: _species?.scientificName ?? _jsonScientificName,
         isEndangered: _isListed,
@@ -226,7 +226,13 @@ class _ResultPageState extends State<ResultPage>
         description: _species?.description,
         facts: _species?.funFacts,
       );
-
+      
+      // Create system instruction with context
+      final systemInstruction = ChatPrompts.answerSystemInstruction(
+        'English',
+        context: systemContext
+      );
+      
       setState(() {
         _chatMessages.add({'role': 'assistant', 'content': ''});
       });
@@ -234,7 +240,8 @@ class _ResultPageState extends State<ResultPage>
       final int streamingIndex = _chatMessages.length - 1;
 
       await modelService.askQuestion(
-        query,
+        text,                                  // Pass the user's question directly without context
+        systemInstruction: systemInstruction,  // Pass context via system instruction
         onProgress: (_, __) {},
         onToken: (token) {
           if (!mounted) return;

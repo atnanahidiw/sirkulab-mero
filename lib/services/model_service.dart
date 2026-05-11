@@ -11,7 +11,33 @@ import 'package:permission_handler/permission_handler.dart';
 import 'model_boot_state.dart';
 import 'species_service.dart';
 import '../models/chat_prompts.dart';
-import '../utils/image_utils.dart';
+import '../models/model_spec.dart';
+
+/// Strip markdown code fences (```json ... ```) around model JSON output.
+String _stripJsonFences(String raw) {
+  final match = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```').firstMatch(raw);
+  return match?.group(1)?.trim() ?? raw.trim();
+}
+
+/// Returns true when [text] contains a word or short phrase repeated
+/// consecutively more than [threshold] times — the hallmark of a
+/// degeneration loop (e.g. "Quadri Quadri Quadri...").
+bool _isRepetitionLoop(String text, {int threshold = 6}) {
+  if (text.isEmpty) return false;
+  // Split on whitespace and look for a run of identical tokens.
+  final tokens = text.trim().split(RegExp(r'\s+'));
+  if (tokens.length < threshold) return false;
+  int run = 1;
+  for (int i = 1; i < tokens.length; i++) {
+    if (tokens[i] == tokens[i - 1]) {
+      run++;
+      if (run >= threshold) return true;
+    } else {
+      run = 1;
+    }
+  }
+  return false;
+}
 
 @visibleForTesting
 bool isCancellationErrorDescription(String? description) {
@@ -188,6 +214,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       _cachedModel = await FlutterGemma.getActiveModel(
         maxTokens: maxTokens,
         preferredBackend: _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu,
+        enableSpeculativeDecoding: true,
         supportImage: true,
         maxNumImages: 1,
       );
@@ -226,17 +253,15 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     }
   }
 
-  /// Generate response with tuned parameters.
-  /// When [tools] is provided, uses InferenceChat with tool calling.
-  /// [onToolCall] is invoked for each tool call and must return the tool result text.
+  /// Generate response with tuned parameters. When [toolSpecs] is provided,
+  /// uses InferenceChat with tool calling. Each spec's [subsequentPrompt]
+  /// is injected into the chat right after its result is returned.
   Future<String> generateOptimizedResponse(
     InferenceModel model,
     String prompt, {
     String? systemInstruction,
     Uint8List? imageBytes,
-    List<Tool>? tools,
-    Future<String> Function(String toolName, Map<String, dynamic> args)?
-        onToolCall,
+    List<ToolSpec>? toolSpecs,
     int maxTokens = 2048,
     double temperature = 0.7,
     int topK = 40,
@@ -244,14 +269,65 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     void Function(String phase, double progress)? onProgress,
     void Function(String token)? onToken,
   }) async {
-    final bool useToolCalling = tools != null && tools.isNotEmpty;
+    final resolvedTools =
+        toolSpecs != null ? ToolSpec.toTools(toolSpecs) : const <Tool>[];
+    final bool useToolCalling = resolvedTools.isNotEmpty;
 
     try {
-      // ── 1. Initialize InferenceChat for all flows ──
+      if (!useToolCalling) {
+        // ── Standard (no-tool) flow via Session ──
+        // Must use createSession, not createChat, for Gemma 4 E2B compatibility.
+        // createChat with ToolChoice.none suppresses text generation on this model.
+        onProgress?.call('Preparing session...', 0.15);
+
+        final session = await model.createSession(
+          enableVisionModality: true,
+          temperature: temperature,
+          topK: topK,
+          topP: topP,
+          systemInstruction: systemInstruction,
+        );
+
+        try {
+          onProgress?.call('Sending question...', 0.35);
+
+          if (imageBytes != null) {
+            await session.addQueryChunk(Message.withImage(
+              text: '',
+              imageBytes: imageBytes,
+              isUser: true,
+            ));
+          }
+          await session.addQueryChunk(Message.text(
+            text: prompt,
+            isUser: true,
+          ));
+
+          onProgress?.call('Generating answer...', 0.55);
+
+          final buffer = StringBuffer();
+          await for (final token in session.getResponseAsync()) {
+            buffer.write(token);
+            onToken?.call(token);
+          }
+
+          onProgress?.call('Complete', 1.0);
+          return buffer.toString();
+        } finally {
+          await session.close();
+        }
+      }
+
+      // ── Tool-calling flow via InferenceChat ──
+      if (imageBytes == null) {
+        throw ArgumentError(
+            'imageBytes is required when using tools (vision mode).');
+      }
+
       onProgress?.call('Preparing chat...', 0.15);
 
       final chat = await model.createChat(
-        tools: tools ?? const [],
+        tools: resolvedTools ?? const [],
         supportsFunctionCalls: useToolCalling,
         systemInstruction: systemInstruction,
         supportImage: imageBytes != null,
@@ -262,86 +338,113 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         toolChoice: useToolCalling ? ToolChoice.required : ToolChoice.none,
       );
 
-      // ── 2. Build message chunks: image first (if any), then prompt text ──
-      // Gemma 4 best practice: image content must come BEFORE text in the
-      // prompt for optimal multimodal attention.
-      // https://huggingface.co/google/gemma-4-31B-it
-      if (imageBytes != null) {
-        onProgress?.call('Sending image...', 0.30);
-        await chat.addQueryChunk(Message.withImage(
-          text: '',               // image-only chunk comes first
-          imageBytes: imageBytes,
+      try {
+        // ── 2. Build message chunks: image first (if any), then prompt text ──
+        // Gemma 4 best practice: image content must come BEFORE text in the
+        // prompt for optimal multimodal attention.
+        // https://huggingface.co/google/gemma-4-31B-it
+        if (imageBytes != null) {
+          onProgress?.call('Sending image...', 0.30);
+          await chat.addQueryChunk(Message.withImage(
+            text: '',               // image-only chunk comes first
+            imageBytes: imageBytes,
+            isUser: true,
+          ));
+        }
+
+        onProgress?.call('Sending prompt...', 0.35);
+        await chat.addQueryChunk(Message.text(
+          text: prompt,            // instruction text always follows last
           isUser: true,
         ));
-      }
 
-      onProgress?.call('Sending prompt...', 0.35);
-      await chat.addQueryChunk(Message.text(
-        text: prompt,            // instruction text always follows last
-        isUser: true,
-      ));
+        // ── 3. Agentic loop: generate → dispatch tools → repeat until no more tool calls ──
+        onProgress?.call(
+          useToolCalling ? 'Identifying species...' : 'Generating answer...',
+          0.45
+        );
+        
+        const int maxPasses = 5;  // Maximum agentic passes to prevent runaway loops.
+        int pass = 0;
+        while (true) {
+          pass++;
+          debugPrint('── Generation pass $pass ──');
 
-      // ── 3. Agentic loop: generate → dispatch tools → repeat until no more tool calls ──
-      onProgress?.call(
-        useToolCalling ? 'Identifying species...' : 'Generating answer...',
-        0.45
-      );
-      int pass = 0;
+          if (pass > maxPasses) {
+            debugPrint('[Pass $pass] Max passes ($maxPasses) exceeded — aborting.');
+            onProgress?.call('Complete', 1.0);
+            return '';
+          }
 
-      while (true) {
-        pass++;
-        debugPrint('── Generation pass $pass ──');
+          final responseBuffer = StringBuffer();
+          bool toolWasCalled = false;
 
-        final responseBuffer = StringBuffer();
-        bool toolWasCalled = false;
-
-        await for (final response in chat.generateChatResponseAsync()) {
-          if (response is TextResponse) {
-            responseBuffer.write(response.token);
-            if (!useToolCalling) onToken?.call(response.token);
-          } else if (response is ThinkingResponse) {
-            debugPrint('[Pass $pass] Thinking: ${response.content}');
-          } else if (response is FunctionCallResponse) {
-            toolWasCalled = true;
-            debugPrint('[Pass $pass] Tool call: ${response.name}(${response.args})');
-            if (onToolCall != null) {
+          await for (final response in chat.generateChatResponseAsync()) {
+            if (response is TextResponse) {
+              responseBuffer.write(response.token);
+              if (!useToolCalling) onToken?.call(response.token);
+            } else if (response is ThinkingResponse) {
+              debugPrint('[Pass $pass] Thinking: ${response.content}');
+            } else if (response is FunctionCallResponse) {
+              toolWasCalled = true;
+              debugPrint('[Pass $pass] Tool call: ${response.name}(${response.args})');
               onProgress?.call('Running tool: ${response.name}...', 0.55);
-              final result = await onToolCall(response.name, response.args);
+              final matchedSpec = toolSpecs!.firstWhere(
+                (s) => s.name == response.name,
+                orElse: () => throw Exception('No ToolSpec found for: ${response.name}'),
+              );
+              final result = await matchedSpec.execute(response.args);
               debugPrint('[Pass $pass] Tool result (${response.name}): $result');
               await chat.addQueryChunk(Message.toolResponse(
                 toolName: response.name,
                 response: {'result': result},
               ));
-            }
-          } else if (response is ParallelFunctionCallResponse) {
-            toolWasCalled = true;
-            debugPrint('[Pass $pass] Parallel tool calls: ${response.calls.map((c) => '${c.name}(${c.args})').join(', ')}');
-            for (final call in response.calls) {
-              if (onToolCall != null) {
-                onProgress?.call('Running tool: ${call.name}...', 0.55);
-                final result = await onToolCall(call.name, call.args);
-                debugPrint('[Pass $pass] Tool result (${call.name}): $result');
+              if (matchedSpec.subsequentPrompt != null) {
+                await chat.addQueryChunk(matchedSpec.subsequentPrompt!);
+              }
+            } else if (response is ParallelFunctionCallResponse) {
+              toolWasCalled = true;
+              debugPrint('[Pass $pass] Parallel tool calls: ${response.calls.map((c) => '${c.name}(${c.args})').join(', ')}');
+              for (final call in response.calls) {
+                final matchedSpec = toolSpecs!.firstWhere(
+                  (s) => s.name == call.name,
+                  orElse: () => throw Exception('No ToolSpec found for: ${call.name}'),
+                );
+                final result = await matchedSpec.execute(call.args);
                 await chat.addQueryChunk(Message.toolResponse(
                   toolName: call.name,
                   response: {'result': result},
                 ));
+                if (matchedSpec.subsequentPrompt != null) {
+                  await chat.addQueryChunk(matchedSpec.subsequentPrompt!);
+                }
               }
             }
           }
+
+          debugPrint('[Pass $pass] Output: ${responseBuffer.toString().trim()}');
+
+          // Guard: detect degenerate repetition output (e.g. "Quadri Quadri Quadri...").
+          // The native model returns all tokens as one chunk, so we can't abort
+          // mid-stream — but we can catch it here before it corrupts the pipeline.
+          final rawOutput = responseBuffer.toString();
+          if (_isRepetitionLoop(rawOutput)) {
+            debugPrint('[Pass $pass] Repetition loop detected — aborting generation.');
+            throw Exception('Model entered a repetition loop. Please try again.');
+          }
+
+          // No tool calls this pass — the model is done, return its text response
+          if (!toolWasCalled) {
+            debugPrint('[Pass $pass] No tool calls — final answer returned after $pass pass(es)');
+            onProgress?.call('Complete', 1.0);
+            return rawOutput.trim();
+          }
+
+          debugPrint('[Pass $pass] Tool(s) dispatched — starting pass ${pass + 1}');
+          onProgress?.call('Generating result...', 0.75);
         }
-
-        debugPrint('[Pass $pass] Output: ${responseBuffer.toString().trim()}');
-
-        // No tool calls this pass — the model is done, return its text response
-        if (!toolWasCalled) {
-          debugPrint('[Pass $pass] No tool calls — final answer returned after $pass pass(es)');
-          onProgress?.call('Complete', 1.0);
-          return responseBuffer.toString().trim();
-        }
-
-        // Tools were called — loop back for another generation pass
-        debugPrint('[Pass $pass] Tool(s) dispatched — starting pass ${pass + 1}');
-        onProgress?.call('Generating result...', 0.75);
+      } finally {
+        await chat.close();
       }
     } catch (e) {
       debugPrint('Generation failed: $e');
@@ -1562,11 +1665,21 @@ class ModelService extends ChangeNotifier {
     }
 
     try {
-      final tool = Tool(
+      final searchSpec = ToolSpec(
         name: ChatPrompts.speciesSearchToolDef['name'] as String,
         description: ChatPrompts.speciesSearchToolDef['description'] as String,
         parameters: ChatPrompts.speciesSearchToolDef['parameters']
             as Map<String, dynamic>,
+        execute: (args) => _speciesService.searchSpeciesByTaxonomy(
+          args['class'] as String? ?? '',
+          args['order'] as String? ?? '',
+          args['family'] as String? ?? '',
+          args['genus'] as String? ?? '',
+        ),
+        subsequentPrompt: Message.text(
+          text: ChatPrompts.identifySynthesisPrompt,
+          isUser: true,
+        ),
       );
 
       _commitState(
@@ -1582,22 +1695,24 @@ class ModelService extends ChangeNotifier {
         ChatPrompts.identifyInputPrompt,
         systemInstruction: ChatPrompts.identifySystemInstruction,
         imageBytes: imageBytes,
-        tools: [tool],
-        onToolCall: (name, args) async {
-          return _speciesService.searchSpeciesByTaxonomy(
-            args['class'] as String? ?? '',
-            args['order'] as String? ?? '',
-            args['family'] as String? ?? '',
-            args['genus'] as String? ?? '',
-          );
-        },
-        temperature: 0.1,  // Lower temperature for factual/JSON consistency
-        topK: 20,          // Reduced to prioritize most likely tokens
+        toolSpecs: [searchSpec],
+        temperature: 0.3,
+        topK: 64,
         topP: 0.85,
         onProgress: (phase, progress) {
           debugPrint('Progress: $phase ($progress)');
         },
       );
+
+      // Strip markdown code fences (```json ... ```) before parsing
+      final cleaned = _stripJsonFences(result);
+
+      try {
+        jsonDecode(cleaned);
+      } catch (_) {
+        debugPrint('[identifySpecies] Garbage result detected — rejecting response.');
+        throw Exception('Model returned an unparseable response. Please try again.');
+      }
 
       _commitState(
         _state.copyWith(
