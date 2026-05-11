@@ -371,7 +371,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get resultRetakePhoto => 'Retake Photo';
 
   @override
-  String get resultNotEndangered => 'Not Endangered';
+  String get resultNotEndangered => 'Not Listed as Endangered';
 
   @override
   String get resultEndangered => 'Endangered';

@@ -90,39 +90,35 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   }
 
   Future<void> _startAnalysis() async {
+    final modelService = Provider.of<ModelService>(context, listen: false);
+
+    final compressedBytes = await ImageUtils.compressImage(
+      widget.rawImageBytes,
+      maxWidth: 768,
+      maxHeight: 768,  // https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4
+      quality: 92,
+    );
+
+    String result;
     try {
-      final modelService = Provider.of<ModelService>(context, listen: false);
-
-      final compressedBytes = await ImageUtils.compressImage(
-        widget.rawImageBytes,
-        maxWidth: 768,
-        maxHeight: 768,  // https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4
-        quality: 92,
-      );
-
-      final result =
-          await modelService.identifySpecies(compressedBytes, 'jpeg');
-
-      if (!mounted) return;
-
-      await Future.delayed(const Duration(milliseconds: 100));
-      Navigator.pushReplacement(
-        context,
-        AppPageRoute.slideUp(
-          (_) => ResultPage(
-            imageBytes: compressedBytes,
-            analysisResult: result,
-          ),
-        ),
-      );
+      result = await modelService.identifySpecies(compressedBytes, 'jpeg');
     } catch (e) {
-      if (mounted) {
-        setState(() {
-          _isAnalyzing = false;
-          _error = e.toString();
-        });
-      }
+      debugPrint('[AnalyzingPage] identifySpecies failed: $e');
+      result = '';
     }
+
+    if (!mounted) return;
+
+    await Future.delayed(const Duration(milliseconds: 100));
+    Navigator.pushReplacement(
+      context,
+      AppPageRoute.slideUp(
+        (_) => ResultPage(
+          imageBytes: compressedBytes,
+          analysisResult: result,
+        ),
+      ),
+    );
   }
 
   @override

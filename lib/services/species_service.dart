@@ -1,140 +1,206 @@
 import 'dart:convert';
+import 'dart:typed_data';
+import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-class Species {
-  final String name;
-  final String latinName;
+/// Detailed species entry from the per-species JSON files.
+class SpeciesDetail {
+  final String scientificName;
+  final String commonName;
+  final String visualFeatures;
   final String description;
-  final List<String> facts;
-  final String? populationEstimate;
-  final String? sourceUri;
+  final String conservationStatus;
+  final String habitat;
+  final List<String> threats;
+  final String ecosystemRole;
+  final String humanConnection;
+  final List<String> whatStudentsCanDo;
+  final List<String> funFacts;
+  final List<String> habitatTags;
+  final Map<String, String> taxonomy;
+  final String populationEstimate;
+  final String sourceUri;
 
-  Species({
-    required this.name,
-    required this.latinName,
+  SpeciesDetail({
+    required this.scientificName,
+    required this.commonName,
+    required this.visualFeatures,
     required this.description,
-    required this.facts,
-    this.populationEstimate,
-    this.sourceUri,
+    required this.conservationStatus,
+    required this.habitat,
+    required this.threats,
+    required this.ecosystemRole,
+    required this.humanConnection,
+    required this.whatStudentsCanDo,
+    required this.funFacts,
+    required this.habitatTags,
+    required this.taxonomy,
+    this.populationEstimate = '',
+    this.sourceUri = '',
   });
 
-  factory Species.fromJson(Map<String, dynamic> json) {
-    return Species(
-      name: json['name'] ?? '',
-      latinName: json['latinName'] ?? '',
+  factory SpeciesDetail.fromJson(Map<String, dynamic> json) {
+    return SpeciesDetail(
+      scientificName: json['scientific_name'] ?? json['latin_name'] ?? '',
+      commonName: json['common_name'] ?? '',
+      visualFeatures: json['visual_features'] ?? '',
       description: json['description'] ?? '',
-      facts: List<String>.from(json['facts'] ?? []),
-      populationEstimate: json['population_estimate'],
-      sourceUri: json['source_uri'],
+      conservationStatus: json['conservation_status'] ?? '',
+      habitat: json['habitat'] ?? '',
+      threats: List<String>.from(json['threats'] ?? []),
+      ecosystemRole: json['ecosystem_role'] ?? '',
+      humanConnection: json['human_connection'] ?? '',
+      whatStudentsCanDo: List<String>.from(json['what_students_can_do'] ?? []),
+      funFacts: List<String>.from(json['fun_fact'] ?? []),
+      habitatTags: List<String>.from(json['habitat_tags'] ?? []),
+      taxonomy: {
+        'kingdom': json['kingdom'] ?? '',
+        'class': json['class'] ?? '',
+        'order': json['order'] ?? '',
+        'family': json['family'] ?? '',
+        'genus': json['genus'] ?? '',
+      },
+      populationEstimate: json['population_estimate'] ?? '',
+      sourceUri: json['population_estimate_source_uri'] ?? '',
     );
   }
+
+  String get genus => taxonomy['genus'] ?? '';
 }
 
 class SpeciesService {
-  static const String _dataPath = 'assets/data/species_data.json';
-  List<Species>? _speciesCache;
+  static const String _zipPath = 'assets/data/species_data.zip';
 
-  /// Load all species data from JSON asset
-  Future<List<Species>> loadSpecies() async {
+  // Genus-indexed in-memory cache (built on first access)
+  Map<String, List<SpeciesDetail>>? _genusDb;
+
+  /// Load the genus index from the bundled [species_data.zip] file.
+  /// Extracts all JSON files, parses them, and indexes by genus.
+  /// Cached in memory after first load.
+  Future<Map<String, List<SpeciesDetail>>> loadGenusDb() async {
+    if (_genusDb != null) return _genusDb!;
+
+    _genusDb = {};
+
     try {
-      if (_speciesCache != null) return _speciesCache!;
+      final ByteData raw = await rootBundle.load(_zipPath);
+      final Uint8List bytes = raw.buffer.asUint8List(
+        raw.offsetInBytes,
+        raw.lengthInBytes,
+      );
+      final Archive archive = ZipDecoder().decodeBytes(bytes);
 
-      final String response = await rootBundle.loadString(_dataPath);
-      final data = json.decode(response);
-      _speciesCache = (data as List).map((json) => Species.fromJson(json)).toList();
-      return _speciesCache!;
-    } catch (e) {
-      debugPrint('Error loading species data: $e');
-      return [];
-    }
-  }
+      for (final archiveFile in archive) {
+        if (archiveFile.isFile && archiveFile.name.endsWith('.json')) {
+          final content = utf8.decode(archiveFile.content);
+          final data = json.decode(content) as Map<String, dynamic>;
+          final detail = SpeciesDetail.fromJson(data);
+          final genus = detail.genus.toLowerCase();
 
-  Future<String?> parseLatinName(String cleanedResponse) async {
-    // Parse response format: [COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
-    final _speciesList = await loadSpecies();
-    final parts = cleanedResponse.split('|').map((p) => p.trim()).toList();
-    
-    if (parts.length >= 3) {
-      final name = parts[0];
-      final latinName = parts[1];
-      final status = parts[2].toLowerCase();
-
-      // Check if it's in the endangered list
-      Species? matchedSpecies;
-      for (final species in _speciesList) {
-        if (latinName.toLowerCase().contains(species.latinName.toLowerCase()) ||
-            species.latinName.toLowerCase().contains(latinName.toLowerCase())) {
-          matchedSpecies = species;
-          break;
+          if (genus.isNotEmpty) {
+            _genusDb!.putIfAbsent(genus, () => []).add(detail);
+          }
         }
       }
 
-      if (matchedSpecies != null) {
-        // Found endangered species in list
-        return matchedSpecies.latinName;
-      } else {
-        // Not in endangered list - return special format
-        return 'NOT_LISTED|$name|$latinName';
-      }
+      final totalSpecies =
+          _genusDb!.values.fold(0, (sum, list) => sum + list.length);
+      debugPrint(
+          'Loaded genus database from zip: ${_genusDb!.length} genera, '
+          '$totalSpecies species');
+    } catch (e) {
+      debugPrint('Error loading genus database from zip: $e');
+      _genusDb = {};
     }
 
-    // Fallback: check if response contains any species from list
-    Species? matchedSpecies;
-    for (final species in _speciesList) {
-      if (cleanedResponse.toLowerCase().contains(species.latinName.toLowerCase())) {
-        matchedSpecies = species;
-        break;
-      }
-    }
-
-    if (matchedSpecies != null) {
-      return matchedSpecies.latinName;
-    }
-
-    if (!cleanedResponse.toLowerCase().contains('not recognized')) {
-      return cleanedResponse;
-    }
-
-    return '';
+    return _genusDb!;
   }
 
-  /// Find species by Latin name
-  Future<Species?> findSpeciesByLatinName(String latinName) async {
-    try {
-      final _speciesList = await loadSpecies();
+  /// Tool implementation: look up all species in a genus and return a
+  /// compact list of scientific names paired with their visual features.
+  Future<String> searchSpeciesByTaxonomy(
+    String taxonClass,
+    String taxonOrder,
+    String taxonFamily,
+    String taxonGenus,
+  ) async {
+    final db = await loadGenusDb();
+    final key = taxonGenus.trim().toLowerCase();
+    final species = db[key];
 
-      return _speciesList.firstWhere(
-        (s) => s.latinName.toLowerCase().contains(latinName.toLowerCase()) ||
-               latinName.toLowerCase().contains(s.latinName.toLowerCase()),
-        orElse: () => Species(
-          name: '',
-          latinName: '',
-          description: '',
-          facts: [],
-        ),
-      );
+    debugPrint(
+      'Finding species in: class=$taxonClass, order=$taxonOrder, family=$taxonFamily, genus=$taxonGenus'
+    );
+
+    if (species == null || species.isEmpty) {
+      return 'No endangered species found in the genus "$taxonGenus".';
+    }
+
+    final buffer = StringBuffer();
+    for (int i = 0; i < species.length; i++) {
+      final s = species[i];
+      if (i > 0) buffer.write(' | ');
+      buffer.write('${s.scientificName}: ${s.visualFeatures}');
+    }
+
+    return buffer.toString();
+  }
+
+  /// Check if a given scientific name is in the endangered species database.
+  Future<bool> isEndangered(String scientificName) async {
+    final db = await loadGenusDb();
+    final query = scientificName.trim().toLowerCase();
+
+    for (final speciesList in db.values) {
+      for (final s in speciesList) {
+        if (s.scientificName.toLowerCase().contains(query) ||
+            query.contains(s.scientificName.toLowerCase())) {
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
+  /// Find species by Latin name — returns SpeciesDetail if found, null otherwise.
+  Future<SpeciesDetail?> findSpeciesByLatinName(String latinName) async {
+    try {
+      final db = await loadGenusDb();
+      final query = latinName.trim().toLowerCase();
+
+      for (final speciesList in db.values) {
+        for (final s in speciesList) {
+          if (s.scientificName.toLowerCase().contains(query) ||
+              query.contains(s.scientificName.toLowerCase())) {
+            return s;
+          }
+        }
+      }
+
+      return null;
     } catch (e) {
       debugPrint('Error finding species: $e');
       return null;
     }
   }
 
-  /// Find species by common name (for fallback use)
-  Future<Species?> findSpeciesByName(String name) async {
+  /// Find species by common name — returns SpeciesDetail if found, null otherwise.
+  Future<SpeciesDetail?> findSpeciesByName(String name) async {
     try {
-      final _speciesList = await loadSpecies();
+      final db = await loadGenusDb();
+      final query = name.trim().toLowerCase();
 
-      return _speciesList.firstWhere(
-        (s) => s.name.toLowerCase().contains(name.toLowerCase()) ||
-               name.toLowerCase().contains(s.name.toLowerCase()),
-        orElse: () => Species(
-          name: '',
-          latinName: '',
-          description: '',
-          facts: [],
-        ),
-      );
+      for (final speciesList in db.values) {
+        for (final s in speciesList) {
+          if (s.commonName.toLowerCase().contains(query) ||
+              query.contains(s.commonName.toLowerCase())) {
+            return s;
+          }
+        }
+      }
+
+      return null;
     } catch (e) {
       debugPrint('Error finding species: $e');
       return null;

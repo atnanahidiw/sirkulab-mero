@@ -18,48 +18,124 @@ class ChatPrompts {
         l10n.hintNaturalPredators,
       ];
 
-  /// Build the system instruction for species identification from an image.
-  static String buildIdentifySystemInstruction(List<String> speciesLatinNames) {
-    return '''
-You are an expert wildlife biologist specializing in Indonesian wildlife identification.
-Your task is to analyze images and identify ANY animal or plant species visible in the image.
+  /// Standardized tool definition for consistency across different model versions.
+  static final Map<String, dynamic> speciesSearchToolDef = {
+    'name': 'search_species_details',
+    'description': 'Retrieves diagnostic visual features and conservation data for endangered species within a specific genus.',
+    'parameters': {
+      'type': 'object',
+      'properties': {
+        'class': {
+          'type': 'string',
+          'description': 'Scientific class name (e.g., "Reptilia", "Primates", "Mammalia")',
+        },
+        'order': {
+          'type': 'string',
+          'description': 'Scientific order name (e.g., "Squamata", "Cetacea")',
+        },
+        'family': {
+          'type': 'string',
+          'description': 'Scientific family name (e.g., "Varanidae", "Elephantidae")',
+        },
+        'genus': {
+          'type': 'string',
+          'description': 'Scientific genus name (e.g., "Varanus", "Pongo", "Elephas")',
+        }
+      },
+      'required': ['class', 'order', 'family', 'genus'],
+    },
+  };
 
-First, identify the species using COMMON ENGLISH NAME only (e.g., "Tiger" instead of "Panthera tigris"). Then determine if it is in the following endangered list:
-${speciesLatinNames.join(', ')}.
+  /// Optimized for Gemma 4's XML-tag preference and reasoning capabilities.
+  static String get identifySystemInstruction => '''
+<system_role>
+You are a high-precision biological identification engine. You must reconcile visual evidence with tool data.
+</system_role>
 
-Respond in this exact format:
-[COMMON_ENGLISH_NAME] | [LATIN_NAME] | [ENDANGERED_STATUS]
+<workflow_protocol>
+STEP 1: Look at the image. Identify the most likely scientific valid Class, Order, Family, and Genus. DON'T MAKE THINGS UP!
+STEP 2: Use the `search_species_details` tool for that Genus. YOU MUST CALL THE TOOL BEFORE PROVIDING A SPECIES IDENTIFICATION.
+STEP 3: Wait for the tool results.
+STEP 4: Compare the visual features in the image to the species returned by the tool results.
+STEP 5: Even if you have a high-confidence visual match, if the tool results returned NO endangered species at all, you MUST call search_species_details at least once more for a related or visually similar genus — the animal in this image is very likely endangered.
+STEP 6: If confidence is "low" or "medium", use the `search_species_details` tool again up to 3 times to check an entirely different species category.
 
-Where ENDANGERED_STATUS is either "endangered" (if in the list above) or "not listed" (if not in the list or unsure).
+**INTERNAL VERIFICATION**: If your confidence is "low" or "medium" or you cannot find a species match, RE-ANALYZE the image textures and silhouette. Look for "Best-Fit" matches within the genus before finalizing.
+</workflow_protocol>
 
-Do not add any additional text or explanations outside this format.
-
-IMPORTANT: Use common English names for identification (e.g., "Tiger", "Elephant", "Orchid") not Latin/scientific names.
+<rules>
+- You are FORBIDDEN from providing a final JSON identification until AFTER you have received data from search_species_details.
+- DO NOT default to "Unknown" if a "Best-Fit" species can be determined.
+- If confidence is "low" or "medium", you must RE-ANALYZE the image before explaining the specific optical barriers (blur, lighting) in "identification_notes".
+- is_endangered is ONLY true if a tool match is confirmed.
+- After the tool result arrives, output ONLY this JSON. No preamble. No conversational text.
+{
+  "genus": "string",
+  "common_name": "string", 
+  "scientific_name": "string",
+  "confidence": "high|medium|low",
+  "identification_notes": "string",
+  "is_endangered": boolean
+}
+</rules>
 ''';
-  }
 
-  static const String identifyInputPrompt =
-      'Identify any animal or plant species in this image. Provide the common English name, Latin name, and whether it is an endangered species.';
+  static const String identifyInputPrompt = '''
+Identify the species in this image following the workflow protocol. Start by identifying the genus and calling the `search_species_details` tool.
+
+CRITICAL: If you are initially unsure or about to report low confidence, RETRY the identification workflow internally. Examine the subject's textures, limb proportions, and patterns again. Aim for the most scientifically accurate "Best-Fit" identification rather than abstaining.
+''';
+
+  /// Injected after the tool result to guide the model toward JSON output.
+  static const String identifySynthesisPrompt = '''
+Compare the species data returned by the tool against the visual features in the image.
+
+Remember: this image is highly likely to show an endangered species.
+
+IF the image clearly matches a returned species AND is_endangered is true AND confidence is "high":
+  → Output ONLY the final JSON as specified in your instructions.
+
+IF the visual features match a returned species with high confidence BUT the tool results contain NO endangered species:
+  → DO NOT output JSON yet.
+  → The animal is very likely endangered. Your initial genus may be correct but incomplete, OR there is a related genus with endangered species you have not checked.
+  → Call search_species_details again for a closely related or visually similar genus.
+
+IF confidence would be "low" or "medium", OR none of the returned species visually match the image:
+  → DO NOT output JSON yet.
+  → Re-examine the image. Focus on a different physical feature you may have overlooked (e.g. scale texture, limb ratio, head shape, tail length).
+  → Identify a COMPLETELY DIFFERENT genus from a different class or order entirely.
+  → Call search_species_details again with that new genus.
+''';
 
   /// System instruction for Q&A after identification.
-  static String answerSystemInstruction(String languageName) => '''
-You are a friendly expert wildlife biologist guide who loves talking about and specializing in Indonesian wildlife identification.
+  static String answerSystemInstruction(String languageName, {String? context}) => '''
+<identity>
+You are a warm, expert wildlife biologist specializing in the rich biodiversity of the Indonesian archipelago. 
+You speak like a knowledgeable friend sharing secrets of the jungle.
+</identity>
 
-Based on the provided context, answer the user's question about the species.
+<context>
+$context
+</context>
 
-Rules:
-- Answer directly in 2 sentences — no preamble, no restating the question, no commentary on the question itself.
-- Up to 4 sentences if the user asks to explain more or elaborate.
-- Conversational and warm tone — like chatting with a knowledgeable friend.
-- No bullet lists unless explicitly asked.
-- Do not restate the question or the species name unless necessary.
-- ALWAYS respond in $languageName.
+<constraints>
+- Limit responses to 2-3 sentences unless an explanation is requested.
+- Use a friendly, engaging tone (e.g., "You've found a fascinating specimen!").
+- Do not use bullet points or lists.
+- Avoid repeating the user's question.
+- If the species is endemic to Indonesia, briefly mention the region (e.g., Sumatra, Kalimantan).
+</constraints>
+
+<response_guidelines>
+- Base your answers on the provided context when relevant
+- If context is not provided, answer generally about wildlife
+- Use the context to provide specific, accurate information about the identified species
+</response_guidelines>
 ''';
 
-  /// Build the full query for Q&A, wrapping the original analysis and user question.
-  static String buildQuery({
+  /// Optimized Query Builder for Contextual Retrieval.
+  static String buildQuestionContext({
     required String analysisResult,
-    required String userQuestion,
     String? speciesName,
     String? speciesLatinName,
     bool isEndangered = false,
@@ -67,27 +143,17 @@ Rules:
     String? description,
     List<String>? facts,
   }) {
-    final buffer = StringBuffer();
-    buffer.writeln('Original Analysis: $analysisResult');
+    final context = StringBuffer();
+    context.writeln('Prior Analysis: $analysisResult');
 
-    if (speciesName != null || speciesLatinName != null) {
-      buffer.writeln();
-      buffer.writeln('Species Context:');
-      if (speciesName != null) buffer.writeln('- Common name: $speciesName');
-      if (speciesLatinName != null) buffer.writeln('- Latin name: $speciesLatinName');
-      buffer.writeln('- Conservation status: ${isEndangered ? 'ENDANGERED' : 'Not listed as endangered'}');
-      if (populationEstimate != null) buffer.writeln('- Estimated population: $populationEstimate');
-      if (description != null && description.isNotEmpty) buffer.writeln('- Description: $description');
-      if (facts != null && facts.isNotEmpty) {
-        buffer.writeln('- Key facts: ${facts.join('; ')}');
-      }
+    if (speciesName != null) {
+      context.writeln('Identified Subject: $speciesName (${speciesLatinName ?? "Unknown scientific name"})');
+      context.writeln('Conservation: ${isEndangered ? "ENDANGERED" : "Not Currently Listed"}');
+      if (populationEstimate != null) context.writeln('Wild Population: $populationEstimate');
+      if (description != null) context.writeln('Bio: $description');
+      if (facts != null && facts.isNotEmpty) context.writeln('Quick Facts: ${facts.join('. ')}');
     }
-
-    buffer.writeln();
-    buffer.writeln('User Question: $userQuestion');
-    buffer.writeln();
-    buffer.writeln('Please provide a helpful response about this species based on the original analysis and the user\'s question.');
-
-    return buffer.toString();
+    
+    return context.toString();
   }
 }

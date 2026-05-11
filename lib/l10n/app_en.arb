@@ -176,7 +176,7 @@
   "resultNotRecognized": "Species not recognized",
   "resultTryDifferentAngle": "Try taking the photo from a different angle or with adequate lighting for better results.",
   "resultRetakePhoto": "Retake Photo",
-  "resultNotEndangered": "Not Endangered",
+  "resultNotEndangered": "Not Listed as Endangered",
   "resultEndangered": "Endangered",
   "resultRemaining": "Remaining: {count}",
   "@resultRemaining": {

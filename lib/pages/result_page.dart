@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
@@ -27,18 +28,22 @@ class ResultPage extends StatefulWidget {
 
 class _ResultPageState extends State<ResultPage>
     with SingleTickerProviderStateMixin {
-  Species? _species;
+  SpeciesDetail? _species;
   final TextEditingController _questionController = TextEditingController();
   final ScrollController _scrollController = ScrollController();
   final List<Map<String, dynamic>> _chatMessages = [];
   bool _isAnalyzing = false;
   List<String> _remainingHints = [];
-  bool _hintsInitialized = false;
   String? _activeHint;
   static const double _expandedHeight = 340.0;
 
   late AnimationController _typingAnimationController;
   late Animation<double> _typingAnimation;
+  final speciesService = SpeciesService();
+
+  // Parsed JSON from analysisResult (for name/scientific_name fallback)
+  Map<String, dynamic>? _parsedJson;
+  bool _hintsInitialized = false;
 
   @override
   void initState() {
@@ -51,6 +56,7 @@ class _ResultPageState extends State<ResultPage>
       CurvedAnimation(
           parent: _typingAnimationController, curve: Curves.easeInOut),
     );
+    _parseResultJson();
     _loadSpeciesData();
   }
 
@@ -58,11 +64,7 @@ class _ResultPageState extends State<ResultPage>
   void didChangeDependencies() {
     super.didChangeDependencies();
     if (!_hintsInitialized) {
-      final l10n = AppLocalizations.of(context)!;
-      _remainingHints = List.from(
-        _isNotListed ? ChatPrompts.notEndangeredHints(l10n) : ChatPrompts.endangeredHints(l10n),
-      );
-      _addInitialMessage(l10n);
+      _initHintsAndMessage();
       _hintsInitialized = true;
     }
   }
@@ -75,62 +77,123 @@ class _ResultPageState extends State<ResultPage>
     super.dispose();
   }
 
-  void _addInitialMessage(AppLocalizations l10n) {
-    if (_chatMessages.isNotEmpty) return;
-    
-    final content = _isNotListed
-        ? l10n.resultInitialMsgNotListed(_notListedName ?? l10n.commonNone)
-        : '';
-    setState(() {
-      _chatMessages.add({'role': 'assistant', 'content': content});
-    });
+  // ── Parsing ──────────────────────────────────────────────────────────────
+
+  /// Parse the JSON result from the model.
+  void _parseResultJson() {
+    try {
+      String jsonStr = widget.analysisResult;
+      final jsonMatch = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```')
+          .firstMatch(widget.analysisResult);
+      if (jsonMatch != null) {
+        jsonStr = jsonMatch.group(1)!.trim();
+      }
+      _parsedJson = jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (e) {
+      debugPrint('Failed to parse analysis JSON: $e');
+      _parsedJson = null;
+    }
   }
 
-  bool get _chatEnabled => _species != null || _isNotListed;
+  // ── Reliable state (based on DB conservationStatus, NOT model JSON) ──────
+
+  /// True when the species was found in the endangered species DB.
+  /// Only reliable AFTER _loadSpeciesData completes (sets _species).
+  bool get _isListed {
+    if (_species == null) return false;
+    return _species!.conservationStatus.isNotEmpty;
+  }
+
+  /// Common name from JSON (fallback when species not in DB).
+  String? get _jsonCommonName =>
+      _parsedJson?['common_name'] as String?;
+
+  /// Scientific name from JSON (fallback when species not in DB).
+  String? get _jsonScientificName =>
+      _parsedJson?['scientific_name'] as String?;
+
+  /// Chat is enabled when we have a species (DB match or JSON fallback).
+  bool get _chatEnabled => _species != null;
+
+  // ── Hints & welcome message ──────────────────────────────────────────────
+  // Initialized in didChangeDependencies with JSON-only info (DB not loaded yet).
+  // Updated by _loadSpeciesData after DB lookup completes.
+
+  void _initHintsAndMessage() {
+    final l10n = AppLocalizations.of(context)!;
+    // Use endangered hints by default until DB tells us otherwise
+    _remainingHints = List.from(ChatPrompts.endangeredHints(l10n));
+    final name = _jsonCommonName;
+    final content = name != null ? l10n.resultInitialMsgNotListed(name) : '';
+    if (content.isNotEmpty) {
+      _chatMessages.add({'role': 'assistant', 'content': content});
+    }
+  }
+
+  /// Refresh hints + welcome message after DB lookup completes.
+  void _updateHintsAndMessage(AppLocalizations l10n) {
+    _remainingHints = List.from(
+      _isListed
+          ? ChatPrompts.endangeredHints(l10n)
+          : ChatPrompts.notEndangeredHints(l10n),
+    );
+    // Replace initial message with the correct one based on DB result
+    if (_chatMessages.isNotEmpty) {
+      final name = _isListed ? _species!.commonName : (_jsonCommonName ?? '');
+      final body = _isListed && _species!.description.isNotEmpty
+          ? l10n.resultInitialMsgEndangered(name, _species!.description)
+          : (name.isNotEmpty
+              ? l10n.resultInitialMsgNotListed(name)
+              : '');
+      _chatMessages[0] = {'role': 'assistant', 'content': body};
+    }
+  }
+
+  // ── DB species data ──────────────────────────────────────────────────────
 
   Future<void> _loadSpeciesData() async {
     try {
-      final speciesName = _extractSpeciesName(widget.analysisResult);
-      if (speciesName.isNotEmpty) {
-        final service = SpeciesService();
-        final matched = await service.findSpeciesByLatinName(speciesName);
-        if (matched?.latinName.isNotEmpty == true) {
-          if (!mounted) return;
-          final l10n = AppLocalizations.of(context)!;
-          setState(() {
-            _species = matched;
-            _remainingHints = List.from(ChatPrompts.endangeredHints(l10n));
-            if (_chatMessages.isNotEmpty) {
-              final name = matched!.name;
-              final body = l10n.resultInitialMsgEndangered(name, matched.description);
-              _chatMessages[0] = {'role': 'assistant', 'content': body};
-            }
-          });
-        }
+      if (_parsedJson == null) return;
+
+      final scientificName = _parsedJson!['scientific_name'] as String? ?? '';
+      final commonName = _parsedJson!['common_name'] as String? ?? '';
+
+      if (scientificName.isNotEmpty) {
+        final matched = await speciesService.findSpeciesByLatinName(scientificName);
+
+        SpeciesDetail? displaySpecies = matched;
+        displaySpecies ??= SpeciesDetail(
+            scientificName: scientificName,
+            commonName: commonName,
+            visualFeatures: '',
+            description: _parsedJson!['identification_notes'] as String? ?? '',
+            conservationStatus: '',
+            habitat: '',
+            threats: const [],
+            ecosystemRole: '',
+            humanConnection: '',
+            whatStudentsCanDo: const [],
+            funFacts: const [],
+            habitatTags: const [],
+            taxonomy: {
+              'genus': _parsedJson!['genus'] as String? ?? '',
+            },
+          );
+
+        if (!mounted) return;
+        final l10n = AppLocalizations.of(context)!;
+        setState(() {
+          _species = displaySpecies;
+          _updateHintsAndMessage(l10n);
+          _hintsInitialized = true;
+        });
       }
     } catch (e) {
       debugPrint('Error loading species data: $e');
     }
   }
 
-  String _extractSpeciesName(String result) {
-    if (result.startsWith('NOT_LISTED|')) return result;
-    return result.replaceAll('**', '').replaceAll('*', '').trim();
-  }
-
-  bool get _isNotListed => widget.analysisResult.startsWith('NOT_LISTED|');
-
-  String? get _notListedName {
-    if (!_isNotListed) return null;
-    final parts = widget.analysisResult.split('|');
-    return parts.length >= 2 ? parts[1] : null;
-  }
-
-  String? get _notListedLatinName {
-    if (!_isNotListed) return null;
-    final parts = widget.analysisResult.split('|');
-    return parts.length >= 3 ? parts[2] : null;
-  }
+  // ── Chat ─────────────────────────────────────────────────────────────────
 
   List<String> get _currentHintBatch => _remainingHints.take(3).toList();
 
@@ -152,50 +215,52 @@ class _ResultPageState extends State<ResultPage>
 
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
-      final languageName = Localizations.localeOf(context).languageCode == 'id' ? 'Indonesian' : 'English';
-      final query = ChatPrompts.buildQuery(
+      
+      // Build context for the system instruction
+      final systemContext = ChatPrompts.buildQuestionContext(
         analysisResult: widget.analysisResult,
-        userQuestion: text,
-        speciesName: _species?.name ?? _notListedName,
-        speciesLatinName: _species?.latinName ?? _notListedLatinName,
-        isEndangered: _species != null,
+        speciesName: _species?.commonName ?? _jsonCommonName,
+        speciesLatinName: _species?.scientificName ?? _jsonScientificName,
+        isEndangered: _isListed,
         populationEstimate: _species?.populationEstimate,
         description: _species?.description,
-        facts: _species?.facts,
+        facts: _species?.funFacts,
       );
-
+      
+      // Create system instruction with context
+      final systemInstruction = ChatPrompts.answerSystemInstruction(
+        'English',
+        context: systemContext
+      );
+      
       setState(() {
         _chatMessages.add({'role': 'assistant', 'content': ''});
       });
 
       final int streamingIndex = _chatMessages.length - 1;
-      int tokenCount = 0;
 
       await modelService.askQuestion(
-        query,
-        systemInstruction: ChatPrompts.answerSystemInstruction(languageName),
+        text,                                  // Pass the user's question directly without context
+        systemInstruction: systemInstruction,  // Pass context via system instruction
         onProgress: (_, __) {},
         onToken: (token) {
           if (!mounted) return;
           setState(() {
             _chatMessages[streamingIndex]['content'] += token;
           });
-          tokenCount++;
-          if (tokenCount % 5 == 0) _scrollToBottom();
         },
       );
 
-      _scrollToBottom();
-
+      await _scrollToBottom();
       await Future.delayed(const Duration(milliseconds: 400));
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
     } catch (e) {
-      final l10n = AppLocalizations.of(context)!;
       setState(() {
         _chatMessages.add({
           'role': 'assistant',
-          'content': l10n.resultErrorProcessing,
+          'content':
+              'I apologize, but I encountered an error while processing your question. Please try again.',
         });
         _isAnalyzing = false;
       });
@@ -222,6 +287,8 @@ class _ResultPageState extends State<ResultPage>
       debugPrint('Failed to launch URL: $e');
     }
   }
+
+  // ── UI helpers ───────────────────────────────────────────────────────────
 
   Widget _buildTypingDots(ColorScheme colorScheme) {
     return AnimatedBuilder(
@@ -255,16 +322,16 @@ class _ResultPageState extends State<ResultPage>
   }
 
   String _speciesDisplayName(AppLocalizations l10n) {
-    if (_species != null) return _species!.name;
-    if (_isNotListed) return _notListedName ?? l10n.resultSpecies;
+    if (_species != null) return _species!.commonName;
+    if (_isListed) return _jsonCommonName ?? l10n.resultSpecies;
     return l10n.resultAnalysisResult;
   }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
-    final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
       bottomNavigationBar: _chatEnabled ? _ChatInputBar(
@@ -273,7 +340,6 @@ class _ResultPageState extends State<ResultPage>
         hintBatch: _currentHintBatch,
         colorScheme: colorScheme,
         textTheme: textTheme,
-        l10n: l10n,
         onSend: _askQuestion,
         onHintTap: (hint) {
           setState(() => _activeHint = hint);
@@ -333,7 +399,7 @@ class _ResultPageState extends State<ResultPage>
                       Icons.copy_outlined,
                       color: collapsed ? colorScheme.onSurface : Colors.white,
                     ),
-                    onPressed: () => _copyToClipboard(context),
+                    onPressed: () => _copyToClipboard(context, l10n),
                   );
                 },
               ),
@@ -383,12 +449,11 @@ class _ResultPageState extends State<ResultPage>
               padding: const EdgeInsets.all(16),
               child: _SpeciesInfoCard(
                 species: _species,
-                isNotListed: _isNotListed,
-                notListedName: _notListedName,
-                notListedLatinName: _notListedLatinName,
+                isListed: _isListed,
+                notListedName: _jsonCommonName,
+                notListedLatinName: _jsonScientificName,
                 colorScheme: colorScheme,
                 textTheme: textTheme,
-                l10n: l10n,
                 onSourceTap: _launchUrl,
                 onRetake: () => Navigator.pop(context),
               ),
@@ -508,15 +573,14 @@ class _ResultPageState extends State<ResultPage>
     );
   }
 
-  Future<void> _copyToClipboard(BuildContext context) async {
-    final l10n = AppLocalizations.of(context)!;
+  Future<void> _copyToClipboard(BuildContext context, AppLocalizations l10n) async {
     String text;
-    if (_species != null) {
+    if (_isListed) {
       text =
-          '${_species!.name}\n${_species!.latinName}\n\n${_species!.description}';
-    } else if (_isNotListed) {
+          '${_species!.commonName}\n${_species!.scientificName}\n\n${_species!.description}';
+    } else if (_species != null) {
       text =
-          '$_notListedName\n$_notListedLatinName\n\n${l10n.resultNotEndangered}';
+          '$_jsonCommonName\n$_jsonScientificName\n\n${l10n.resultNotEndangered}';
     } else {
       text = widget.analysisResult;
     }
@@ -530,7 +594,7 @@ class _ResultPageState extends State<ResultPage>
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.resultFailedToCopy(e.toString()))),
+        SnackBar(content: Text('${l10n.commonError}: $e')),
       );
     }
   }
@@ -539,30 +603,30 @@ class _ResultPageState extends State<ResultPage>
 // ─── Species Info Card ───────────────────────────────────────────────────────
 
 class _SpeciesInfoCard extends StatelessWidget {
-  final Species? species;
-  final bool isNotListed;
+  final SpeciesDetail? species;
+  final bool isListed;
   final String? notListedName;
   final String? notListedLatinName;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
-  final AppLocalizations l10n;
   final void Function(String url) onSourceTap;
   final VoidCallback? onRetake;
 
   const _SpeciesInfoCard({
     required this.species,
-    required this.isNotListed,
+    required this.isListed,
     required this.notListedName,
     required this.notListedLatinName,
     required this.colorScheme,
     required this.textTheme,
-    required this.l10n,
     required this.onSourceTap,
     this.onRetake,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Card(
       color: colorScheme.secondaryContainer,
       child: Padding(
@@ -570,7 +634,7 @@ class _SpeciesInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (species == null && !isNotListed) ...[
+            if (species == null) ...[
               Icon(
                 Icons.image_search_outlined,
                 size: 36,
@@ -598,9 +662,9 @@ class _SpeciesInfoCard extends StatelessWidget {
                 label: Text(l10n.resultRetakePhoto),
               ),
             ]
-            else if (isNotListed) ...[
+            else if (!isListed) ...[
               Text(
-                notListedName ?? l10n.commonNone,
+                notListedName ?? 'Unknown',
                 style: textTheme.headlineSmall?.copyWith(
                   color: colorScheme.onSecondaryContainer,
                 ),
@@ -630,22 +694,22 @@ class _SpeciesInfoCard extends StatelessWidget {
               ),
             ] else ...[
               Text(
-                species!.name,
+                species!.commonName,
                 style: textTheme.headlineSmall?.copyWith(
                   color: colorScheme.onSecondaryContainer,
                 ),
               ),
-              if (species!.latinName.isNotEmpty) ...[
+              if (species!.scientificName.isNotEmpty) ...[
                 const SizedBox(height: 4),
                 Text(
-                  species!.latinName,
+                  species!.scientificName,
                   style: textTheme.bodyMedium?.copyWith(
                     color: colorScheme.onSecondaryContainer,
                     fontStyle: FontStyle.italic,
                   ),
                 ),
               ],
-              if (species!.populationEstimate != null) ...[
+              if (species!.populationEstimate.isNotEmpty) ...[
                 const SizedBox(height: 10),
                 Chip(
                   label: Text(l10n.resultEndangered),
@@ -660,18 +724,18 @@ class _SpeciesInfoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  l10n.resultRemaining(species!.populationEstimate!),
+                  species!.populationEstimate,
                   style: textTheme.labelMedium?.copyWith(
                     color: colorScheme.onSecondaryContainer
                         .withValues(alpha: 0.8),
                   ),
                 ),
-                if (species!.sourceUri != null) ...[
+                if (species!.sourceUri.isNotEmpty) ...[
                   const SizedBox(height: 4),
                   Align(
                     alignment: Alignment.centerRight,
                     child: GestureDetector(
-                      onTap: () => onSourceTap(species!.sourceUri!),
+                      onTap: () => onSourceTap(species!.sourceUri),
                       child: Text(
                         l10n.resultSource,
                         style: textTheme.labelSmall?.copyWith(
@@ -699,7 +763,6 @@ class _ChatInputBar extends StatelessWidget {
   final List<String> hintBatch;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
-  final AppLocalizations l10n;
   final VoidCallback onSend;
   final void Function(String hint) onHintTap;
 
@@ -709,13 +772,14 @@ class _ChatInputBar extends StatelessWidget {
     required this.hintBatch,
     required this.colorScheme,
     required this.textTheme,
-    required this.l10n,
     required this.onSend,
     required this.onHintTap,
   });
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+
     return Container(
       color: colorScheme.surfaceContainer,
       padding: EdgeInsets.only(

@@ -113,7 +113,7 @@ abstract class AppLocalizations {
   /// No description provided for @appTagline.
   ///
   /// In en, this message translates to:
-  /// **'We can’t protect what we don’t recognize'**
+  /// **'we can’t protect what we don’t recognize'**
   String get appTagline;
 
   /// No description provided for @commonSave.
@@ -773,7 +773,7 @@ abstract class AppLocalizations {
   /// No description provided for @resultNotEndangered.
   ///
   /// In en, this message translates to:
-  /// **'Not Endangered'**
+  /// **'Not Listed as Endangered'**
   String get resultNotEndangered;
 
   /// No description provided for @resultEndangered.

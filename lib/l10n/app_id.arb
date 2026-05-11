@@ -176,7 +176,7 @@
   "resultNotRecognized": "Spesies tidak dikenali",
   "resultTryDifferentAngle": "Coba ambil foto dari sudut yang berbeda atau dengan pencahayaan yang memadai untuk hasil yang lebih baik.",
   "resultRetakePhoto": "Ambil Ulang Foto",
-  "resultNotEndangered": "Tidak Terancam Punah",
+  "resultNotEndangered": "Tidak Ada di Daftar Terancam Punah",
   "resultEndangered": "Terancam Punah",
   "resultRemaining": "Tersisa: {count}",
   "@resultRemaining": {

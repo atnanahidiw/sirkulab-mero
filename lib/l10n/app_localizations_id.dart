@@ -64,7 +64,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get bootPhaseCanceled => 'Dibatalkan';
 
   @override
-  String get bootPhaseInstalling => 'Memasang';
+  String get bootPhaseInstalling => 'Menginstall';
 
   @override
   String get bootPhaseFailed => 'Butuh perhatian';
@@ -374,7 +374,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get resultRetakePhoto => 'Ambil Ulang Foto';
 
   @override
-  String get resultNotEndangered => 'Tidak Terancam Punah';
+  String get resultNotEndangered => 'Tidak Ada di Daftar Terancam Punah';
 
   @override
   String get resultEndangered => 'Terancam Punah';
