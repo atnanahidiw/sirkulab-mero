@@ -132,21 +132,38 @@ class _ResultPageState extends State<ResultPage>
   }
 
   /// Refresh hints + welcome message after DB lookup completes.
-  void _updateHintsAndMessage(AppLocalizations l10n) {
+  Future<void> _updateHintsAndMessage(
+    AppLocalizations l10n, {
+    required String name,
+    required String description,
+  }) async {
     _remainingHints = List.from(
       _isListed
           ? ChatPrompts.endangeredHints(l10n)
           : ChatPrompts.notEndangeredHints(l10n),
     );
-    // Replace initial message with the correct one based on DB result
-    if (_chatMessages.isNotEmpty) {
-      final name = _isListed ? _species!.commonName : (_jsonCommonName ?? '');
-      final body = _isListed && _species!.description.isNotEmpty
-          ? l10n.resultInitialMsgEndangered(name, _species!.description)
-          : (name.isNotEmpty
-              ? l10n.resultInitialMsgNotListed(name)
-              : '');
-      _chatMessages[0] = {'role': 'assistant', 'content': body};
+
+    final rawBody = description.isNotEmpty
+        ? l10n.resultInitialMsgEndangered(name, description)
+        : l10n.resultInitialMsgNotListed(name);
+    final body = await _translateIfNeeded(rawBody);
+
+    _chatMessages[0] = {'role': 'assistant', 'content': body};
+  }
+
+  /// Translate [bodyText] to the current locale using the on-device Gemma model.
+  Future<String> _translateIfNeeded(String bodyText) async {
+    final locale = _l10n?.localeName;
+    if (bodyText.isEmpty) return bodyText;
+
+    try {
+      final modelService = Provider.of<ModelService>(context, listen: false);
+      final targetLang = locale == 'id' ? 'Bahasa Indonesia' : 'English';
+
+      return await modelService.translate(bodyText, targetLang);
+    } catch (e) {
+      debugPrint('Translation failed: $e');
+      return bodyText;
     }
   }
 
@@ -182,9 +199,20 @@ class _ResultPageState extends State<ResultPage>
           );
 
         if (!mounted) return;
+
+        await _updateHintsAndMessage(
+          _l10n!,
+          name: _isListed
+              ? displaySpecies.commonName
+              : (_jsonCommonName ?? ''),
+          description: _isListed
+              ? displaySpecies.description
+              : '',
+        );
+
+        if (!mounted) return;
         setState(() {
           _species = displaySpecies;
-          _updateHintsAndMessage(_l10n!);
           _hintsInitialized = true;
         });
       }
