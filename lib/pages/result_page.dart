@@ -44,6 +44,7 @@ class _ResultPageState extends State<ResultPage>
   // Parsed JSON from analysisResult (for name/scientific_name fallback)
   Map<String, dynamic>? _parsedJson;
   bool _hintsInitialized = false;
+  AppLocalizations? _l10n;
 
   @override
   void initState() {
@@ -63,6 +64,7 @@ class _ResultPageState extends State<ResultPage>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    _l10n = AppLocalizations.of(context)!;
     if (!_hintsInitialized) {
       _initHintsAndMessage();
       _hintsInitialized = true;
@@ -120,11 +122,10 @@ class _ResultPageState extends State<ResultPage>
   // Updated by _loadSpeciesData after DB lookup completes.
 
   void _initHintsAndMessage() {
-    final l10n = AppLocalizations.of(context)!;
     // Use endangered hints by default until DB tells us otherwise
-    _remainingHints = List.from(ChatPrompts.endangeredHints(l10n));
+    _remainingHints = List.from(ChatPrompts.endangeredHints(_l10n!));
     final name = _jsonCommonName;
-    final content = name != null ? l10n.resultInitialMsgNotListed(name) : '';
+    final content = name != null ? _l10n!.resultInitialMsgNotListed(name) : '';
     if (content.isNotEmpty) {
       _chatMessages.add({'role': 'assistant', 'content': content});
     }
@@ -181,10 +182,9 @@ class _ResultPageState extends State<ResultPage>
           );
 
         if (!mounted) return;
-        final l10n = AppLocalizations.of(context)!;
         setState(() {
           _species = displaySpecies;
-          _updateHintsAndMessage(l10n);
+          _updateHintsAndMessage(_l10n!);
           _hintsInitialized = true;
         });
       }
@@ -228,8 +228,9 @@ class _ResultPageState extends State<ResultPage>
       );
       
       // Create system instruction with context
+      final langName = _l10n!.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
       final systemInstruction = ChatPrompts.answerSystemInstruction(
-        'English',
+        langName,
         context: systemContext
       );
       
@@ -329,7 +330,7 @@ class _ResultPageState extends State<ResultPage>
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
+    _l10n = AppLocalizations.of(context)!;
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
 
@@ -380,7 +381,7 @@ class _ResultPageState extends State<ResultPage>
                     _scrollController.offset >
                         (_expandedHeight - kToolbarHeight);
                 return Text(
-                  _speciesDisplayName(l10n),
+                  _speciesDisplayName(_l10n!),
                   style: textTheme.titleLarge?.copyWith(
                     color: collapsed ? colorScheme.onSurface : Colors.white,
                   ),
@@ -399,7 +400,7 @@ class _ResultPageState extends State<ResultPage>
                       Icons.copy_outlined,
                       color: collapsed ? colorScheme.onSurface : Colors.white,
                     ),
-                    onPressed: () => _copyToClipboard(context, l10n),
+                    onPressed: () => _copyToClipboard(context, _l10n!),
                   );
                 },
               ),
@@ -580,7 +581,7 @@ class _ResultPageState extends State<ResultPage>
           '${_species!.commonName}\n${_species!.scientificName}\n\n${_species!.description}';
     } else if (_species != null) {
       text =
-          '$_jsonCommonName\n$_jsonScientificName\n\n${l10n.resultNotEndangered}';
+          '$_jsonCommonName\n$_jsonScientificName\n\n${_l10n!.resultNotEndangered}';
     } else {
       text = widget.analysisResult;
     }
@@ -589,12 +590,12 @@ class _ResultPageState extends State<ResultPage>
       await Clipboard.setData(ClipboardData(text: text));
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(l10n.resultCopied)),
+        SnackBar(content: Text(_l10n!.resultCopied)),
       );
     } catch (e) {
       if (!context.mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('${l10n.commonError}: $e')),
+        SnackBar(content: Text('${_l10n!.commonError}: $e')),
       );
     }
   }
