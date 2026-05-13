@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -16,10 +15,15 @@ class ResultPage extends StatefulWidget {
   final Uint8List imageBytes;
   final String analysisResult;
 
+  /// Species resolved by AnalyzingPage before navigation.
+  /// When provided, ResultPage renders immediately with no loading state.
+  final SpeciesDetail? preloadedSpecies;
+
   const ResultPage({
     super.key,
     required this.imageBytes,
     required this.analysisResult,
+    this.preloadedSpecies,
   });
 
   @override
@@ -39,9 +43,7 @@ class _ResultPageState extends State<ResultPage>
 
   late AnimationController _typingAnimationController;
   late Animation<double> _typingAnimation;
-  final speciesService = SpeciesService();
 
-  // Parsed JSON from analysisResult (for name/scientific_name fallback)
   Map<String, dynamic>? _parsedJson;
   bool _hintsInitialized = false;
   AppLocalizations? _l10n;
@@ -49,6 +51,7 @@ class _ResultPageState extends State<ResultPage>
   @override
   void initState() {
     super.initState();
+
     _typingAnimationController = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 1200),
@@ -57,8 +60,11 @@ class _ResultPageState extends State<ResultPage>
       CurvedAnimation(
           parent: _typingAnimationController, curve: Curves.easeInOut),
     );
+
     _parseResultJson();
-    _loadSpeciesData();
+
+    // Apply preloaded species immediately — no skeleton, no flash.
+    _species = widget.preloadedSpecies;
   }
 
   @override
@@ -97,8 +103,6 @@ class _ResultPageState extends State<ResultPage>
     }
   }
 
-  // ── Reliable state (based on DB conservationStatus, NOT model JSON) ──────
-
   /// True when the species was found in the endangered species DB.
   /// Only reliable AFTER _loadSpeciesData completes (sets _species).
   bool get _isListed {
@@ -106,113 +110,54 @@ class _ResultPageState extends State<ResultPage>
     return _species!.conservationStatus.isNotEmpty;
   }
 
-  /// Common name from JSON (fallback when species not in DB).
   String? get _jsonCommonName => _parsedJson?['common_name'] as String?;
-
-  /// Scientific name from JSON (fallback when species not in DB).
+  
   String? get _jsonScientificName => _parsedJson?['scientific_name'] as String?;
 
-  /// Chat is enabled when we have a species (DB match or JSON fallback).
+  /// Chat is enabled when we have a species.
   bool get _chatEnabled => _species != null;
 
   // ── Hints & welcome message ──────────────────────────────────────────────
-  // Initialized in didChangeDependencies with JSON-only info (DB not loaded yet).
-  // Updated by _loadSpeciesData after DB lookup completes.
 
   void _initHintsAndMessage() {
-    // Use endangered hints by default until DB tells us otherwise
-    _remainingHints = List.from(ChatPrompts.endangeredHints(_l10n!));
-    final name = _jsonCommonName;
-    final content = name != null ? _l10n!.resultInitialMsgNotListed(name) : '';
-    if (content.isNotEmpty) {
-      _chatMessages.add({'role': 'assistant', 'content': content});
+    // _species is already set so hints and message are correct on first render.
+    _remainingHints = List.from(
+      _isListed
+          ? ChatPrompts.endangeredHints(_l10n!)
+          : ChatPrompts.notEndangeredHints(_l10n!),
+    );
+
+    final name = _species?.commonName ?? _jsonCommonName ?? '';
+    final description = _isListed ? (_species?.description ?? '') : '';
+
+    final rawBody = description.isNotEmpty
+        ? _l10n!.resultInitialMsgEndangered(name, description)
+        : (name.isNotEmpty ? _l10n!.resultInitialMsgNotListed(name) : '');
+
+    if (rawBody.isNotEmpty) {
+      _chatMessages.add({'role': 'assistant', 'content': rawBody});
+      // Translate async and swap message[0] when ready — non-blocking.
+      _translateWelcomeMessage(rawBody);
     }
   }
 
-  /// Refresh hints + welcome message after DB lookup completes.
-  Future<void> _updateHintsAndMessage(
-    AppLocalizations l10n, {
-    required String name,
-    required String description,
-  }) async {
-    _remainingHints = List.from(
-      _isListed
-          ? ChatPrompts.endangeredHints(l10n)
-          : ChatPrompts.notEndangeredHints(l10n),
-    );
-
-    final rawBody = description.isNotEmpty
-        ? l10n.resultInitialMsgEndangered(name, description)
-        : l10n.resultInitialMsgNotListed(name);
-    final body = await _translateIfNeeded(rawBody);
-
-    _chatMessages[0] = {'role': 'assistant', 'content': body};
+  Future<void> _translateWelcomeMessage(String rawBody) async {
+    final translated = await _translateIfNeeded(rawBody);
+    if (!mounted || translated == rawBody || _chatMessages.isEmpty) return;
+    setState(() {
+      _chatMessages[0] = {'role': 'assistant', 'content': translated};
+    });
   }
 
-  /// Translate [bodyText] to the current locale using the on-device Gemma model.
   Future<String> _translateIfNeeded(String bodyText) async {
-    final locale = _l10n?.localeName;
     if (bodyText.isEmpty) return bodyText;
-
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
-      final targetLang = locale == 'id' ? 'Bahasa Indonesia' : 'English';
-
+      final targetLang = _l10n?.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
       return await modelService.translate(bodyText, targetLang);
     } catch (e) {
       debugPrint('Translation failed: $e');
       return bodyText;
-    }
-  }
-
-  // ── DB species data ──────────────────────────────────────────────────────
-
-  Future<void> _loadSpeciesData() async {
-    try {
-      if (_parsedJson == null) return;
-
-      final scientificName = _parsedJson!['scientific_name'] as String? ?? '';
-      final commonName = _parsedJson!['common_name'] as String? ?? '';
-
-      if (scientificName.isNotEmpty) {
-        final matched =
-            await speciesService.findSpeciesByLatinName(scientificName);
-
-        SpeciesDetail? displaySpecies = matched;
-        displaySpecies ??= SpeciesDetail(
-          scientificName: scientificName,
-          commonName: commonName,
-          visualFeatures: {},
-          description: _parsedJson!['identification_notes'] as String? ?? '',
-          conservationStatus: '',
-          habitat: '',
-          threats: const [],
-          ecosystemRole: '',
-          humanConnection: '',
-          whatStudentsCanDo: const [],
-          funFacts: const [],
-          habitatTags: const [],
-          taxonomy: {
-            'genus': _parsedJson!['genus'] as String? ?? '',
-          },
-        );
-
-        if (!mounted) return;
-
-        await _updateHintsAndMessage(
-          _l10n!,
-          name: _isListed ? displaySpecies.commonName : (_jsonCommonName ?? ''),
-          description: _isListed ? displaySpecies.description : '',
-        );
-
-        if (!mounted) return;
-        setState(() {
-          _species = displaySpecies;
-          _hintsInitialized = true;
-        });
-      }
-    } catch (e) {
-      debugPrint('Error loading species data: $e');
     }
   }
 
@@ -263,9 +208,8 @@ class _ResultPageState extends State<ResultPage>
       final int streamingIndex = _chatMessages.length - 1;
 
       await modelService.askQuestion(
-        text, // Pass the user's question directly without context
-        systemInstruction:
-            systemInstruction, // Pass context via system instruction
+        text,
+        systemInstruction: systemInstruction,
         onProgress: (_, __) {},
         onToken: (token) {
           if (!mounted) return;
