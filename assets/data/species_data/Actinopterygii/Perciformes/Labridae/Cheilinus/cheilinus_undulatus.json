@@ -6,12 +6,28 @@
   "order": "Perciformes",
   "family": "Labridae",
   "genus": "Cheilinus",
-  "visual_features": "The humphead wrasse is the largest extant member of the family Labridae. Males can reach up to 229 cm (90 in) and weigh up to 191 kg (421 lb), though average length tends to be around 60 cm (24 in). Females rarely grow larger than one meter. This species can be easily identified by its large size, thick lips, two black lines behind its eyes, and the hump on the foreheads of larger adults. Its color varies between olive to more vibrant shades of green and purplish-blue, with a pattern of yellow undulating lines or reticulation on the head.",
+  "visual_features": {
+    "color": "olive to green and purplish-blue, yellow undulating lines on head",
+    "body_shape": "large robust fish with thick lips and humped forehead in adults",
+    "distinctive_marks": "prominent forehead hump in adults, two black lines behind eyes, thick fleshy lips",
+    "texture": "large smooth scales",
+    "size_class": "very large",
+    "pattern": "yellow undulating lines or reticulation on head"
+  },
   "description": "The humphead wrasse is one of the top predators of the reef ecosystem, mainly consuming various invertebrate species including the crown-of-thorns starfish. It is very opportunistic, preying on mollusks (particularly gastropods and bivalves), sea urchins, crustaceans, annelids, other fish, and even toxic species such as sea hares, boxfish, and crown-of-thorns starfish. The species is long-lived, with individuals becoming sexually mature at 5-7 years and known to live for around 30 years. They are protogynous hermaphrodites, with some females transitioning to male at about 9 years old. Adults are usually solitary but also observed in male-female pairs and small groups.",
   "conservation_status": "Endangered",
   "population_estimate": "Listed as Endangered with a decreasing population trend across its range. Maximum population density is rarely above 20 adults per 10,000 m\u00b2. The species has been overfished throughout most of its range due to extremely high value in the live reef fish trade. The Philippines, Indonesia, and Malaysia are the three largest exporters, with uncontrolled harvesting of juvenile 'plate-sized' fish for grow-out operations removing hundreds of thousands of individuals from Indonesia alone over multiple years.",
   "habitat": "Found on coral reefs in the Indo-Pacific region from the east coast of Africa around the Red Sea to various areas of the Indian and Pacific Oceans. Juveniles are usually found in shallow, sandy ranges bordering coral reef waters. Adults are found mostly in offshore and deeper areas of coral reefs, typically on steep outer-reef slopes, channel slopes, and lagoon reefs at depths of 2 to 100 m. They are usually solitary but also seen in pairs and small groups.",
-  "habitat_tags": ["coral_reef", "tropical", "outer_reef_slope", "lagoon", "channel_slope", "indo_pacific", "sandy_bottom", "coral_lagoon"],
+  "habitat_tags": [
+    "coral_reef",
+    "tropical",
+    "outer_reef_slope",
+    "lagoon",
+    "channel_slope",
+    "indo_pacific",
+    "sandy_bottom",
+    "coral_lagoon"
+  ],
   "threats": [
     "Overfishing for the live reef food fish trade with extremely high retail value",
     "Selective harvesting of juvenile fish for grow-out operations",

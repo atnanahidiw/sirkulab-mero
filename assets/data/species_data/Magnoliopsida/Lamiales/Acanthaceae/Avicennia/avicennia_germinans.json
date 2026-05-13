@@ -6,7 +6,14 @@
   "order": "Lamiales",
   "family": "Acanthaceae",
   "genus": "Avicennia",
-  "visual_features": "Black mangroves are evergreen shrubs or small trees that typically grow 3-10 meters tall, though they can reach up to 15 meters in optimal conditions. Their most distinctive feature is their specialized pneumatophore roots that grow vertically up to 30cm above the soil surface, allowing the tree to 'breathe' in waterlogged saline environments. The leaves are leathery, elliptical, and have a distinctive white hue due to salt excretion, with salt crystals often visible on the leaf surfaces. They produce fragrant white flowers that bloom mainly in spring and summer but can occur year-round. The seeds are green, tear-dropped shaped, and float in water until they wash ashore to sprout.",
+  "visual_features": {
+    "color": "dark green upper leaf surface, silvery-white hairy underside; black bark; white flowers",
+    "body_shape": "shrub or small tree with branching above-ground roots (pneumatophores)",
+    "distinctive_marks": "pencil-like pneumatophores (breathing roots) emerging from mud, silvery-white leaf undersides, black bark",
+    "texture": "smooth leaves with hairy underside, rough bark",
+    "size_class": "small to medium",
+    "pattern": "uniform green canopy with distinctive pencil roots below"
+  },
   "description": "Black mangroves are remarkable salt-tolerant trees that inhabit coastal ecosystems throughout the tropical and subtropical regions of the Americas and Western Africa. These highly specialized plants have evolved unique adaptations to thrive in harsh intertidal zones where most other vegetation cannot survive. Their distinctive pneumatophore roots protrude vertically from the soil, allowing oxygen uptake when the ground is submerged during high tides. Black mangroves play crucial ecological roles as nursery habitats for juvenile marine species, particularly crustaceans and fish, while their dead foliage provides food for numerous marine organisms. They are also important nesting sites for coastal birds including brown pelicans, making them keystone species in coastal ecosystems.",
   "conservation_status": "Least Concern",
   "population_estimate": "Widespread and abundant throughout its range; currently stable but facing localized declines in some areas",

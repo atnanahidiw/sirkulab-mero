@@ -6,12 +6,26 @@
   "order": "Ciconiiformes",
   "family": "Ciconiidae",
   "genus": "Mycteria",
-  "visual_features": "Large white stork standing 91-97 cm tall with a wingspan of 43.5-50 cm. Adult plumage is entirely white except for black flight feathers on wings and tail with a greenish gloss. Breeding adults develop a pale creamy yellow suffusion on white plumage, giving the 'milky' appearance. Bare facial skin is greyish to dark maroon with black blotches, turning deep wine red with black markings during breeding. The downcurved bill is dull pinkish-yellow (turning deep yellow during courtship). Legs are dull red-flesh colour turning deep magenta during courtship. Juveniles have pale greyish-brown plumage with white lower back and rump, dark bare areas on forehead and sides of head, and dull yellow bare parts.",
+  "visual_features": {
+    "color": "entirely white with black flight feathers and tail with greenish gloss; breeding adults develop creamy yellow suffusion",
+    "body_shape": "large tall wading bird with downcurved bill, long legs",
+    "distinctive_marks": "downcurved pinkish-yellow bill, dark greyish to maroon facial skin, long red legs",
+    "texture": "smooth dense feathers, bare facial skin",
+    "size_class": "large",
+    "pattern": "mostly white with black wing and tail tips; creamy wash in breeding adults"
+  },
   "description": "The milky stork (Mycteria cinerea) is a medium-sized stork species inhabiting predominantly mangroves in Southeast Asia. It is native to Cambodia, Vietnam, Malaysia and Indonesia. Since the 1980s, the global population has declined from an estimated 5,000 to approximately 1,500 mature individuals due to habitat destruction, overfishing and illegal smuggling of chicks. It is listed as Endangered on the IUCN Red List and on CITES Appendix I. The species is closely related to the painted stork (Mycteria leucocephala) and shares a clade with other members of the genus Mycteria. It is usually silent during non-breeding but utters a falsetto 'fizz' call during courtship displays at nests.",
   "conservation_status": "Endangered",
   "population_estimate": "Approximately 1,500 mature individuals globally. The largest remaining population is on Sumatra, Indonesia (about 1,600 birds estimated in 2008-2009), with fewer than 500 in West Java. Very small populations persist in Cambodia (about 17 pairs in 2010) and Peninsular Malaysia (fewer than 10 birds in 2005). The population has declined by approximately 70% in South Sumatra between 1986 and 2008. The species is now very likely extinct in Thailand where it was historically recorded.",
   "habitat": "Predominantly a lowland coastal species inhabiting mangroves, tidal mudflats, shallow saline or freshwater pools, freshwater marshes, fishponds, rice paddies, and backswamps along river floodplains up to 15 km from the coast. Breeding requires extensive and undisturbed mangrove or riverine forest with tall trees (6-12 m) for nesting, and shallow pools within forests for juveniles to forage. In Cambodia, the species also disperses to the Tonle Sap Lake area during the wet season.",
-  "habitat_tags": ["mangrove", "coastal wetland", "tidal mudflat", "freshwater marsh", "estuary", "rice paddy"],
+  "habitat_tags": [
+    "mangrove",
+    "coastal wetland",
+    "tidal mudflat",
+    "freshwater marsh",
+    "estuary",
+    "rice paddy"
+  ],
   "threats": [
     "Habitat destruction - mangrove clearing for aquaculture, agriculture and coastal development",
     "Illegal wildlife trade - smuggling of chicks and eggs from nests",

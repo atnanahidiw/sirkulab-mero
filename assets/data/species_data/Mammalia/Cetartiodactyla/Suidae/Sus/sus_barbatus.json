@@ -6,7 +6,14 @@
   "order": "Cetartiodactyla",
   "family": "Suidae",
   "genus": "Sus",
-  "visual_features": "The Bearded Pig is a large, long-legged pig with a distinctive 'beard' of coarse, bushy hairs on the bridge of the nose and cheeks. The beard is more pronounced in males with hairs up to 15 cm long and whitish in color, often yellow- or silver-tinted. The sparsely-haired body is generally pale gray, reddish-brown, or dark brown depending on location. The snout is prominent with a mobile disk-shaped structure bearing the nostrils, and it ends with sharp tusks that may grow to 25 cm long in males. Males develop two pairs of facial warts hidden within the beard; females lack warts. The tail has a distinctive tuft comprised of two rows of bristly hair. Head and body length is 137-152 cm for males and 122-148 cm for females, with shoulder height of 70-90 cm, and body weight ranging from 57-83 kg.",
+  "visual_features": {
+    "color": "greyish-brown to dark brown body, pale facial bands, blackish legs",
+    "body_shape": "large robust pig with prominent facial warts and mane",
+    "distinctive_marks": "prominent white or pale yellowish facial bands (beard), three pairs of facial warts, prominent manes, long curved tusks",
+    "texture": "bristly coarse hair with longer mane hairs",
+    "size_class": "large",
+    "pattern": "pale facial bands on darker body"
+  },
   "description": "The Bearded Pig (Sus barbatus), also known as the Bornean bearded pig or Sunda bearded pig, is a species of wild pig native to Southeast Asia. It is found in Sumatra, Borneo, the Malay Peninsula, and various smaller islands. This unique pig is known for its extensive seasonal migrations where several hundred animals join together, led by old boars, traveling at night on well-worn paths. It can be cross-bred with other species in the family Suidae. The species is recognizable by its prominent beard and sometimes has tassels on its tail. Potential predators include tigers, leopards, clouded leopards, and reticulated pythons.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Population estimates are uncertain but declining. Populations in peninsular Malaysia and Sumatra have decreased substantially in recent years. Bornean bearded pigs still appear to be widespread. No exact population estimates are available, but the species is assessed as Vulnerable by IUCN due to ongoing habitat loss and hunting pressure. The last Bornean bearded pig held in European zoos died in Berlin Zoo in February 2024.",

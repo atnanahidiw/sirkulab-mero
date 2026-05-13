@@ -6,7 +6,14 @@
   "order": "Ranunculales",
   "family": "Ranunculaceae",
   "genus": "Atragene",
-  "visual_features": "Atragene grahamii is a delicate climbing vine with attractive bell-shaped flowers. The plant features compound leaves with multiple leaflets and produces solitary or small clusters of nodding flowers. The flowers typically have four petal-like sepals that may range in color from pale blue to lavender with prominent contrasting stamens. As a member of the Atragene group, it is known for its early spring flowering and hardiness. The vine is relatively compact, typically growing to about 1-2 meters in height with slender, flexible stems.",
+  "visual_features": {
+    "color": "green compound leaves; flowers with pale purple-blue to blue sepals; creamy stamens",
+    "body_shape": "deciduous woody climbing vine (liana) with slender twining stems",
+    "distinctive_marks": "nodding lantern-shaped flowers with large showy sepals, compound leaves, climbing by twining leaf stalks",
+    "texture": "smooth herbaceous to woody stems, textured leaves",
+    "size_class": "medium (vine)",
+    "pattern": "climbing vine with scattered flowers along stem"
+  },
   "description": "Atragene grahamii is a rare and specialized clematis species belonging to the Atragene group, which is known for its hardiness and early spring flowering. This delicate climbing vine is adapted to specific habitats and represents an important part of native plant biodiversity. Like other Atragene species, it likely has specific ecological relationships with pollinators, particularly bumblebees that are attracted to its bell-shaped flowers. The plant's rarity suggests it may have specific habitat requirements or be naturally limited in its distribution, possibly due to specialized growing conditions or historical factors.",
   "conservation_status": "Endangered",
   "population_estimate": "Extremely rare with limited known populations; estimated fewer than 1000 mature individuals remaining",

@@ -6,17 +6,31 @@
   "order": "Primates",
   "family": "Cercopithecidae",
   "genus": "Presbytis",
-  "visual_features": "The hair on the top of the head rises in a crown resembling a mohawk; this crown is white at the front with a dark grey stripe running down through it. Two tufts of fur extend on either side of the face. The belly is cream-colored and the back is grey. Amber eyes with grey outlines around the eyes. Juveniles have creamy white fur that darkens with age. Medium-sized primate with long limbs adapted for leaping and climbing. A distinct white crown patch contrasts sharply with the dark grey stripe, making them easily identifiable.",
+  "visual_features": {
+    "color": "dark grey to black upper body, greyish-white underparts, white nose and mouth area",
+    "body_shape": "slender primate with long tail, small rounded head",
+    "distinctive_marks": "white nose and mouth region (pale 'mask'), white inner thighs, black stripe from shoulders to tail, long tail",
+    "texture": "soft dense fur",
+    "size_class": "medium",
+    "pattern": "dark body with white facial markings and white underparts"
+  },
   "description": "Thomas's langur (Presbytis thomasi), also known as the North Sumatran leaf monkey or Thomas's leaf monkey, is a primate endemic to northern Sumatra, Indonesia, found only north of Lake Toba and the Alas and Wampu rivers. It inhabits subtropical or tropical dry forests. Like other members of the genus Presbytis, this species has evolved to digest cellulose through microbial fermentation in a specialized foregut. Although primarily folivorous, they also eat fruit (usually unripe with high pH to avoid killing gut microbes), flowers, and occasionally toadstools and snails. They live approximately 20 years in the wild and up to 29 years in captivity. Substantial populations exist in Gunung Leuser National Park, particularly in Ketambe and Bukit Lawang.",
   "conservation_status": "Vulnerable (IUCN 3.1)",
   "population_estimate": "Population declined by approximately 30% in the last few decades due to ongoing deforestation of the Leuser and Ulu Massen Ecosystems. No precise census available. Protected under Indonesian Law and CITES Appendix II.",
   "habitat": "Subtropical or tropical dry forests of northern Sumatra, Indonesia. Found only north of Lake Toba and the Alas and Wampu rivers. Inhabits Gunung Leuser National Park with substantial populations in Ketambe and Bukit Lawang areas. Prefers forested habitats with access to young leaves, which are their preferred food source.",
-  "habitat_tags": ["tropical dry forest", "subtropical forest", "montane forest", "arboreal", "Sumatra", "Gunung Leuser"],
+  "habitat_tags": [
+    "tropical dry forest",
+    "subtropical forest",
+    "montane forest",
+    "arboreal",
+    "Sumatra",
+    "Gunung Leuser"
+  ],
   "threats": [
     "Deforestation of the Leuser and Ulu Massen Ecosystems",
     "Illegal logging and palm oil plantation expansion",
-    "Human-wildlife conflict — enters croplands and is culled by farmers",
-    "Illegal pet trade — infants are captured after mothers are killed",
+    "Human-wildlife conflict \u2014 enters croplands and is culled by farmers",
+    "Illegal pet trade \u2014 infants are captured after mothers are killed",
     "Parts sold for traditional medicine",
     "Habituation to tourists in Gunung Leuser leading to negative human-wildlife interactions"
   ],
@@ -30,7 +44,7 @@
     "Practice and encourage responsible wildlife tourism (no feeding wild animals)"
   ],
   "fun_fact": [
-    "Thomas's langurs have a distinctive crown-like 'mohawk' of white fur with a dark grey stripe running through it — one of the most striking hairstyles in the primate world",
+    "Thomas's langurs have a distinctive crown-like 'mohawk' of white fur with a dark grey stripe running through it \u2014 one of the most striking hairstyles in the primate world",
     "They primarily eat unripe fruit with high pH levels to avoid killing the specialized microbes in their stomachs that help digest leaves",
     "They drink from naturally occurring tree holes where rainwater collects, or from small forest pools",
     "Juveniles have creamy white fur that gradually changes to the adult grey coloration as they mature",

@@ -6,8 +6,15 @@
   "order": "Primates",
   "family": "Tarsiidae",
   "genus": "Tarsius",
-  "visual_features": "Gursky's Spectral Tarsier is among the smallest primates, with a head-to-body length of only 5.5 inches (14 cm) and a nonprehensile tail of 9.4 inches (24 cm), weighing just 4.6 ounces (0.13 kg). It has extraordinarily large golden eyes — each as large as or larger than its brain — outlined with black circles, dominating the grayish-orange furred face. The face has a small pinkish muzzle with a few white whiskers. Extremely sharp, bat-like teeth fit inside the mouth. Large, fan-like ears can move independently like satellite dishes. Its fingers and toes are bony, long, and thin; the third finger is about the same length as its upper arm. The second and third toes have a long, curved grooming claw. The body is covered with thick, plush gray undercoat and orange upper hairs, with a long scaly tail tipped with a black tuft of fur.",
-  "description": "Gursky's Spectral Tarsier (Tarsius spectrumgurskyae), known locally as wusing, is a species of tarsier found only on the Indonesian island of Sulawesi. It was described as a new species in 2017, split from the spectral tarsier (Tarsius spectrum) based on differences in vocalizations and pelage. The species is named after Dr. Sharon Gursky, who conducted extensive studies on its behavioral ecology. These tiny, nocturnal primates are vertical clingers and leapers, capable of jumping up to 19.7 feet (6 meters) between tree trunks. They are the only entirely faunivorous primates — their diet consists 100% of live animal prey.",
+  "visual_features": {
+    "color": "greyish-brown to reddish fur, pale grey underparts, large brown eyes",
+    "body_shape": "tiny primate with enormous eyes, elongated tarsal (ankle) bones, long thin tail with tufted tip",
+    "distinctive_marks": "enormous eyes (larger than brain), extremely long hind limbs for leaping, 180-degree head rotation, long tufted tail",
+    "texture": "soft fine fur, velvety in appearance",
+    "size_class": "very small",
+    "pattern": "uniform brownish with paler belly; no bold markings"
+  },
+  "description": "Gursky's Spectral Tarsier (Tarsius spectrumgurskyae), known locally as wusing, is a species of tarsier found only on the Indonesian island of Sulawesi. It was described as a new species in 2017, split from the spectral tarsier (Tarsius spectrum) based on differences in vocalizations and pelage. The species is named after Dr. Sharon Gursky, who conducted extensive studies on its behavioral ecology. These tiny, nocturnal primates are vertical clingers and leapers, capable of jumping up to 19.7 feet (6 meters) between tree trunks. They are the only entirely faunivorous primates \u2014 their diet consists 100% of live animal prey.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Exact population estimates are not available. The species is assessed as Vulnerable by IUCN due to its restricted range (northeastern tip of Sulawesi), ongoing habitat loss, and limited area of occupancy. Confined to the northern peninsula of Sulawesi, the species' population is likely fragmented and decreasing.",
   "habitat": "Endemic to the northeastern arm of Sulawesi, Indonesia. Inhabits various forest types including primary forests, secondary forests, mangrove forests, and forest gardens (agroforestry). Found at elevations from sea level up to 1,100 m. They reside mostly in the lower canopy, often close to the forest floor, and prefer areas with vertical tree trunks for their characteristic vertical clinging and leaping locomotion.",
@@ -36,10 +43,10 @@
     "Document traditional ecological knowledge about local primate species"
   ],
   "fun_fact": [
-    "Tarsiers have the largest eye-to-body size ratio of all mammals — each eye is as large as or larger than its brain",
+    "Tarsiers have the largest eye-to-body size ratio of all mammals \u2014 each eye is as large as or larger than its brain",
     "Their neck can rotate 180 degrees in each direction, giving them a 360-degree view of their surroundings",
-    "Tarsiers are the only entirely faunivorous primates — they eat 100% live animal prey including insects, lizards, frogs, birds, and bats",
-    "They can leap up to 19.7 feet (6 meters) between tree trunks — over 40 times their body length",
+    "Tarsiers are the only entirely faunivorous primates \u2014 they eat 100% live animal prey including insects, lizards, frogs, birds, and bats",
+    "They can leap up to 19.7 feet (6 meters) between tree trunks \u2014 over 40 times their body length",
     "Discovered as a new species in 2017, this tarsier was separated from the spectral tarsier based on differences in its calls and fur color"
   ],
   "population_estimate_source_uri": "https://www.iucnredlist.org/species/162336422/162336580"

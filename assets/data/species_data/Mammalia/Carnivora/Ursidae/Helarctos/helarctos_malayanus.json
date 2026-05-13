@@ -6,12 +6,26 @@
   "order": "Carnivora",
   "family": "Ursidae",
   "genus": "Helarctos",
-  "visual_features": "The smallest of all bear species, standing nearly 70 cm at the shoulder and weighing 25-65 kg. Stockily built with large paws, strongly curved claws (the longest of any bear), small rounded ears, and a short snout. Fur is generally short, sleek and jet black but can vary from grey to red. The characteristic chest patch is orange to cream-colored, horseshoe-shaped or bib-like, and unique to each individual. Has the longest tongue of any bear species, adapted for extracting honey. Inward-turned front feet and flattened chest are adaptations for climbing.",
+  "visual_features": {
+    "color": "black coat, orange-yellow crescent-shaped chest patch (U-shaped), pale muzzle",
+    "body_shape": "small stocky bear with short snout, large paws with naked soles, very long tongue",
+    "distinctive_marks": "orange-yellow crescent/U-shaped chest patch, extremely long tongue (20-25 cm), short sleek coat, large sickle-shaped claws",
+    "texture": "short sleek dense fur",
+    "size_class": "small (smallest bear species)",
+    "pattern": "solid black with distinctive pale chest crescent mark"
+  },
   "description": "The sun bear is a bear species in the family Ursidae found in the tropical forests of Southeast Asia. It is the only species in the genus Helarctos and the smallest bear species. The generic name Helarctos comes from Greek 'helios' (sun) and 'arctos' (bear). Two subspecies are recognized: the Malayan sun bear (H. m. malayanus) found in mainland Southeast Asia, Bangladesh and Sumatra; and the Bornean sun bear (H. m. euryspilus) found only in Borneo. It is the most arboreal of all bears, an excellent climber that sunbathes and sleeps in trees 2-7 m above ground. It is mainly diurnal but may become nocturnal near human activity. It does not hibernate as food is available year-round. Omnivorous diet includes ants, bees, beetles, honey, termites, fruits, seeds, and occasionally vertebrates. Breeds year-round with litters of 1-2 cubs that stay with mother for about 3 years.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Global population estimated to have declined by approximately 35% since the 1990s (three sun bear generations). Exact population numbers are unknown but the decline trend is well-documented across all range countries. Populations continue to decline due to deforestation and poaching.",
   "habitat": "Found in tropical and subtropical forests throughout mainland Southeast Asia (including northeast India, Bangladesh, Myanmar, Thailand, Laos, Cambodia, Vietnam, Peninsular Malaysia) and insular Southeast Asia (Sumatra and Borneo). Primarily inhabits lowland and montane tropical forests, including evergreen, deciduous and swamp forests. Requires large territories with abundant fruiting trees and insect colonies. Considered extinct in Singapore. May now be extirpated from parts of its former range in Bangladesh and southern China.",
-  "habitat_tags": ["tropical", "forest", "lowland", "montane", "arboreal", "rainforest"],
+  "habitat_tags": [
+    "tropical",
+    "forest",
+    "lowland",
+    "montane",
+    "arboreal",
+    "rainforest"
+  ],
   "threats": [
     "Heavy deforestation and habitat loss across Southeast Asia for palm oil and timber",
     "Poaching for bear bile used in traditional medicine",
@@ -22,7 +36,7 @@
     "Poor enforcement of wildlife protection laws across range countries"
   ],
   "ecosystem_role": "Vital ecosystem engineer and seed disperser. As they move through forests feeding on fruits, they disperse seeds over wide areas maintaining forest biodiversity. Their feeding on termites, ants, and beetle larvae helps control insect populations and aerate soil. They create cavities in trees while foraging that become homes for other wildlife species. Considered a keystone species and umbrella species for Southeast Asian forest conservation.",
-  "human_connection": "Significant in Southeast Asian folklore, sometimes called 'honey bear' (beruang madu in Indonesian/Malay) for their love of honey. Victims of the bear bile trade — a cruel practice where bile is extracted from live bears for traditional medicine. Their charming teddy bear-like appearance has made them popular in conservation campaigns. The global sun bear population decline is closely tied to the palm oil industry and deforestation.",
+  "human_connection": "Significant in Southeast Asian folklore, sometimes called 'honey bear' (beruang madu in Indonesian/Malay) for their love of honey. Victims of the bear bile trade \u2014 a cruel practice where bile is extracted from live bears for traditional medicine. Their charming teddy bear-like appearance has made them popular in conservation campaigns. The global sun bear population decline is closely tied to the palm oil industry and deforestation.",
   "what_students_can_do": [
     "Support sun bear conservation organizations and sanctuaries",
     "Choose products with certified sustainable palm oil",
@@ -31,10 +45,10 @@
     "Advocate for stronger protection of Southeast Asian forests"
   ],
   "fun_fact": [
-    "Sun bears do not hibernate — they can find food year-round in tropical forests",
+    "Sun bears do not hibernate \u2014 they can find food year-round in tropical forests",
     "Each sun bear has a unique chest patch pattern, like human fingerprints, used for individual identification",
     "They have the longest tongue of any bear species, reaching up to 20-25 cm to extract honey from beehives",
-    "They are the most arboreal bear — building sleeping platforms high in trees",
+    "They are the most arboreal bear \u2014 building sleeping platforms high in trees",
     "Despite being the smallest bear, they are incredibly strong and have the longest claws relative to body size of any bear"
   ],
   "population_estimate_source_uri": "https://www.iucnredlist.org/species/41688/22163722"

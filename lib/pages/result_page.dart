@@ -107,12 +107,10 @@ class _ResultPageState extends State<ResultPage>
   }
 
   /// Common name from JSON (fallback when species not in DB).
-  String? get _jsonCommonName =>
-      _parsedJson?['common_name'] as String?;
+  String? get _jsonCommonName => _parsedJson?['common_name'] as String?;
 
   /// Scientific name from JSON (fallback when species not in DB).
-  String? get _jsonScientificName =>
-      _parsedJson?['scientific_name'] as String?;
+  String? get _jsonScientificName => _parsedJson?['scientific_name'] as String?;
 
   /// Chat is enabled when we have a species (DB match or JSON fallback).
   bool get _chatEnabled => _species != null;
@@ -177,37 +175,34 @@ class _ResultPageState extends State<ResultPage>
       final commonName = _parsedJson!['common_name'] as String? ?? '';
 
       if (scientificName.isNotEmpty) {
-        final matched = await speciesService.findSpeciesByLatinName(scientificName);
+        final matched =
+            await speciesService.findSpeciesByLatinName(scientificName);
 
         SpeciesDetail? displaySpecies = matched;
         displaySpecies ??= SpeciesDetail(
-            scientificName: scientificName,
-            commonName: commonName,
-            visualFeatures: '',
-            description: _parsedJson!['identification_notes'] as String? ?? '',
-            conservationStatus: '',
-            habitat: '',
-            threats: const [],
-            ecosystemRole: '',
-            humanConnection: '',
-            whatStudentsCanDo: const [],
-            funFacts: const [],
-            habitatTags: const [],
-            taxonomy: {
-              'genus': _parsedJson!['genus'] as String? ?? '',
-            },
-          );
+          scientificName: scientificName,
+          commonName: commonName,
+          visualFeatures: {},
+          description: _parsedJson!['identification_notes'] as String? ?? '',
+          conservationStatus: '',
+          habitat: '',
+          threats: const [],
+          ecosystemRole: '',
+          humanConnection: '',
+          whatStudentsCanDo: const [],
+          funFacts: const [],
+          habitatTags: const [],
+          taxonomy: {
+            'genus': _parsedJson!['genus'] as String? ?? '',
+          },
+        );
 
         if (!mounted) return;
 
         await _updateHintsAndMessage(
           _l10n!,
-          name: _isListed
-              ? displaySpecies.commonName
-              : (_jsonCommonName ?? ''),
-          description: _isListed
-              ? displaySpecies.description
-              : '',
+          name: _isListed ? displaySpecies.commonName : (_jsonCommonName ?? ''),
+          description: _isListed ? displaySpecies.description : '',
         );
 
         if (!mounted) return;
@@ -243,7 +238,7 @@ class _ResultPageState extends State<ResultPage>
 
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
-      
+
       // Build context for the system instruction
       final systemContext = ChatPrompts.buildQuestionContext(
         analysisResult: widget.analysisResult,
@@ -254,14 +249,13 @@ class _ResultPageState extends State<ResultPage>
         description: _species?.description,
         facts: _species?.funFacts,
       );
-      
+
       // Create system instruction with context
-      final langName = _l10n!.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
-      final systemInstruction = ChatPrompts.answerSystemInstruction(
-        langName,
-        context: systemContext
-      );
-      
+      final langName =
+          _l10n!.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
+      final systemInstruction =
+          ChatPrompts.answerSystemInstruction(langName, context: systemContext);
+
       setState(() {
         _chatMessages.add({'role': 'assistant', 'content': ''});
       });
@@ -269,8 +263,9 @@ class _ResultPageState extends State<ResultPage>
       final int streamingIndex = _chatMessages.length - 1;
 
       await modelService.askQuestion(
-        text,                                  // Pass the user's question directly without context
-        systemInstruction: systemInstruction,  // Pass context via system instruction
+        text, // Pass the user's question directly without context
+        systemInstruction:
+            systemInstruction, // Pass context via system instruction
         onProgress: (_, __) {},
         onToken: (token) {
           if (!mounted) return;
@@ -363,21 +358,23 @@ class _ResultPageState extends State<ResultPage>
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      bottomNavigationBar: _chatEnabled ? _ChatInputBar(
-        controller: _questionController,
-        isAnalyzing: _isAnalyzing,
-        hintBatch: _currentHintBatch,
-        colorScheme: colorScheme,
-        textTheme: textTheme,
-        onSend: _askQuestion,
-        onHintTap: (hint) {
-          setState(() => _activeHint = hint);
-          _questionController.text = hint;
-          _questionController.selection = TextSelection.fromPosition(
-            TextPosition(offset: hint.length),
-          );
-        },
-      ) : null,
+      bottomNavigationBar: _chatEnabled
+          ? _ChatInputBar(
+              controller: _questionController,
+              isAnalyzing: _isAnalyzing,
+              hintBatch: _currentHintBatch,
+              colorScheme: colorScheme,
+              textTheme: textTheme,
+              onSend: _askQuestion,
+              onHintTap: (hint) {
+                setState(() => _activeHint = hint);
+                _questionController.text = hint;
+                _questionController.selection = TextSelection.fromPosition(
+                  TextPosition(offset: hint.length),
+                );
+              },
+            )
+          : null,
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -566,7 +563,8 @@ class _ResultPageState extends State<ResultPage>
                   [LatexBlockSyntax()],
                   [LatexInlineSyntax()],
                 ),
-                styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                styleSheet:
+                    MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
                   p: textTheme.bodyMedium?.copyWith(color: textColor),
                   strong: textTheme.bodyMedium?.copyWith(
                     color: textColor,
@@ -602,7 +600,8 @@ class _ResultPageState extends State<ResultPage>
     );
   }
 
-  Future<void> _copyToClipboard(BuildContext context, AppLocalizations l10n) async {
+  Future<void> _copyToClipboard(
+      BuildContext context, AppLocalizations l10n) async {
     String text;
     if (_isListed) {
       text =
@@ -681,7 +680,8 @@ class _SpeciesInfoCard extends StatelessWidget {
               Text(
                 l10n.resultTryDifferentAngle,
                 style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
+                  color:
+                      colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
                 ),
               ),
               const SizedBox(height: 16),
@@ -690,8 +690,7 @@ class _SpeciesInfoCard extends StatelessWidget {
                 icon: const Icon(Icons.camera_alt_outlined, size: 18),
                 label: Text(l10n.resultRetakePhoto),
               ),
-            ]
-            else if (!isListed) ...[
+            ] else if (!isListed) ...[
               Text(
                 notListedName ?? 'Unknown',
                 style: textTheme.headlineSmall?.copyWith(
@@ -755,8 +754,8 @@ class _SpeciesInfoCard extends StatelessWidget {
                 Text(
                   species!.populationEstimate,
                   style: textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSecondaryContainer
-                        .withValues(alpha: 0.8),
+                    color:
+                        colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
                   ),
                 ),
                 if (species!.sourceUri.isNotEmpty) ...[

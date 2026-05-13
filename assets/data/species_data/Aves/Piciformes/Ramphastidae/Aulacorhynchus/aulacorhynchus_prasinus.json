@@ -6,7 +6,14 @@
   "order": "Piciformes",
   "family": "Ramphastidae",
   "genus": "Aulacorhynchus",
-  "visual_features": "The Emerald Toucanet is a small toucan species, measuring 30-33 cm (11.75-13 inches) in length, making it the smallest member of the toucan family. Both males and females have similar coloration but differ slightly in size, with males weighing approximately 160g (5.7 oz) and females around 149g (5.3 oz). They display vibrant green plumage with highlights of white, gray, and reddish-brown that help them blend with forest foliage. Their most distinctive feature is their colorful beak - the upper mandible is yellow with a white outline, while the lower mandible is black or dark red depending on the subspecies. Their green coloration provides excellent camouflage in the forest canopy where they live.",
+  "visual_features": {
+    "color": "vibrant green plumage with white, gray, and reddish-brown highlights; upper mandible yellow with white outline, lower mandible black or dark red",
+    "body_shape": "small compact toucan with colorful beak and long tail",
+    "distinctive_marks": "two-tone colorful beak (yellow upper, black/dark red lower), smallest toucan species, green camouflage plumage",
+    "texture": "smooth feathers, hard keratin beak",
+    "size_class": "small",
+    "pattern": "predominantly green with contrasting beak colors"
+  },
   "description": "The Emerald Toucanet is a charismatic bird species found abundantly in Central and South America along the eastern coast, particularly in Mexico, Costa Rica, Panama, and northern Venezuela. These birds inhabit higher elevation cloud forests but have recently expanded their range into lower elevation rainforests, demonstrating remarkable ecological flexibility. Emerald Toucanets are known for their vertical migration patterns, moving between different elevations depending on season and food availability. They form monogamous pairs that engage in unique courtship behaviors including 'bill fencing' - a form of sparring where pairs tap their beaks together. These birds nest in tree cavities that they appropriate from other species, showing resourcefulness in finding suitable nesting sites.",
   "conservation_status": "Least Concern",
   "population_estimate": "Widespread and abundant throughout its range with stable populations; not currently threatened",

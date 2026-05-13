@@ -6,12 +6,26 @@
   "order": "Primates",
   "family": "Cercopithecidae",
   "genus": "Macaca",
-  "visual_features": "Moor Macaques are mostly brown-black in color with a pale rump patch and pink bare skin on the rump. They have oval-shaped ischial callosities and a dog-like muzzle, earning them the local nickname 'dog-ape'. Head-body length is 55–69 cm (males) and 46–59 cm (females), with a very short tail of only 2–7 cm. Weight ranges from 8.2–10 kg (males) and 3.8–7.6 kg (females). Some individuals have grey fur, and interestingly, almost every group contains an individual with mostly whitish fur.",
-  "description": "The Moor Macaque is a macaque species endemic to the island of Sulawesi in Indonesia. It is the only macaque species that naturally occurs in South Sulawesi. These primates are highly social, living in groups of 15–40 individuals with an adult sex ratio of 1 male to 0.5–2.7 females. They are diurnal and semi-terrestrial, spending much of their time in trees foraging and on the ground traveling. Their home range is typically 20–30 ha wide with a total daily travel distance of roughly 6.6 km. The population has declined dramatically from an estimated 56,000 in 1983 to under 10,000 in 1994 due to deforestation and habitat loss. They are sometimes called 'dog-ape' because of their dog-like muzzle, though they are Old World monkeys, not apes.",
+  "visual_features": {
+    "color": "dark brown to almost black coat, lighter greyish-brown underparts, pinkish bare rump patches",
+    "body_shape": "stocky tailless macaque with robust build",
+    "distinctive_marks": "no tail (stump only), prominent brow ridge, pink ischial callosities (buttock pads), heavy build",
+    "texture": "short dense fur",
+    "size_class": "medium",
+    "pattern": "uniform dark coat without contrasting markings"
+  },
+  "description": "The Moor Macaque is a macaque species endemic to the island of Sulawesi in Indonesia. It is the only macaque species that naturally occurs in South Sulawesi. These primates are highly social, living in groups of 15\u201340 individuals with an adult sex ratio of 1 male to 0.5\u20132.7 females. They are diurnal and semi-terrestrial, spending much of their time in trees foraging and on the ground traveling. Their home range is typically 20\u201330 ha wide with a total daily travel distance of roughly 6.6 km. The population has declined dramatically from an estimated 56,000 in 1983 to under 10,000 in 1994 due to deforestation and habitat loss. They are sometimes called 'dog-ape' because of their dog-like muzzle, though they are Old World monkeys, not apes.",
   "conservation_status": "Endangered",
-  "population_estimate": "Estimated at under 10,000 mature individuals (down from ~56,000 in 1983). Density surveys found 6.3–63.2 individuals per km² in 1992. The population continues to decline due to habitat loss and fragmentation.",
-  "habitat": "Moist deciduous forests up to 2,000 m above sea level, mosaics of forest with grasslands, areas of cultivation surrounded by primary and secondary forests, and karst (limestone) forest ecosystems. A large part of the remaining population is confined to karst tower forests in southwestern Sulawesi, where towers are 150–300 m tall with abundant fruit trees on top. They show significant ecological flexibility and can use several forest strata including secondary habitats.",
-  "habitat_tags": ["tropical", "forest", "karst", "lowland", "montane", "sulawesi"],
+  "population_estimate": "Estimated at under 10,000 mature individuals (down from ~56,000 in 1983). Density surveys found 6.3\u201363.2 individuals per km\u00b2 in 1992. The population continues to decline due to habitat loss and fragmentation.",
+  "habitat": "Moist deciduous forests up to 2,000 m above sea level, mosaics of forest with grasslands, areas of cultivation surrounded by primary and secondary forests, and karst (limestone) forest ecosystems. A large part of the remaining population is confined to karst tower forests in southwestern Sulawesi, where towers are 150\u2013300 m tall with abundant fruit trees on top. They show significant ecological flexibility and can use several forest strata including secondary habitats.",
+  "habitat_tags": [
+    "tropical",
+    "forest",
+    "karst",
+    "lowland",
+    "montane",
+    "sulawesi"
+  ],
   "threats": [
     "Habitat loss from agriculture and urban development",
     "Deforestation of lowland forests over the past 50 years",
@@ -35,7 +49,7 @@
     "They are one of the primate species most affected by habitat fragmentation in Indonesia, with populations becoming increasingly isolated",
     "Moor Macaques have been habituated for research since the 1980s at Bantimurung-Bulusaraung National Park",
     "They can form hybrid groups with Tonkean Macaques (Macaca tonkeana) where their ranges overlap",
-    "Their population crashed from ~56,000 to under 10,000 in just 11 years (1983–1994)"
+    "Their population crashed from ~56,000 to under 10,000 in just 11 years (1983\u20131994)"
   ],
   "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Moor_macaque"
 }

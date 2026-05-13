@@ -6,8 +6,15 @@
   "order": "Galliformes",
   "family": "Phasianidae",
   "genus": "Argusianus",
-  "visual_features": "A magnificent, large pheasant with strikingly beautiful plumage. Males have predominantly brown plumage with an intricately textured pattern of fine bars and spots. The head is pastel-blue with a bold black 'mohawk' crest (hair-like feathers on crown and nape), rufous-red upper breast, and coral-pink legs and feet. Most extraordinary are the huge, broad and greatly elongated secondary wing feathers decorated with large eye-like spots (ocelli), inspired by the hundred-eyed giant Argus from Greek mythology. Males measure 160-200 cm in total length including an impressive tail of 105-143 cm, weighing 2.04-2.72 kg. Females are smaller and duller (72-76 cm total length, 30-36 cm tail, 1.59-1.7 kg) with shorter tails and fewer eyespots. Unusual among Galliformes in lacking a uropygial gland (oil gland). Young males develop full adult plumage only in their third year.",
-  "description": "One of Southeast Asia's most spectacular pheasants, renowned for its elaborate courtship display. Native to the jungles of Borneo, Sumatra, and the Malay Peninsula (including southern Thailand and southern Myanmar). Two recognized subspecies: nominate argus (Malay peninsula and Sumatra) and A. a. grayi (Borneo). The male performs an extraordinary courtship dance — he clears an open spot on the forest floor, spreads his wings into two enormous fans revealing hundreds of 'eyes' while his real eyes are hidden behind them, staring intently at the female. This remarkable display ranks among the most impressive in the bird world. Named by Carl Linnaeus — the specific name 'argus' references Argus Panoptes, the hundred-eyed giant of Greek mythology. The species is also known as 'Kuang raya' (great pheasant) in Malay. Listed on CITES Appendix II. The now-rejected double-banded argus (A. bipunctatus), known only from a single feather found in a millinery shipment to London, was long thought to be a second species but is now considered a mutant form of the great argus.",
+  "visual_features": {
+    "color": "male: brown with intricate fine bars/spots, pastel-blue head, rufous-red upper breast; female: duller brown",
+    "body_shape": "large pheasant with huge elongated secondary wing feathers and long tail",
+    "distinctive_marks": "huge wing feathers with large eye-like spots (ocelli), pastel-blue head with black mohawk crest, coral-pink legs",
+    "texture": "dense intricately patterned feathers",
+    "size_class": "large",
+    "pattern": "intricate fine baring and spotting with large ocelli on wing feathers"
+  },
+  "description": "One of Southeast Asia's most spectacular pheasants, renowned for its elaborate courtship display. Native to the jungles of Borneo, Sumatra, and the Malay Peninsula (including southern Thailand and southern Myanmar). Two recognized subspecies: nominate argus (Malay peninsula and Sumatra) and A. a. grayi (Borneo). The male performs an extraordinary courtship dance \u2014 he clears an open spot on the forest floor, spreads his wings into two enormous fans revealing hundreds of 'eyes' while his real eyes are hidden behind them, staring intently at the female. This remarkable display ranks among the most impressive in the bird world. Named by Carl Linnaeus \u2014 the specific name 'argus' references Argus Panoptes, the hundred-eyed giant of Greek mythology. The species is also known as 'Kuang raya' (great pheasant) in Malay. Listed on CITES Appendix II. The now-rejected double-banded argus (A. bipunctatus), known only from a single feather found in a millinery shipment to London, was long thought to be a second species but is now considered a mutant form of the great argus.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Global population estimated at >100,000 as of 2016 (BirdLife International). Population is decreasing, threatened by habitat loss and hunting pressure. Density is naturally low to avoid competition between individuals. Local studies in Kerian-Sungai Sepetang Wildlife Sanctuary (Malaysia) estimated 108 individuals (95% CI: 41-272). Populations persist in most remaining areas of extensive forest on Sumatra and the Malay Peninsula, and throughout Malaysian territories on Borneo.",
   "population_estimate_source_uri": "https://birdfinding.info/great-argus/",
@@ -39,7 +46,7 @@
     "Choose certified sustainable palm oil products to help reduce deforestation"
   ],
   "fun_fact": [
-    "The great argus gets its name from Greek mythology — the intricate eye-like patterns on its wings reference Argus Panoptes, a hundred-eyed giant",
+    "The great argus gets its name from Greek mythology \u2014 the intricate eye-like patterns on its wings reference Argus Panoptes, a hundred-eyed giant",
     "Despite their spectacular multi-eyed display, the male's real eyes are hidden behind his fanned wings during courtship, meaning he cannot see the female's reaction",
     "Young males develop their full adult plumage with spectacular wing patterns only in their third year of life",
     "The species is unique among all galliformes (game birds) for lacking a uropygial gland (oil gland) and for females laying only two eggs instead of the typical larger clutch sizes",

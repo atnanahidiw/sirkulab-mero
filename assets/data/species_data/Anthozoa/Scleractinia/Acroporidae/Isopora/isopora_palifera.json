@@ -6,12 +6,27 @@
   "order": "Scleractinia",
   "family": "Acroporidae",
   "genus": "Isopora",
-  "visual_features": "Reef-building coral that can be encrusting, massive, form columnar branches, or parallel ridges of blade-like branches — shape depends on water movement. Branches 5-15 cm in diameter and up to 20 cm long. Each branch has several axial corallites up to 4 mm in diameter. Radial corallites are cylindrical, large and close together, projecting up to 5 mm. Each has a distinct, large irregularly shaped opening near the tip. Color is greenish, creamy, or pale brown from symbiotic zooxanthellae. Fluorescent pigment granules present, more concentrated in high-light environments.",
-  "description": "Isopora palifera is a species of stony coral in the family Acroporidae, first described by Jean-Baptiste Lamarck in 1816. It is a vigorous and aggressive reef-building coral — where it contacts other corals, it will overgrow and kill their tissues. Has a porous, fragile structure easily damaged by storms, but detached pieces can re-establish in suitable locations. Hosts symbiotic dinoflagellates (Symbiodinium phylotypes C and D) that provide nutrients through photosynthesis. Susceptible to black band disease and white band disease. Closely resembles Isopora cuneata. First appears in the fossil record in Papua New Guinea from the Pliocene era.",
+  "visual_features": {
+    "color": "greenish, creamy, or pale brown from symbiotic zooxanthellae; fluorescent pigment granules",
+    "body_shape": "encrusting, massive, columnar branches, or parallel ridges of blade-like branches",
+    "distinctive_marks": "thick rounded branches with smooth round corallites, axial corallites up to 4 mm diameter",
+    "texture": "smooth rounded corallites covering entire colony, hard calcareous skeleton",
+    "size_class": "medium",
+    "pattern": "uniform with projecting cylindrical corallites"
+  },
+  "description": "Isopora palifera is a species of stony coral in the family Acroporidae, first described by Jean-Baptiste Lamarck in 1816. It is a vigorous and aggressive reef-building coral \u2014 where it contacts other corals, it will overgrow and kill their tissues. Has a porous, fragile structure easily damaged by storms, but detached pieces can re-establish in suitable locations. Hosts symbiotic dinoflagellates (Symbiodinium phylotypes C and D) that provide nutrients through photosynthesis. Susceptible to black band disease and white band disease. Closely resembles Isopora cuneata. First appears in the fossil record in Papua New Guinea from the Pliocene era.",
   "conservation_status": "Endangered",
   "population_estimate": "No specific global population count available. Listed as Near Threatened on the IUCN Red List (2014 assessment). It is the commonest coral species in the northern Great Barrier Reef. Overall population trend is decreasing due to climate change and ocean acidification.",
   "habitat": "Found across the Indo-Pacific Ocean: from South Africa and Madagascar to East Africa, Aldabra, Chagos, India, China, Japan, Indonesia, and Australia. Commonest coral in the northern Great Barrier Reef. Occurs subtidally on reef flats, edges, walls, and slopes in shallow water. Found in varying water conditions from strong currents to calm, still conditions.",
-  "habitat_tags": ["marine", "coral reef", "tropical", "subtidal", "reef flat", "reef slope", "Indo-Pacific"],
+  "habitat_tags": [
+    "marine",
+    "coral reef",
+    "tropical",
+    "subtidal",
+    "reef flat",
+    "reef slope",
+    "Indo-Pacific"
+  ],
   "threats": [
     "Coral bleaching from rising sea temperatures (zooxanthellae expelled, leading to death)",
     "Ocean acidification reducing calcification rates",
@@ -29,11 +44,11 @@
     "Participate in beach cleanups to reduce pollution entering oceans"
   ],
   "fun_fact": [
-    "This coral can change its entire growth form depending on water conditions — from flat encrusting in strong currents to branching in calm waters!",
-    "It gets its color from tiny algae (zooxanthellae) that live inside its tissues and photosynthesize — a built-in solar food factory",
+    "This coral can change its entire growth form depending on water conditions \u2014 from flat encrusting in strong currents to branching in calm waters!",
+    "It gets its color from tiny algae (zooxanthellae) that live inside its tissues and photosynthesize \u2014 a built-in solar food factory",
     "It is aggressively competitive: when it touches other corals, it simply grows over and kills them",
     "If broken by a storm, detached pieces can re-attach and start growing again in a new location",
-    "It has fluorescent granules that glow, especially in bright sunlight — a natural sunscreen!"
+    "It has fluorescent granules that glow, especially in bright sunlight \u2014 a natural sunscreen!"
   ],
   "population_estimate_source_uri": "https://www.iucnredlist.org/species/133139/54202066"
 }

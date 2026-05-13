@@ -6,12 +6,26 @@
   "order": "Sapindales",
   "family": "Anacardiaceae",
   "genus": "Koordersiodendron",
-  "visual_features": "Large evergreen tree reaching 25-50 meters in height with a cylindrical bole and buttresses up to 2 meters tall. Trunk diameter 120 cm or more. Bark dark brown or black with deep longitudinal fissures when mature. Leaves spirally arranged, crowded at twig ends, imparipinnate, 50-80 cm long, with (6-)10-16 pairs of leaflets. Leaflets oblong, 9-20 cm x 2.2-5 cm, glossy green above, yellowish-green below, with 10-24 pairs of bright red secondary veins. Inflorescence: axillary panicles up to 50 cm long bearing small white or yellow-green bisexual flowers. Fruit: yellowish drupe 2.5-4 cm long with cartilaginous endocarp and ellipsoid seed.",
+  "visual_features": {
+    "color": "dark green glossy pinnate leaves, greyish-brown bark, greenish-white flowers, reddish-brown fruits",
+    "body_shape": "large buttressed rainforest tree with spreading crown",
+    "distinctive_marks": "buttressed trunk, pinnate compound leaves with leaflets having wavy margins, edible seed kernels",
+    "texture": "smooth leathery leaflets, rough bark",
+    "size_class": "large",
+    "pattern": "dense symmetrical canopy"
+  },
   "description": "Koordersiodendron pinnatum, known locally as amugis (Philippines) or ranggu (elsewhere), is a species of tree in the cashew family (Anacardiaceae). It is the sole species in the genus Koordersiodendron. Widely distributed throughout the Philippines, northern Borneo, Sulawesi, the Moluccas, and northern Irian Jaya. The fruit is edible and reportedly tastes sweet. The exudates (gum) are used in local medicine. Studies show the leaves, bark, and exudates may have anticancer, antioxidant, and antibacterial properties. The wood is moderately durable, heavy, dark red, with uniform color excellent for furniture, flooring, and general construction.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Assessed as Vulnerable (VU) under IUCN criteria A2cd (last assessed 2023). Widely distributed but nowhere abundant. Found in scattered locations in lowland forests. Population decreasing due to deforestation.",
   "habitat": "Found in humid evergreen lowland forest. In the Philippines, occurs mainly on fringes of lowland forest from near sea level up to 450(-800) meters altitude. Found in undisturbed forests up to 800 m, usually below 500 m. Also present in secondary forests as pre-disturbance remnant. Distributed across Philippines (most islands and provinces), Borneo (including Sabah), Sulawesi, Moluccas, and New Guinea.",
-  "habitat_tags": ["forest", "lowland", "tropical", "evergreen", "rainforest", "Southeast Asia"],
+  "habitat_tags": [
+    "forest",
+    "lowland",
+    "tropical",
+    "evergreen",
+    "rainforest",
+    "Southeast Asia"
+  ],
   "threats": [
     "Deforestation and habitat conversion for agriculture and development",
     "Overexploitation for its high-quality timber",
@@ -28,8 +42,8 @@
     "Avoid buying furniture made from illegally logged tropical hardwood"
   ],
   "fun_fact": [
-    "This tree is the only species in its entire genus (Koordersiodendron) — it's truly one of a kind!",
-    "It is related to the cashew tree — so technically its fruits are in the same family as cashew nuts and mangoes",
+    "This tree is the only species in its entire genus (Koordersiodendron) \u2014 it's truly one of a kind!",
+    "It is related to the cashew tree \u2014 so technically its fruits are in the same family as cashew nuts and mangoes",
     "The fruit is edible and sweet, but despite being related to cashews, it's not commonly cultivated",
     "Its uniform dark red wood is so prized that trees are selectively harvested, contributing to its vulnerable status",
     "The bright red leaf veins make the leaves quite distinctive and beautiful even from a distance"

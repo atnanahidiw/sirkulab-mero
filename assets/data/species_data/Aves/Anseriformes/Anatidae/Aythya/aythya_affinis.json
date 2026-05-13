@@ -6,7 +6,14 @@
   "order": "Anseriformes",
   "family": "Anatidae",
   "genus": "Aythya",
-  "visual_features": "Lesser scaup are medium-sized diving ducks with distinctive plumage differences between males and females. Males measure 40.4-45.1 cm in length and weigh 700-1200g, while females are slightly smaller at 39.1-43.4 cm and 600-1100g. Males in breeding plumage have a striking appearance with a blue bill, purplish-black head, breast, neck, tail, and vent. Their sides and belly are white, with a white back showing grey flecking. Females are chocolate brown with lighter sides, a rufous head, and a white patch at the base of their dark grey bill. Both sexes have white secondary feathers creating a distinctive white wing stripe on the trailing edge of the upper wing. Male irises are deep yellow, while females have brownish irises, making them easier to distinguish at close range.",
+  "visual_features": {
+    "color": "male: purplish-black head/breast/neck, white sides and belly, blue bill; female: chocolate brown with rufous head, white wing stripe",
+    "body_shape": "medium-sized diving duck with rounded head and short neck",
+    "distinctive_marks": "blue bill, white secondary wing feathers creating white stripe, yellow iris in males, brown iris in females",
+    "texture": "smooth dense feathers",
+    "size_class": "small to medium",
+    "pattern": "male has large white patches on sides and belly; female is mottled brown"
+  },
   "description": "Lesser scaup are highly social diving ducks with fascinating life histories and behaviors. They breed in the interior boreal forests and parklands of Alaska and Canada, extending into the northern United States. These birds are known for being one of the latest nesting ducks in North America, with nesting activity peaking in June. This timing allows them to take advantage of increasing amphipod prey abundance later in the season. They form monogamous pairs during late spring migration, though mate-switching is common and forced extra-pair copulations occur frequently. Their reproductive strategy is flexible, allowing them to maximize success when resources vary temporally. After breeding, males abandon females during incubation, and females raise the precocial ducklings that can feed themselves shortly after hatching.",
   "conservation_status": "Least Concern",
   "population_estimate": "Historically one of the most abundant diving ducks in North America with average breeding population estimates around 5.5 million, though winter populations have declined by about half since the 1960s. Current populations are below North American Waterfowl Management Plan targets.",

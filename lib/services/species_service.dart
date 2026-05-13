@@ -1,14 +1,14 @@
 import 'dart:convert';
-import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'visual_features_service.dart';
 
-/// Detailed species entry from the per-species JSON files.
+/// Detailed species entry from the per-species JSON files bundled in the zip.
 class SpeciesDetail {
   final String scientificName;
   final String commonName;
-  final String visualFeatures;
+  final Map<String, String> visualFeatures;
   final String description;
   final String conservationStatus;
   final String habitat;
@@ -22,7 +22,7 @@ class SpeciesDetail {
   final String populationEstimate;
   final String sourceUri;
 
-  SpeciesDetail({
+  const SpeciesDetail({
     required this.scientificName,
     required this.commonName,
     required this.visualFeatures,
@@ -41,28 +41,53 @@ class SpeciesDetail {
   });
 
   factory SpeciesDetail.fromJson(Map<String, dynamic> json) {
+    const vfKeys = [
+      'color',
+      'body_shape',
+      'distinctive_marks',
+      'texture',
+      'size_class',
+      'pattern',
+    ];
+    final rawVf = json['visual_features'];
+    final vfMap = <String, String>{for (final k in vfKeys) k: ''};
+    if (rawVf is Map) {
+      for (final k in vfKeys) {
+        final val = rawVf[k];
+        if (val is String && val.isNotEmpty) vfMap[k] = val;
+      }
+    }
+
+    // accept both 'scientific_name' (new schema) and 'latin_name' (old).
+    final scientificName =
+        (json['scientific_name'] as String? ?? json['latin_name'] as String? ?? '');
+
+    // genus is a top-level field; include it in taxonomy so `get genus` works.
+    final taxonomy = <String, String>{
+      'class': json['class'] as String? ?? '',
+      'order': json['order'] as String? ?? '',
+      'family': json['family'] as String? ?? '',
+      'genus': json['genus'] as String? ?? '',
+    };
+
     return SpeciesDetail(
-      scientificName: json['scientific_name'] ?? json['latin_name'] ?? '',
-      commonName: json['common_name'] ?? '',
-      visualFeatures: json['visual_features'] ?? '',
-      description: json['description'] ?? '',
-      conservationStatus: json['conservation_status'] ?? '',
-      habitat: json['habitat'] ?? '',
-      threats: List<String>.from(json['threats'] ?? []),
-      ecosystemRole: json['ecosystem_role'] ?? '',
-      humanConnection: json['human_connection'] ?? '',
-      whatStudentsCanDo: List<String>.from(json['what_students_can_do'] ?? []),
-      funFacts: List<String>.from(json['fun_fact'] ?? []),
-      habitatTags: List<String>.from(json['habitat_tags'] ?? []),
-      taxonomy: {
-        'kingdom': json['kingdom'] ?? '',
-        'class': json['class'] ?? '',
-        'order': json['order'] ?? '',
-        'family': json['family'] ?? '',
-        'genus': json['genus'] ?? '',
-      },
-      populationEstimate: json['population_estimate'] ?? '',
-      sourceUri: json['population_estimate_source_uri'] ?? '',
+      scientificName: scientificName,
+      commonName: json['common_name'] as String? ?? '',
+      visualFeatures: vfMap,
+      description: json['description'] as String? ?? '',
+      conservationStatus: json['conservation_status'] as String? ?? '',
+      habitat: json['habitat'] as String? ?? '',
+      threats: List<String>.from(json['threats'] as List? ?? []),
+      ecosystemRole: json['ecosystem_role'] as String? ?? '',
+      humanConnection: json['human_connection'] as String? ?? '',
+      whatStudentsCanDo:
+          List<String>.from(json['what_students_can_do'] as List? ?? []),
+      funFacts: List<String>.from(json['fun_fact'] as List? ?? []),
+      habitatTags: List<String>.from(json['habitat_tags'] as List? ?? []),
+      taxonomy: taxonomy,
+      populationEstimate: json['population_estimate'] as String? ?? '',
+      sourceUri:
+          json['population_estimate_source_uri'] as String? ?? '',
     );
   }
 
@@ -70,47 +95,46 @@ class SpeciesDetail {
 }
 
 class SpeciesService {
+  final VisualFeaturesSearchService _visualFeaturesSearch = VisualFeaturesSearchService();
+
   static const String _zipPath = 'assets/data/species_data.zip';
 
-  // Genus-indexed in-memory cache (built on first access)
   Map<String, List<SpeciesDetail>>? _genusDb;
 
-  /// Load the genus index from the bundled [species_data.zip] file.
-  /// Extracts all JSON files, parses them, and indexes by genus.
-  /// Cached in memory after first load.
+  /// Pre-loads the genus DB and the embedding index in parallel.
+  Future<void> preloadAll() async {
+    await Future.wait([
+      loadGenusDb(),
+      _visualFeaturesSearch.load(),
+    ]);
+  }
+
+  /// Loads the genus index from [species_data.zip] and caches it.
   Future<Map<String, List<SpeciesDetail>>> loadGenusDb() async {
     if (_genusDb != null) return _genusDb!;
 
     _genusDb = {};
-
     try {
-      final ByteData raw = await rootBundle.load(_zipPath);
-      final Uint8List bytes = raw.buffer.asUint8List(
-        raw.offsetInBytes,
-        raw.lengthInBytes,
-      );
-      final Archive archive = ZipDecoder().decodeBytes(bytes);
+      final raw = await rootBundle.load(_zipPath);
+      final bytes =
+          raw.buffer.asUint8List(raw.offsetInBytes, raw.lengthInBytes);
+      final archive = ZipDecoder().decodeBytes(bytes);
 
-      for (final archiveFile in archive) {
-        if (archiveFile.isFile && archiveFile.name.endsWith('.json')) {
-          final content = utf8.decode(archiveFile.content);
-          final data = json.decode(content) as Map<String, dynamic>;
-          final detail = SpeciesDetail.fromJson(data);
-          final genus = detail.genus.toLowerCase();
-
-          if (genus.isNotEmpty) {
-            _genusDb!.putIfAbsent(genus, () => []).add(detail);
-          }
+      for (final file in archive) {
+        if (!file.isFile || !file.name.endsWith('.json')) continue;
+        final detail =
+            SpeciesDetail.fromJson(jsonDecode(utf8.decode(file.content)));
+        final genus = detail.genus.trim().toLowerCase();
+        if (genus.isNotEmpty) {
+          _genusDb!.putIfAbsent(genus, () => []).add(detail);
         }
       }
 
-      final totalSpecies =
-          _genusDb!.values.fold(0, (sum, list) => sum + list.length);
+      final total = _genusDb!.values.fold(0, (s, l) => s + l.length);
       debugPrint(
-          'Loaded genus database from zip: ${_genusDb!.length} genera, '
-          '$totalSpecies species');
+          'SpeciesService: ${_genusDb!.length} genera, $total species loaded');
     } catch (e) {
-      debugPrint('Error loading genus database from zip: $e');
+      debugPrint('SpeciesService: failed to load genus DB — $e');
       _genusDb = {};
     }
 
@@ -137,73 +161,93 @@ class SpeciesService {
       return 'No endangered species found in the genus "$taxonGenus".';
     }
 
-    final buffer = StringBuffer();
-    for (int i = 0; i < species.length; i++) {
-      final s = species[i];
-      if (i > 0) buffer.write(' | ');
-      buffer.write('${s.scientificName}: ${s.visualFeatures}');
-    }
+    return species
+        .map((s) => '${s.scientificName}: ${vfToToolString(s.visualFeatures)}')
+        .join(' | ');
+  }
 
-    return buffer.toString();
+  /// Semantic similarity search: returns up to [topK] species ranked by
+  ///   combined = (taxonomy × 1 + visual_features × 2) / 3
+  ///
+  /// Stage 1 — if the query genus is in the pre-computed index
+  ///   MiniLM cosine-similarity results (semantically richer).
+  /// Stage 2 — otherwise, falls back to weighted token-overlap scoring
+  ///   across the entire index.
+  Future<String> findSimilarByFeatures({
+    required String taxClass,
+    required String order,
+    required String family,
+    required String genus,
+    required Map<String, String> visualFeature,
+    int topK = 5,
+  }) async {
+    await _visualFeaturesSearch.load();
+    return _visualFeaturesSearch.findSimilarFormatted(
+      taxClass: taxClass,
+      order: order,
+      family: family,
+      genus: genus,
+      visualFeatures: visualFeature,
+      topK: topK,
+    );
+  }
+
+  /// Typed variant — returns [SimilarSpeciesResult] objects directly.
+  Future<List<SimilarSpeciesResult>> findSimilarByFeaturesTyped({
+    required String taxClass,
+    required String order,
+    required String family,
+    required String genus,
+    required Map<String, String> visualFeature,
+    int topK = 5,
+  }) async {
+    await _visualFeaturesSearch.load();
+    return _visualFeaturesSearch.findSimilarSpecies(
+      taxClass: taxClass,
+      order: order,
+      family: family,
+      genus: genus,
+      visualFeatures: visualFeature,
+      topK: topK,
+    );
   }
 
   /// Check if a given scientific name is in the endangered species database.
   Future<bool> isEndangered(String scientificName) async {
     final db = await loadGenusDb();
-    final query = scientificName.trim().toLowerCase();
-
-    for (final speciesList in db.values) {
-      for (final s in speciesList) {
-        if (s.scientificName.toLowerCase().contains(query) ||
-            query.contains(s.scientificName.toLowerCase())) {
-          return true;
-        }
+    final q = scientificName.trim().toLowerCase();
+    for (final list in db.values) {
+      for (final s in list) {
+        final sn = s.scientificName.toLowerCase();
+        if (sn.contains(q) || q.contains(sn)) return true;
       }
     }
     return false;
   }
 
-  /// Find species by Latin name — returns SpeciesDetail if found, null otherwise.
+  /// Finds a SpeciesDetail by scientific / Latin name.
   Future<SpeciesDetail?> findSpeciesByLatinName(String latinName) async {
-    try {
-      final db = await loadGenusDb();
-      final query = latinName.trim().toLowerCase();
-
-      for (final speciesList in db.values) {
-        for (final s in speciesList) {
-          if (s.scientificName.toLowerCase().contains(query) ||
-              query.contains(s.scientificName.toLowerCase())) {
-            return s;
-          }
-        }
+    final db = await loadGenusDb();
+    final q = latinName.trim().toLowerCase();
+    for (final list in db.values) {
+      for (final s in list) {
+        final sn = s.scientificName.toLowerCase();
+        if (sn.contains(q) || q.contains(sn)) return s;
       }
-
-      return null;
-    } catch (e) {
-      debugPrint('Error finding species: $e');
-      return null;
     }
+    return null;
   }
 
-  /// Find species by common name — returns SpeciesDetail if found, null otherwise.
+  /// Finds a SpeciesDetail by common name.
   Future<SpeciesDetail?> findSpeciesByName(String name) async {
-    try {
-      final db = await loadGenusDb();
-      final query = name.trim().toLowerCase();
-
-      for (final speciesList in db.values) {
-        for (final s in speciesList) {
-          if (s.commonName.toLowerCase().contains(query) ||
-              query.contains(s.commonName.toLowerCase())) {
-            return s;
-          }
-        }
+    final db = await loadGenusDb();
+    final q = name.trim().toLowerCase();
+    for (final list in db.values) {
+      for (final s in list) {
+        final cn = s.commonName.toLowerCase();
+        if (cn.contains(q) || q.contains(cn)) return s;
       }
-
-      return null;
-    } catch (e) {
-      debugPrint('Error finding species: $e');
-      return null;
     }
+    return null;
   }
 }

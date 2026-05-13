@@ -6,12 +6,27 @@
   "order": "Cetartiodactyla",
   "family": "Cervidae",
   "genus": "Rusa",
-  "visual_features": "Large, heavy-bodied deer with coarse, shaggy dark brown to yellowish-brown coat and small but dense neck mane more prominent in males. Tail relatively long (22-35 cm), black above with whitish underside. Males have large, rugged antlers typically up to 110 cm with three tines (rusine type). Shoulder height 102-160 cm, weight 100-350 kg (up to 546 kg). Adult males and pregnant/lactating females have unusual hairless blood-red spot on throat that oozes white liquid - a scent gland unique to this species.",
+  "visual_features": {
+    "color": "uniform dark brown to greyish-brown coat, lighter underparts, reddish-brown tinge",
+    "body_shape": "large robust deer with thick body, relatively short legs, large ears",
+    "distinctive_marks": "males have large three-tined antlers, long bushy tail (blackish), pale patch on throat, very large ears",
+    "texture": "short coarse fur, thicker winter coat",
+    "size_class": "large",
+    "pattern": "uniform dark brown without distinct spots or markings"
+  },
   "description": "The sambar is one of the largest deer species in Asia, native to the Indian subcontinent, South China, and Southeast Asia with seven recognised subspecies. It is the favourite prey of Bengal tigers and Asiatic lions, comprising up to 45% of tiger biomass consumption in India. Fossil sambar are known from the early Pleistocene, showing an ancient lineage. Listed as Vulnerable since 2008 due to substantial population declines from hunting, insurgency, and industrial habitat exploitation. The Bonin sambar (R. u. boninensis) from Japan is now extinct.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Population in India exceeds 50,000; over 5,000 introduced in Australia. Global population declining substantially due to hunting, insurgency, and industrial habitat exploitation. Listed as Vulnerable on IUCN Red List since 2008.",
   "habitat": "Wide variety of forest types: tropical dry forests, tropical seasonal forests, subtropical mixed forests with conifers, montane grasslands, broadleaved deciduous and evergreen forests, and tropical rainforests. Prefers dense cover of deciduous shrubs and grasses. Ranges from sea level to 3,500 m elevation. Always found near water sources. Home ranges up to 1,500 ha for males and 300 ha for females in India.",
-  "habitat_tags": ["tropical", "forest", "montane", "subtropical", "grassland", "south_asia", "southeast_asia"],
+  "habitat_tags": [
+    "tropical",
+    "forest",
+    "montane",
+    "subtropical",
+    "grassland",
+    "south_asia",
+    "southeast_asia"
+  ],
   "threats": [
     "Hunting and poaching for meat, antlers, and sport",
     "Industrial exploitation of habitat including logging and plantations",

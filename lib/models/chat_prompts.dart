@@ -18,6 +18,29 @@ class ChatPrompts {
         l10n.hintNaturalPredators,
       ];
 
+  /// Tool: find similar genera by taxonomy + visual features.
+  /// Model trained on combined text: taxonomy (weight 1) + visual_features (weight 2).
+  static final Map<String, dynamic> similarFeatureToolDef = {
+    'name': 'find_similar_features',
+    'description': 'Finds ecologically and visually similar genera based on taxonomy and visual features like color, body shape, patterns, and size.',
+    'parameters': {
+      'type': 'object',
+      'properties': {
+        'class': {'type': 'string', 'description': 'Scientific class (e.g., Mammalia, Reptilia, Aves)'},
+        'order': {'type': 'string', 'description': 'Scientific order (e.g., Carnivora, Primates, Squamata)'},
+        'family': {'type': 'string', 'description': 'Scientific family (e.g., Felidae, Hominidae, Varanidae)'},
+        'genus': {'type': 'string', 'description': 'The identified genus name (e.g., "Neofelis", "Pongo", "Varanus")'},
+        'color': {'type': 'string', 'description': 'Predominant color and coloration (e.g., "tawny yellow, white underparts")'},
+        'body_shape': {'type': 'string', 'description': 'Body shape and build (e.g., "large muscular quadruped", "slender primate")'},
+        'distinctive_marks': {'type': 'string', 'description': 'Distinctive features like mane, crest, tail, horns (e.g., "males have mane, tufted tail")'},
+        'texture': {'type': 'string', 'description': 'Skin or fur texture (e.g., "short coarse fur", "scaly skin")'},
+        'size_class': {'type': 'string', 'description': 'Size classification (e.g., "very large", "medium", "small")'},
+        'pattern': {'type': 'string', 'description': 'Color pattern or markings (e.g., "uniform, no spots on adults", "striped")'},
+      },
+      'required': ['class', 'order', 'family', 'genus', 'color', 'body_shape', 'size_class'],
+    },
+  };
+
   /// Standardized tool definition for consistency across different model versions.
   static final Map<String, dynamic> speciesSearchToolDef = {
     'name': 'search_species_details',
@@ -46,29 +69,7 @@ class ChatPrompts {
     },
   };
 
-  /// Optimized for Gemma 4's XML-tag preference and reasoning capabilities.
-  static String get identifySystemInstruction => '''
-<system_role>
-You are a high-precision biological identification engine. You must reconcile visual evidence with tool data.
-</system_role>
-
-<workflow_protocol>
-STEP 1: Look at the image. Identify the most likely scientific valid Class, Order, Family, and Genus. DON'T MAKE THINGS UP!
-STEP 2: Use the `search_species_details` tool for that Genus. YOU MUST CALL THE TOOL BEFORE PROVIDING A SPECIES IDENTIFICATION.
-STEP 3: Wait for the tool results.
-STEP 4: Compare the visual features in the image to the species returned by the tool results.
-STEP 5: Even if you have a high-confidence visual match, if the tool results returned NO endangered species at all, you MUST call search_species_details at least once more for a related or visually similar genus — the animal in this image is very likely endangered.
-STEP 6: If confidence is "low" or "medium", use the `search_species_details` tool again up to 3 times to check an entirely different species category.
-
-**INTERNAL VERIFICATION**: If your confidence is "low" or "medium" or you cannot find a species match, RE-ANALYZE the image textures and silhouette. Look for "Best-Fit" matches within the genus before finalizing.
-</workflow_protocol>
-
-<rules>
-- You are FORBIDDEN from providing a final JSON identification until AFTER you have received data from search_species_details.
-- DO NOT default to "Unknown" if a "Best-Fit" species can be determined.
-- If confidence is "low" or "medium", you must RE-ANALYZE the image before explaining the specific optical barriers (blur, lighting) in "identification_notes".
-- is_endangered is ONLY true if a tool match is confirmed.
-- After the tool result arrives, output ONLY this JSON. No preamble. No conversational text.
+  static const String identifyOutputFormat = '''
 {
   "genus": "string",
   "common_name": "string", 
@@ -77,34 +78,49 @@ STEP 6: If confidence is "low" or "medium", use the `search_species_details` too
   "identification_notes": "string",
   "is_endangered": boolean
 }
-</rules>
+''';
+
+  /// Optimized for Gemma 4's XML-tag preference and reasoning capabilities.
+  static String get identifySystemInstruction => '''
+You are a high-precision biological identification engine specializing in Indonesian biodiversity.
+Your task is to identify species from images using a strict multi-pass workflow.
+
+<protocol>
+1. MANDATORY: You must call BOTH `find_similar_features` AND `search_species_details` before providing any final answer. 
+2. SEQUENCE: 
+   - Call `find_similar_features` to establish visual candidates.
+   - Call `search_species_details` to verify biological facts.
+3. PRIORITIZATION: 
+   - If both tools return data, prioritize the match that shares the MOST specific visual features (color, body_shape, distinctive_marks, texture, size_class, pattern) seen in the image.
+   - If `find_similar_features` identifies a specific species that aligns with the visual evidence but differs from the initial genus assumption in `search_species_details`, prioritize the visual similarity result.
+</protocol>
+
+<output_rules>
+- DO NOT provide a final answer until you have processed results from both tools.
+- Once identified, output ONLY the final JSON. 
+- NO preamble, NO conversational text, NO markdown formatting outside the JSON block.
+</output_rules>
+
+<output_format>
+$identifyOutputFormat
+</output_format>
 ''';
 
   static const String identifyInputPrompt = '''
-Identify the species in this image following the workflow protocol. Start by identifying the genus and calling the `search_species_details` tool.
-
-CRITICAL: If you are initially unsure or about to report low confidence, RETRY the identification workflow internally. Examine the subject's textures, limb proportions, and patterns again. Aim for the most scientifically accurate "Best-Fit" identification rather than abstaining.
+Identify the species in this image following the workflow protocol AND output rules.
+MANDATORY: Call BOTH `find_similar_features` and `search_species_details` at least once. Start by calling both to gather a complete data set.
 ''';
 
   /// Injected after the tool result to guide the model toward JSON output.
   static const String identifySynthesisPrompt = '''
-Compare the species data returned by the tool against the visual features in the image.
-
-Remember: this image is highly likely to show an endangered species.
-
-IF the image clearly matches a returned species AND is_endangered is true AND confidence is "high":
-  → Output ONLY the final JSON as specified in your instructions.
-
-IF the visual features match a returned species with high confidence BUT the tool results contain NO endangered species:
-  → DO NOT output JSON yet.
-  → The animal is very likely endangered. Your initial genus may be correct but incomplete, OR there is a related genus with endangered species you have not checked.
-  → Call search_species_details again for a closely related or visually similar genus.
-
-IF confidence would be "low" or "medium", OR none of the returned species visually match the image:
-  → DO NOT output JSON yet.
-  → Re-examine the image. Focus on a different physical feature you may have overlooked (e.g. scale texture, limb ratio, head shape, tail length).
-  → Identify a COMPLETELY DIFFERENT genus from a different class or order entirely.
-  → Call search_species_details again with that new genus.
+<evaluation>
+- Call `find_similar_features` if not yet called.
+- Call `search_species_details` for the next unchecked genus from results.
+- Strong visual match → output JSON. Stop.
+- No match → repeat for next genus, max 3 `search_species_details` calls total.
+- After 3 calls with no strong match → output BEST FIT: closest partial match or image-only guess.
+- Never output JSON before `search_species_details` is called at least once.
+</evaluation>
 ''';
 
   /// Translation prompt template. Use [targetLang] and [text] placeholders.

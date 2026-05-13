@@ -6,12 +6,26 @@
   "order": "Diprotodontia",
   "family": "Phalangeridae",
   "genus": "Spilocuscus",
-  "visual_features": "Medium-sized arboreal marsupial with distinctive spotted coat. Unlike all other Spilocuscus species, both males and females are whitish with black spots. Strong prehensile tail, hairless on underside for gripping branches. Amber or orange eyes with vertical slit pupils like cats or reptiles, enabling superior night vision. Long claws for grip on tree branches and grooming.",
-  "description": "The Waigeou cuscus (or Waigeo spotted cuscus) is a species of marsupial in the family Phalangeridae, endemic to the small island of Waigeo in West Papua, Indonesia (part of the Raja Ampat archipelago). It is one of the least-studied cuscus species. Remains fairly common within its limited range, but its tiny geographic distribution makes it highly vulnerable to habitat loss, mining, and hunting. First described in 1822 by French zoologist Anselme Gaëtan Desmarest. Listed as Vulnerable on IUCN Red List with CITES Appendix II protection.",
+  "visual_features": {
+    "color": "whitish body with irregular black spots (both sexes)",
+    "body_shape": "medium-sized arboreal marsupial with round head, large eyes, prehensile tail",
+    "distinctive_marks": "both sexes have black spotting on white coat (unique among spotted cuscus), prehensile tail, soft dense fur",
+    "texture": "soft dense woolly fur",
+    "size_class": "medium",
+    "pattern": "irregular black spots and blotches on white to cream background"
+  },
+  "description": "The Waigeou cuscus (or Waigeo spotted cuscus) is a species of marsupial in the family Phalangeridae, endemic to the small island of Waigeo in West Papua, Indonesia (part of the Raja Ampat archipelago). It is one of the least-studied cuscus species. Remains fairly common within its limited range, but its tiny geographic distribution makes it highly vulnerable to habitat loss, mining, and hunting. First described in 1822 by French zoologist Anselme Ga\u00ebtan Desmarest. Listed as Vulnerable on IUCN Red List with CITES Appendix II protection.",
   "conservation_status": "Vulnerable",
-  "population_estimate": "No precise population data available. Remains fairly common within its very limited range on Waigeo Island (approx. 3,155 km²) but highly vulnerable to habitat disturbance. Listed as Vulnerable on IUCN Red List.",
+  "population_estimate": "No precise population data available. Remains fairly common within its very limited range on Waigeo Island (approx. 3,155 km\u00b2) but highly vulnerable to habitat disturbance. Listed as Vulnerable on IUCN Red List.",
   "habitat": "Restricted to the small island of Waigeo off the northwest coast of West Papua, Indonesia (Raja Ampat archipelago). Inhabits primary and secondary tropical forests, spending most of its time in the tree canopy. Entire range is limited to this single island, making its existence extremely fragile.",
-  "habitat_tags": ["tropical", "rainforest", "island", "papua", "indonesia", "endemic"],
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "island",
+    "papua",
+    "indonesia",
+    "endemic"
+  ],
   "threats": [
     "Palm oil deforestation - concessions sold on Waigeo Island encroaching on habitat",
     "Mining concessions reducing available range on the small island",
@@ -32,7 +46,7 @@
     "The Waigeou cuscus is unique among all Spilocuscus species because both males and females have spotted coats - in other species only males have spots",
     "Its eyes have vertical slit pupils like a cat or reptile, giving exceptional night vision for a nocturnal lifestyle",
     "It is one of the few marsupials found east of the Wallace Line in the Raja Ampat archipelago",
-    "The species was first described in 1822 by French zoologist Anselme Gaëtan Desmarest, but very little is still known about its ecology and behavior"
+    "The species was first described in 1822 by French zoologist Anselme Ga\u00ebtan Desmarest, but very little is still known about its ecology and behavior"
   ],
   "population_estimate_source_uri": "https://www.iucnredlist.org/species/20638/21949972"
 }

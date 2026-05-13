@@ -6,7 +6,14 @@
   "order": "Polypodiales",
   "family": "Blechnaceae",
   "genus": "Stenochlaena",
-  "visual_features": "A coarse, climbing fern with stems that can reach indefinite length. The rhizomes attach themselves to tree trunks using adhesive roots. Stems are brown, smooth, less than 1 centimeter in diameter and sparingly branched. Sterile fronds can grow up to 80 centimeters in length, while fertile fronds are somewhat shorter.",
+  "visual_features": {
+    "color": "glossy bright green above, paler green or glaucous underside; fertile fronds darker with brown sporangia",
+    "body_shape": "climbing fern with long scrambling or climbing fronds (up to several meters)",
+    "distinctive_marks": "climbing growth habit, dimorphic fronds (sterile and fertile), glossy upper leaf surface, brown sporangia covering fertile pinnae undersides",
+    "texture": "smooth leathery leaves, papery when dry",
+    "size_class": "medium (climbing)",
+    "pattern": "pinnate leaf arrangement with smooth-edged pinnae"
+  },
   "description": "Stenochlaena palustris is an important ecological and economic plant found in swampy areas across Southeast Asia and the Pacific. This adaptable fern can thrive in both full sun and deep shade, making it highly versatile in different forest conditions. The plant has significant cultural importance as a food source, with young shoots consumed raw as salad or cooked in various dishes. Additionally, it plays a crucial role in traditional medicine due to its antibacterial properties.",
   "conservation_status": "Endangered",
   "population_estimate": "Exact population estimates are not widely available, but the species is classified as Endangered due to habitat loss and overharvesting for local use (IUCN assessment)",

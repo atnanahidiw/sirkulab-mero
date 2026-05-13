@@ -6,7 +6,14 @@
   "order": "Cardiida",
   "family": "Cardiidae",
   "genus": "Tridacna",
-  "visual_features": "The largest living bivalve mollusc. Its shell can grow up to 120 cm (47 in) across and weigh over 200 kg (440 lb). The shell has four or five distinct vertical folds, distinguishing it from the similar T. derasa which has six to seven. It has a colorful, cape-like mantle with vibrant patterns. Unlike other giant clams, it cannot close its shell completely, leaving part of the brownish-yellow mantle visible. The mantle border has hundreds to thousands of tiny pinhole eyespots (~0.5 mm diameter) that detect light and movement. The largest known specimen measured 137 cm and weighed 250 kg alive.",
+  "visual_features": {
+    "color": "brownish-yellow mantle with vibrant colorful patterns; mantle border with tiny pinhole eyespots",
+    "body_shape": "very large bivalve with thick ribbed shell and cape-like colored mantle",
+    "distinctive_marks": "four to five vertical shell folds, cannot close shell completely, thousands of tiny eyespots on mantle border",
+    "texture": "rough ribbed calcareous shell, fleshy soft mantle",
+    "size_class": "very large",
+    "pattern": "vibrant wavy patterns on mantle; shell has radial folds"
+  },
   "description": "Tridacna gigas, the giant clam, is the best-known species of the giant clam genus Tridacna. Native to the shallow coral reefs of the South Pacific and Indian Oceans, it also occurs in the Philippines, South China Sea, Malaysia, and the Great Barrier Reef. It has an obligate symbiotic relationship with zooxanthellae (single-celled algae) that provide 65-70% of its nutrition through photosynthesis. It is hermaphroditic, reproducing through broadcast spawning and releasing over 500 million eggs at a time. Its average lifespan in the wild exceeds 100 years. Larvae are planktonic, becoming sessile as adults. In 2024, the IUCN reassessed it from Vulnerable to Critically Endangered due to dramatic population declines.",
   "conservation_status": "Critically Endangered",
   "population_estimate": "Critically Endangered (IUCN 2024). Population has plunged by more than 80% in recent decades due to overexploitation. Extinct in many areas where once common. NOAA Fisheries proposes listing it as Endangered under the U.S. Endangered Species Act (2024). Listed on CITES Appendix II.",

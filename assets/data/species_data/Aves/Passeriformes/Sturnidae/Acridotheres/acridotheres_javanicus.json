@@ -6,7 +6,14 @@
   "order": "Passeriformes",
   "family": "Sturnidae",
   "genus": "Acridotheres",
-  "visual_features": "A stocky, medium-sized bird measuring 21-23 cm in length and weighing approximately 100 g. Plumage is mainly black with a slight glossy sheen. Wings are brownish-black with white bases on primary feathers forming a striking white wing bar visible during flight. White tail bar displayed in flight, and white undertail coverts give the alternative name 'white-vented myna'. A short, erect crest adorns the forehead. The beak, legs, and feet are bright yellow. The iris is lemon-yellow, distinguishing it from the common myna (A. tristis) which has a brown iris. Immature birds are browner and duller with less prominent crests.",
+  "visual_features": {
+    "color": "mainly black with glossy sheen, brownish-black wings with white wing bar, white undertail coverts, bright yellow beak and legs",
+    "body_shape": "stocky medium-sized bird with short erect crest on forehead",
+    "distinctive_marks": "white wing bar visible in flight, white undertail coverts, short erect forehead crest, bright yellow beak/legs, lemon-yellow iris",
+    "texture": "smooth glossy feathers",
+    "size_class": "small to medium",
+    "pattern": "black body with white wing patches and undertail"
+  },
   "description": "The Javan myna is a species of myna in the starling family Sturnidae, native to Java and Bali in Indonesia, where its population has declined significantly due to excessive trapping for the cage-bird trade. Paradoxically, while considered Vulnerable in its native range, it has become a highly successful invasive species elsewhere, most notably in Singapore where it is now the most abundant bird species. Introduced to southeastern Thailand, southern Malaysia, Sumatra, the Lesser Sundas, Taiwan, Japan, Nepal, and Puerto Rico. The species was formally described by German ornithologist Jean Cabanis in 1851. It is sometimes considered conspecific with the great myna (A. grandis) or jungle myna (A. fuscus). These birds are highly adaptable and thrive in urban environments, feeding on insects, fruit, seeds, nectar, and human food waste. They are notably bold around humans and have loud, varied vocalizations.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Global population size has not been quantified, but the species is experiencing rapid decline in its native range (Java and Bali) due to intensive trapping for the cage-bird trade. In native range, it is now uncommon to rare in areas where it was formerly abundant. Conversely, introduced populations in Singapore are superabundant, with the species comprising a substantial proportion of total urban bird populations.",
@@ -28,7 +35,7 @@
     "Invasive success causing ecological imbalance outside native range"
   ],
   "ecosystem_role": "Omnivorous and highly opportunistic feeders, consuming invertebrates (particularly insects), seeds, grains, fruits, and nectar. Plays roles as seed disperser for various plants, helping maintain plant diversity. Insect-feeding habits help control pest populations, contributing to natural pest management in both natural and urban environments. In introduced ranges, may contribute to decline of native species through competition for food and nesting sites (e.g., common myna and Oriental magpie-robin in Singapore).",
-  "human_connection": "Long kept as cage birds in Indonesia and Malaysia, valued for vocalizations and mimicry ability — this demand has been a primary driver of decline in its native range. In Singapore and other introduced areas, they are sometimes considered pests due to noise at communal roosts, droppings, and scavenging from outdoor eating areas. Despite native population decline, they remain popular in aviculture trade. First introduced to Singapore in the 1920s through the cage-bird trade when Singapore was a major British colonial trading hub.",
+  "human_connection": "Long kept as cage birds in Indonesia and Malaysia, valued for vocalizations and mimicry ability \u2014 this demand has been a primary driver of decline in its native range. In Singapore and other introduced areas, they are sometimes considered pests due to noise at communal roosts, droppings, and scavenging from outdoor eating areas. Despite native population decline, they remain popular in aviculture trade. First introduced to Singapore in the 1920s through the cage-bird trade when Singapore was a major British colonial trading hub.",
   "what_students_can_do": [
     "Research and raise awareness about the impacts of the cage-bird trade on wild populations",
     "Support ethical bird-watching practices and habitat conservation projects",
@@ -37,7 +44,7 @@
     "Participate in citizen science bird surveys to monitor population trends"
   ],
   "fun_fact": [
-    "Javan mynas demonstrate remarkable adaptability — one documented case showed a myna learned to activate an automatic door by flying up to its motion sensor, enabling it and its mate to exit a building",
+    "Javan mynas demonstrate remarkable adaptability \u2014 one documented case showed a myna learned to activate an automatic door by flying up to its motion sensor, enabling it and its mate to exit a building",
     "These birds form large communal roosts and are notably bold, often remaining in place even when approached within two meters",
     "The species represents an unusual conservation paradox: threatened in its native range yet superabundant and even problematic as an invasive species elsewhere",
     "When foraging, one bird typically acts as a sentinel, keeping watch from a vantage point while others feed, alerting the group with a high-pitched alarm call if danger is detected"

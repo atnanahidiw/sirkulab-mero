@@ -6,7 +6,14 @@
   "order": "Dipsacales",
   "family": "Viburnaceae",
   "genus": "Viburnum",
-  "visual_features": "An evergreen shrub with woody, cylindrical stems. It has large, oblong or elliptic leaves with a leathery texture (the species name 'coriaceum' means leathery in Latin). The leaves are typically hairless or have minimal hair on the underside. Small, white flowers are arranged in flat-topped clusters called cymes. It produces small, berry-like drupes that turn bright red when ripe. Flowers from July to September in its native range.",
+  "visual_features": {
+    "color": "dark blue-green upper leaf surface, pale underside; creamy white flowers; blue-black berries",
+    "body_shape": "evergreen shrub with upright habit and coarsely textured oval leaves",
+    "distinctive_marks": "leathery glossy oval leaves with deeply impressed veins, flat clusters of creamy white flowers",
+    "texture": "leathery textured leaves (coriaceum = leathery), smooth bark",
+    "size_class": "small to medium",
+    "pattern": "uniform green foliage with prominent veined pattern"
+  },
   "description": "Viburnum coriaceum, commonly known as Leathery Viburnum or Ghode khari, is an evergreen shrub in the family Viburnaceae. It is native to the temperate biome of South Asia, found in Bangladesh, Bhutan, India, Myanmar, and Nepal. It typically grows at the margins of shola forests in mountainous regions. The leathery texture of its leaves gives the species its scientific name. Listed as Endangered on the IUCN Red List, it faces significant threats from deforestation and habitat loss across its range.",
   "conservation_status": "Endangered",
   "population_estimate": "Endangered (IUCN). Decreasing population trend. Threatened by deforestation and habitat loss across its range in the Himalayan and South Asian regions.",

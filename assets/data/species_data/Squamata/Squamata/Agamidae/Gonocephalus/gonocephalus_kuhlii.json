@@ -6,12 +6,25 @@
   "order": "Squamata",
   "family": "Agamidae",
   "genus": "Gonocephalus",
-  "visual_features": "A medium-sized arboreal lizard with a distinctive angular, triangular head shape typical of angle-headed dragons. Body coloration is variable — males are predominantly green with indistinct reticulation patterns, while females are rust-red dorsolaterally with oval spots. The body is covered in rough, keeled scales that provide excellent camouflage against tree bark. Relatively long and slender limbs function as stabilizers when moving through trees. The species shows pronounced sexual dimorphism in coloration.",
+  "visual_features": {
+    "color": "vivid green body with yellow or turquoise markings, males have blue throat pouch, whitish belly",
+    "body_shape": "medium-sized arboreal lizard with long slender body, prominent dorsal crest, long tail",
+    "distinctive_marks": "large dorsal crest along back and tail (males), large expandable dewlap/throat pouch, long whip-like tail, large eyes",
+    "texture": "keeled scaly skin",
+    "size_class": "medium",
+    "pattern": "uniform green with bold yellow/turquoise spots or bands; males have colorful throat"
+  },
   "description": "Gonocephalus kuhlii is a species of lizard in the family Agamidae, endemic to Java, Indonesia, with an unconfirmed record from Sumatra. Originally described by German zoologist Hermann Schlegel in 1851 as Lophyrus kuhlii and named in honor of German ornithologist Heinrich Kuhl. It is diurnal and arboreal, spending most of its life on tree trunks and vegetation in humid forest habitats. An oviparous species laying clutches of four eggs. Classified as Vulnerable on the IUCN Red List (assessed 2021) due to ongoing habitat destruction from deforestation and agricultural expansion. Its taxonomic validity was confirmed in recent studies on the systematics of the genus Gonocephalus.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Population status unknown but considered uncommon and localized. Populations are severely fragmented due to habitat loss across its range in Java. Trend is unknown but suspected to be declining. The species is confined to remaining forest fragments, primarily in protected areas.",
   "habitat": "Primary habitat is humid montane rainforest at altitudes of 700-1,200 m above sea level on the island of Java, Indonesia. It is strictly arboreal, found on tree trunks and vegetation in the forest canopy. Requires dense, undisturbed forest habitat with high humidity levels. Known from protected areas including Ujung Kulon National Park and Gunung Halimun Salak National Park.",
-  "habitat_tags": ["tropical", "montane_forest", "rainforest", "arboreal", "terrestrial"],
+  "habitat_tags": [
+    "tropical",
+    "montane_forest",
+    "rainforest",
+    "arboreal",
+    "terrestrial"
+  ],
   "threats": [
     "Habitat loss due to deforestation and agricultural expansion across Java",
     "Habitat fragmentation isolating remaining populations",
