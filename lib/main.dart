@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
@@ -13,13 +12,9 @@ import 'widgets/startup_gate.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Load environment variables
-  await dotenv.load(fileName: '.env');
-
   // Initialize FlutterGemma
   await FlutterGemma.initialize(
     // webStorageMode: WebStorageMode.cacheApi, // Optional for web
-    huggingFaceToken: dotenv.env['HUGGINGFACE_TOKEN'],
     maxDownloadRetries: 10,
   );
 

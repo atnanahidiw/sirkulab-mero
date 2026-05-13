@@ -19,10 +19,31 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
         isCoreLibraryDesugaringEnabled = true
     }
-    
+
     packagingOptions {
+        // Exclude non-arm64 architectures (arm64-only build)
         excludes.add("lib/x86_64/*.so")
         excludes.add("lib/armeabi-v7a/*.so")
+
+        // MediaPipe LLM JNI bridge — not used, .litertlm goes through FFI directly
+        excludes.add("lib/arm64-v8a/libmediapipe_tasks_genai_jni.so")
+        excludes.add("lib/arm64-v8a/libllm_inference_engine_jni.so")
+
+        // Embedding models — not used in this app
+        excludes.add("lib/arm64-v8a/libgemma_embedding_model_jni.so")
+        excludes.add("lib/arm64-v8a/libgecko_embedding_model_jni.so")
+
+        // Image generation — not used in this app
+        excludes.add("lib/arm64-v8a/libmediapipe_tasks_vision_image_generator_jni.so")
+        excludes.add("lib/arm64-v8a/libimagegenerator_gpu.so")
+
+        // RAG (Retrieval-Augmented Generation) — not used in this app
+        excludes.add("lib/arm64-v8a/libtext_chunker_jni.so")
+        excludes.add("lib/arm64-v8a/libsqlite_vector_store_jni.so")
+
+        // WebGPU accelerator — not supported on Android, web-only
+        excludes.add("lib/arm64-v8a/libLiteRtWebGpuAccelerator.so")
+        excludes.add("lib/arm64-v8a/libLiteRtTopKWebGpuSampler.so")
     }
 
     kotlin {

@@ -266,6 +266,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     double temperature = 0.7,
     int topK = 40,
     double topP = 0.9,
+    int seed = 31415926,
     void Function(String phase, double progress)? onProgress,
     void Function(String token)? onToken,
   }) async {
@@ -282,6 +283,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 
         final session = await model.createSession(
           enableVisionModality: true,
+          randomSeed: seed,
           temperature: temperature,
           topK: topK,
           topP: topP,
@@ -319,23 +321,19 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       }
 
       // ── Tool-calling flow via InferenceChat ──
-      if (imageBytes == null) {
-        throw ArgumentError(
-            'imageBytes is required when using tools (vision mode).');
-      }
-
       onProgress?.call('Preparing chat...', 0.15);
 
       final chat = await model.createChat(
+        supportImage: imageBytes != null,
         tools: resolvedTools ?? const [],
         supportsFunctionCalls: useToolCalling,
-        systemInstruction: systemInstruction,
-        supportImage: imageBytes != null,
+        toolChoice: useToolCalling ? ToolChoice.required : ToolChoice.none,
+        randomSeed: seed,
         temperature: temperature,
         topK: topK,
         topP: topP,
         modelType: modelType,
-        toolChoice: useToolCalling ? ToolChoice.required : ToolChoice.none,
+        systemInstruction: systemInstruction,
       );
 
       try {
