@@ -220,6 +220,7 @@ class _ResultPageState extends State<ResultPage>
           setState(() {
             _chatMessages[streamingIndex]['content'] += token;
           });
+          _scrollToBottom();
         },
       );
 
@@ -241,11 +242,10 @@ class _ResultPageState extends State<ResultPage>
   }
 
   Future<void> _scrollToBottom() async {
-    await Future.delayed(const Duration(milliseconds: 100));
     if (_scrollController.hasClients) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 300),
+        duration: const Duration(milliseconds: 100),
         curve: Curves.easeOut,
       );
     }

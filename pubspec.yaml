@@ -19,7 +19,6 @@ dependencies:
   http: ^1.1.0
   provider: ^6.1.0
   cached_network_image: ^3.3.0
-  flutter_dotenv: ^6.0.1
   permission_handler: ^12.0.1
   url_launcher: ^6.2.0
   image: ^4.2.0
@@ -46,7 +45,6 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/species_data.zip
-    - .env
 
   # For iOS, need to set minimum version
   # Add to ios/Podfile: platform :ios, '16.0'
