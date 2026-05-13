@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../core/navigation/app_page_route.dart';
 import '../l10n/app_localizations.dart';
 import '../services/model_service.dart';
+import '../services/species_service.dart';
 import '../utils/image_utils.dart';
 import 'result_page.dart';
 
@@ -45,8 +47,10 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   String _currentMessage = '';
   int _messageIndex = 0;
   Timer? _messageTimer;
-  bool _isAnalyzing = true;
-  String? _error;
+
+  // Species service — used to pre-resolve the DB lookup before navigating,
+  // so ResultPage always receives fully-loaded data with no loading flash.
+  final _speciesService = SpeciesService();
 
   @override
   void initState() {
@@ -75,7 +79,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
   void _setupMessageTimer(AppLocalizations l10n) {
     if (_messageTimer != null) return;
-    
+
     final messages = _getMessages(l10n);
     _currentMessage = messages[Random().nextInt(messages.length)];
 
@@ -99,12 +103,20 @@ class _AnalyzingPageState extends State<AnalyzingPage>
       quality: 92,
     );
 
+    // Step 1 — run the model to identify the species
     String result;
     try {
       result = await modelService.identifySpecies(compressedBytes, 'jpeg');
     } catch (e) {
       debugPrint('[AnalyzingPage] identifySpecies failed: $e');
       result = '';
+    }
+
+    // Step 2 — resolve the species in the DB while still on the analyzing
+    // screen, so ResultPage can render immediately with no loading flash.
+    SpeciesDetail? preloadedSpecies;
+    if (result.isNotEmpty) {
+      preloadedSpecies = await _resolveSpecies(result);
     }
 
     if (!mounted) return;
@@ -116,9 +128,50 @@ class _AnalyzingPageState extends State<AnalyzingPage>
         (_) => ResultPage(
           imageBytes: compressedBytes,
           analysisResult: result,
+          preloadedSpecies: preloadedSpecies, // fully resolved — no skeleton needed
         ),
       ),
     );
+  }
+
+  /// Parse [result] JSON and look up the species in the local DB.
+  /// Returns null if parsing fails or the species isn't found.
+  Future<SpeciesDetail?> _resolveSpecies(String result) async {
+    try {
+      // Strip optional ```json fences
+      String jsonStr = result;
+      final fence = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```').firstMatch(result);
+      if (fence != null) jsonStr = fence.group(1)!.trim();
+
+      final parsed    = jsonDecode(jsonStr) as Map<String, dynamic>;
+      final sciName   = parsed['scientific_name'] as String? ?? '';
+      final comName   = parsed['common_name']     as String? ?? '';
+
+      if (sciName.isEmpty) return null;
+
+      // Try the DB first; fall back to a stub built from the model's JSON
+      final matched = await _speciesService.findSpeciesByLatinName(sciName);
+      return matched ?? SpeciesDetail(
+        scientificName: sciName,
+        commonName: comName,
+        visualFeatures: '',
+        description: parsed['identification_notes'] as String? ?? '',
+        conservationStatus: '',
+        habitat: '',
+        threats: const [],
+        ecosystemRole: '',
+        humanConnection: '',
+        whatStudentsCanDo: const [],
+        funFacts: const [],
+        habitatTags: const [],
+        taxonomy: {
+          'genus': parsed['genus'] as String? ?? '',
+        },
+      );
+    } catch (e) {
+      debugPrint('[AnalyzingPage] _resolveSpecies failed: $e');
+      return null;
+    }
   }
 
   @override
@@ -204,80 +257,51 @@ class _AnalyzingPageState extends State<AnalyzingPage>
             const SizedBox(height: 32),
 
             // Progress bar
-            if (_isAnalyzing)
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 48),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(8),
-                  child: LinearProgressIndicator(
-                    minHeight: 6,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
-                    valueColor:
-                        AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                  ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 48),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(8),
+                child: LinearProgressIndicator(
+                  minHeight: 6,
+                  backgroundColor: colorScheme.surfaceContainerHighest,
+                  valueColor:
+                      AlwaysStoppedAnimation<Color>(colorScheme.primary),
                 ),
               ),
+            ),
 
             const SizedBox(height: 32),
 
-            // Message / error
+            // Rotating fun messages
             Expanded(
               flex: 1,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: _error != null
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(Icons.error_outline,
-                              color: colorScheme.error, size: 40),
-                          const SizedBox(height: 12),
-                          Text(
-                            l10n.analyzeFailed,
-                            style: textTheme.titleMedium?.copyWith(
-                              color: colorScheme.error,
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            _error!,
-                            textAlign: TextAlign.center,
-                            style: textTheme.bodySmall?.copyWith(
-                              color: colorScheme.onSurfaceVariant,
-                            ),
-                          ),
-                          const SizedBox(height: 16),
-                          FilledButton.tonal(
-                            onPressed: () => Navigator.pop(context),
-                            child: Text(l10n.analyzeGoBack),
-                          ),
-                        ],
-                      )
-                    : AnimatedSwitcher(
-                        duration: const Duration(milliseconds: 500),
-                        transitionBuilder: (child, animation) {
-                          return FadeTransition(
-                            opacity: animation,
-                            child: SlideTransition(
-                              position: Tween<Offset>(
-                                begin: const Offset(0, 0.3),
-                                end: Offset.zero,
-                              ).animate(animation),
-                              child: child,
-                            ),
-                          );
-                        },
-                        child: Text(
-                          _currentMessage,
-                          key: ValueKey<String>(_currentMessage),
-                          textAlign: TextAlign.center,
-                          style: textTheme.bodyLarge?.copyWith(
-                            color: colorScheme.onSurfaceVariant,
-                            fontStyle: FontStyle.italic,
-                            height: 1.4,
-                          ),
-                        ),
+                child: AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 500),
+                  transitionBuilder: (child, animation) {
+                    return FadeTransition(
+                      opacity: animation,
+                      child: SlideTransition(
+                        position: Tween<Offset>(
+                          begin: const Offset(0, 0.3),
+                          end: Offset.zero,
+                        ).animate(animation),
+                        child: child,
                       ),
+                    );
+                  },
+                  child: Text(
+                    _currentMessage,
+                    key: ValueKey<String>(_currentMessage),
+                    textAlign: TextAlign.center,
+                    style: textTheme.bodyLarge?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                      fontStyle: FontStyle.italic,
+                      height: 1.4,
+                    ),
+                  ),
+                ),
               ),
             ),
 
