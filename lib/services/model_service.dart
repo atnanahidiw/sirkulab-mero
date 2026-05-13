@@ -1784,6 +1784,33 @@ class ModelService extends ChangeNotifier {
     }
   }
 
+  /// Translate [text] to [targetLang] using the on-device Gemma model.
+  Future<String> translate(String text, String targetLang) async {
+    if (_model == null) {
+      throw Exception('Model not loaded. Please wait for model to download.');
+    }
+
+    final prompt = ChatPrompts.translatePrompt(targetLang, text);
+
+    try {
+      final response = await (_runtime as FlutterGemmaModelRuntime)
+          .generateOptimizedResponse(
+        _model!,
+        prompt,
+        systemInstruction: ChatPrompts.translateSystemInstruction,
+        temperature: 0.3,
+        topK: 16,
+        topP: 0.5,
+        maxTokens: 1024,
+      );
+
+      return response.trim();
+    } catch (e) {
+      debugPrint('Translation failed: $e');
+      rethrow;
+    }
+  }
+
   @override
   void dispose() {
     // Use optimized cleanup for FlutterGemmaModelRuntime

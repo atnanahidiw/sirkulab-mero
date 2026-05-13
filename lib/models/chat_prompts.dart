@@ -107,6 +107,15 @@ IF confidence would be "low" or "medium", OR none of the returned species visual
   → Call search_species_details again with that new genus.
 ''';
 
+  /// Translation prompt template. Use [targetLang] and [text] placeholders.
+  static String translatePrompt(String targetLang, String text) =>
+      'Translate this to $targetLang:\n\n$text';
+
+  /// System instruction for pure text translation.
+  static const String translateSystemInstruction = '''
+You are a precise translator. Output ONLY the translated text, nothing else.
+''';
+
   /// System instruction for Q&A after identification.
   static String answerSystemInstruction(String languageName, {String? context}) => '''
 <identity>
@@ -117,6 +126,10 @@ You speak like a knowledgeable friend sharing secrets of the jungle.
 <context>
 $context
 </context>
+
+<language>
+You must ALWAYS produce ALL responses in $languageName. Every sentence, word, and phrase must be in $languageName. Never switch to another language.
+</language>
 
 <constraints>
 - Limit responses to 2-3 sentences unless an explanation is requested.
