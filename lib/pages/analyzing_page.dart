@@ -94,12 +94,16 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   }
 
   Future<void> _startAnalysis() async {
+    // Give enough time for the transition to finish and for HomePage to dispose the camera
+    // This ensures RAM is fully cleared before we start heavy inference
+    await Future.delayed(const Duration(milliseconds: 600));
+
     final modelService = Provider.of<ModelService>(context, listen: false);
 
     final compressedBytes = await ImageUtils.compressImage(
       widget.rawImageBytes,
-      maxWidth: 768,
-      maxHeight: 768,  // https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4
+      maxWidth: 1080,
+      maxHeight: 1080,  // https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4
       quality: 92,
     );
 
@@ -122,16 +126,14 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     if (!mounted) return;
 
     await Future.delayed(const Duration(milliseconds: 100));
-    Navigator.pushReplacement(
-      context,
-      AppPageRoute.slideUp(
-        (_) => ResultPage(
-          imageBytes: compressedBytes,
-          analysisResult: result,
-          preloadedSpecies: preloadedSpecies, // fully resolved — no skeleton needed
-        ),
-      ),
-    );
+
+    // Return the results to HomePage instead of navigating here.
+    // This allows HomePage to keep the camera off during ResultPage.
+    Navigator.pop(context, {
+      'imageBytes': compressedBytes,
+      'analysisResult': result,
+      'preloadedSpecies': preloadedSpecies,
+    });
   }
 
   /// Parse [result] JSON and look up the species in the local DB.
