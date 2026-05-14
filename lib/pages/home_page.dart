@@ -247,6 +247,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           AppPageRoute.slideUp(
             (_) => ResultPage(
               imageBytes: analysisResult['imageBytes'],
+              additionalImages: analysisResult['additionalImages'],
               analysisResult: analysisResult['analysisResult'],
               preloadedSpecies: analysisResult['preloadedSpecies'],
             ),

@@ -13,6 +13,7 @@ import '../l10n/app_localizations.dart';
 
 class ResultPage extends StatefulWidget {
   final Uint8List imageBytes;
+  final List<Uint8List>? additionalImages;
   final String analysisResult;
 
   /// Species resolved by AnalyzingPage before navigation.
@@ -22,6 +23,7 @@ class ResultPage extends StatefulWidget {
   const ResultPage({
     super.key,
     required this.imageBytes,
+    this.additionalImages,
     required this.analysisResult,
     this.preloadedSpecies,
   });
@@ -214,6 +216,8 @@ class _ResultPageState extends State<ResultPage>
       await modelService.askQuestion(
         text,
         systemInstruction: systemInstruction,
+        imageBytes: widget.imageBytes,
+        additionalImages: widget.additionalImages,
         onProgress: (_, __) {},
         onToken: (token) {
           if (!mounted) return;

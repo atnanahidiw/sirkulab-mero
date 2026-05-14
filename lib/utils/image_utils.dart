@@ -243,6 +243,68 @@ class ImageUtils {
         return 'jpg';
     }
   }
+
+  /// Split image into 2x2 grid (4 quadrants) for enriched analysis
+  /// Returns list of 4 image bytes: [top-left, top-right, bottom-left, bottom-right]
+  static Future<List<Uint8List>> splitImageInto2x2Grid(
+    Uint8List imageBytes,
+  ) async {
+    try {
+      final image = img.decodeImage(imageBytes);
+      if (image == null) {
+        throw Exception('Failed to decode image');
+      }
+
+      final width = image.width;
+      final height = image.height;
+      final halfWidth = width ~/ 2;
+      final halfHeight = height ~/ 2;
+
+      // Crop 4 quadrants
+      final topLeft = img.copyCrop(
+        image,
+        x: 0,
+        y: 0,
+        width: halfWidth,
+        height: halfHeight,
+      );
+
+      final topRight = img.copyCrop(
+        image,
+        x: halfWidth,
+        y: 0,
+        width: width - halfWidth,
+        height: halfHeight,
+      );
+
+      final bottomLeft = img.copyCrop(
+        image,
+        x: 0,
+        y: halfHeight,
+        width: halfWidth,
+        height: height - halfHeight,
+      );
+
+      final bottomRight = img.copyCrop(
+        image,
+        x: halfWidth,
+        y: halfHeight,
+        width: width - halfWidth,
+        height: height - halfHeight,
+      );
+
+      // Encode each quadrant as JPEG
+      return [
+        img.encodeJpg(topLeft, quality: 95),
+        img.encodeJpg(topRight, quality: 95),
+        img.encodeJpg(bottomLeft, quality: 95),
+        img.encodeJpg(bottomRight, quality: 95),
+      ];
+    } catch (e) {
+      debugPrint('Image splitting failed: $e');
+      rethrow;
+    }
+  }
 }
 
 /// Background service for image analysis with queue management and battery optimization

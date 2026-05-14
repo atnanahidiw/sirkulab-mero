@@ -211,12 +211,13 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       }
 
       // Create optimized model with GPU acceleration
+      // Support up to 5 images for enriched analysis (original + 4 quadrants)
       _cachedModel = await FlutterGemma.getActiveModel(
         maxTokens: maxTokens,
         preferredBackend: _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu,
         enableSpeculativeDecoding: true,
         supportImage: true,
-        maxNumImages: 1,
+        maxNumImages: 5,
       );
 
       _isInitialized = true;
@@ -256,11 +257,13 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
   /// Generate response with tuned parameters. When [toolSpecs] is provided,
   /// uses InferenceChat with tool calling. Each spec's [subsequentPrompt]
   /// is injected into the chat right after its result is returned.
+  /// Supports single image via [imageBytes] or multiple images via [multipleImages].
   Future<String> generateOptimizedResponse(
     InferenceModel model,
     String prompt, {
     String? systemInstruction,
     Uint8List? imageBytes,
+    List<Uint8List>? multipleImages,
     List<ToolSpec>? toolSpecs,
     int maxTokens = 4096,
     double temperature = 0.7,
@@ -291,7 +294,17 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         try {
           onProgress?.call('Sending question...', 0.35);
 
-          if (imageBytes != null) {
+          final images = multipleImages;
+          if (images != null && images.isNotEmpty) {
+            // Enriched analysis: Send multiple images (e.g., original + 4 quadrants).
+            // This provides the model with both global context and high-detail local crops,
+            // significantly improving identification accuracy for small or complex features.
+            await session.addQueryChunk(Message.withImages(
+              text: 'The following images include the original photo followed by four high-detail quadrant crops for enriched analysis.',
+              imageBytes: images,
+              isUser: true,
+            ));
+          } else if (imageBytes != null) {
             await session.addQueryChunk(Message.withImage(
               text: '',
               imageBytes: imageBytes,
@@ -339,11 +352,22 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       );
 
       try {
-        // ── 2. Build message chunks: image first (if any), then prompt text ──
+        // ── 2. Build message chunks: image(s) first (if any), then prompt text ──
         // Gemma 4 best practice: image content must come BEFORE text in the
         // prompt for optimal multimodal attention.
         // https://huggingface.co/google/gemma-4-31B-it
-        if (imageBytes != null) {
+        final images = multipleImages;
+        if (images != null && images.isNotEmpty) {
+          onProgress?.call('Sending images...', 0.30);
+          // Enriched analysis: Send multiple images (original + 4 quadrants).
+          // Providing local detail crops alongside the original image allows the model
+          // to zoom in on specific anatomical features for more reliable species identification.
+          await chat.addQueryChunk(Message.withImages(
+            text: 'The following images include the original photo followed by four high-detail quadrant crops for enriched analysis.',
+            imageBytes: images,
+            isUser: true,
+          ));
+        } else if (imageBytes != null) {
           onProgress?.call('Sending image...', 0.30);
           await chat.addQueryChunk(Message.withImage(
             text: '',               // image-only chunk comes first
@@ -1657,8 +1681,9 @@ class ModelService extends ChangeNotifier {
 
   Future<String> identifySpecies(
     Uint8List imageBytes,
-    String imageFormat,
-  ) async {
+    String imageFormat, {
+    List<Uint8List>? additionalImages,
+  }) async {
     if (_model == null) {
       throw Exception('Model not loaded. Please wait for model to download.');
     }
@@ -1688,12 +1713,16 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
+      // Support multiple images via Message.withImages()
+      final allImages = [imageBytes, ...?additionalImages];
+
       final result = await (_runtime as FlutterGemmaModelRuntime)
           .generateOptimizedResponse(
         _model!,
         ChatPrompts.identifyInputPrompt,
         systemInstruction: ChatPrompts.identifySystemInstruction,
         imageBytes: imageBytes,
+        multipleImages: allImages.length > 1 ? allImages : null,
         toolSpecs: [searchSpec],
         temperature: 0.3,
         topK: 64,
@@ -1732,6 +1761,8 @@ class ModelService extends ChangeNotifier {
   Future<String> askQuestion(
     String question, {
     String? systemInstruction,
+    Uint8List? imageBytes,
+    List<Uint8List>? additionalImages,
     void Function(String phase, double progress)? onProgress,
     void Function(String token)? onToken,
   }) async {
@@ -1749,12 +1780,17 @@ class ModelService extends ChangeNotifier {
 
       onProgress?.call('Starting...', 0.0);
 
+      // Support multiple images via Message.withImages() if vision is enabled
+      final allImages = imageBytes != null ? [imageBytes, ...?additionalImages] : null;
+
       // Use optimized generation method for text-based question
       final response = await (_runtime as FlutterGemmaModelRuntime)
           .generateOptimizedResponse(
         _model!,
         question,
         systemInstruction: systemInstruction ?? ChatPrompts.answerSystemInstruction('English'),
+        imageBytes: imageBytes,
+        multipleImages: allImages != null && allImages.length > 1 ? allImages : null,
         temperature: 0.7,
         topK: 32,
         topP: 0.9,

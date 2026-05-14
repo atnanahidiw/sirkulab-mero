@@ -100,6 +100,12 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
     final modelService = Provider.of<ModelService>(context, listen: false);
 
+    // Step 1 — Split image into 2x2 grid for enriched analysis
+    final quadrants = await ImageUtils.splitImageInto2x2Grid(
+      widget.rawImageBytes,
+    );
+
+    // Step 2 — Compress all 5 images (original + 4 quadrants)
     final compressedBytes = await ImageUtils.compressImage(
       widget.rawImageBytes,
       maxWidth: 1080,
@@ -107,17 +113,29 @@ class _AnalyzingPageState extends State<AnalyzingPage>
       quality: 92,
     );
 
-    // Step 1 — run the model to identify the species
+    final compressedQuadrants = await Future.wait(
+      quadrants.map((q) => ImageUtils.compressImage(
+        q,
+        maxWidth: 1080,
+        maxHeight: 1080,
+        quality: 92,
+      )),
+    );
+
+    // Step 3 — Run model inference with all 5 images
     String result;
     try {
-      result = await modelService.identifySpecies(compressedBytes, 'jpeg');
+      result = await modelService.identifySpecies(
+        compressedBytes,
+        'jpeg',
+        additionalImages: compressedQuadrants,
+      );
     } catch (e) {
       debugPrint('[AnalyzingPage] identifySpecies failed: $e');
       result = '';
     }
 
-    // Step 2 — resolve the species in the DB while still on the analyzing
-    // screen, so ResultPage can render immediately with no loading flash.
+    // Step 4 — Resolve species in DB for immediate ResultPage render
     SpeciesDetail? preloadedSpecies;
     if (result.isNotEmpty) {
       preloadedSpecies = await _resolveSpecies(result);
@@ -131,6 +149,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     // This allows HomePage to keep the camera off during ResultPage.
     Navigator.pop(context, {
       'imageBytes': compressedBytes,
+      'additionalImages': compressedQuadrants,
       'analysisResult': result,
       'preloadedSpecies': preloadedSpecies,
     });
