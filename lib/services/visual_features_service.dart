@@ -20,11 +20,32 @@ String vfToToolString(Map<String, String> vf) {
   return parts.isEmpty ? 'no visual data' : parts.join(', ');
 }
 
-/// Splits a string into lowercase tokens (length > 2) for overlap scoring.
+/// Lightweight stemmer for biological English.
+///
+/// Handles common plural/suffix patterns so that "stripe", "stripes",
+/// "striped" all map to the same normalized form.
+String _normalizeToken(String t) {
+  if (t.endsWith('ed') && t.length > 4) return t.substring(0, t.length - 2);
+  if (t.endsWith('ies') && t.length > 5) {
+    return '${t.substring(0, t.length - 3)}y';
+  }
+  if (t.endsWith('es') && t.length > 4) return t.substring(0, t.length - 2);
+  if (t.endsWith('s') && t.length > 3 && !t.endsWith('ss')) {
+    return t.substring(0, t.length - 1);
+  }
+  return t;
+}
+
+/// Splits a string into lowercase normalized tokens (length > 1).
+///
+/// - Strips punctuation
+/// - Applies lightweight stemming ([_normalizeToken])
+/// - Filters out single characters (biologically insignificant)
 Set<String> _tokenize(String text) => text
     .toLowerCase()
     .split(RegExp(r'\W+'))
-    .where((t) => t.length > 2)
+    .where((t) => t.length > 1)
+    .map(_normalizeToken)
     .toSet();
 
 /// Jaccard-like token overlap ∈ [0, 1] between two strings.
@@ -38,7 +59,7 @@ double _tokenOverlap(String a, String b) {
   return intersection / union;
 }
 
-/// One result entry returned by [EmbeddingSearchService].
+/// One result entry returned by [VisualFeaturesSearchService].
 class SimilarSpeciesResult {
   final String scientificName;
   final String commonName;
@@ -46,13 +67,13 @@ class SimilarSpeciesResult {
   final Map<String, String> visualFeatures;
 
   /// Combined weighted score ∈ [0, 1]:
-  ///   score = (taxonomyScore × 1 + visualScore × 2) / 3
+  ///   score = finalVisual × 0.67 + finalTax × 0.33
   final double score;
 
-  /// Taxonomy sub-score ∈ [0, 1] (weight 1×).
+  /// Taxonomy sub-score ∈ [0, 1] (weight 0.33).
   final double taxonomyScore;
 
-  /// Visual-feature sub-score ∈ [0, 1] (weight 2×).
+  /// Visual-feature sub-score ∈ [0, 1] (weight 0.67).
   final double visualScore;
 
   const SimilarSpeciesResult({
@@ -76,9 +97,22 @@ class VisualFeaturesSearchService {
     'pattern',
   ];
 
+  static const _taxKeys = ['class', 'order', 'family', 'genus'];
+
+  // Species metadata.
   List<Map<String, dynamic>>? _speciesList;
 
-  // use a Future to guard concurrent load calls.
+  /// Flat Float32List of embeddings:
+  ///   per species: [tax_0..127, vis_0..255] = 384 floats
+  Float32List? _embeddings;
+
+  /// Config from JSON.
+  Map<String, dynamic>? _embeddingConfig;
+
+  int get _taxDim => _embeddingConfig?['taxonomy_dim'] as int? ?? 128;
+  int get _visDim => _embeddingConfig?['visual_dim'] as int? ?? 256;
+  int get _totalDim => _taxDim + _visDim; // no tags — only tax+vis
+
   Future<void>? _loadFuture;
 
   Future<void> load() => _loadFuture ??= _doLoad();
@@ -87,21 +121,43 @@ class VisualFeaturesSearchService {
     try {
       final raw = await rootBundle.loadString('assets/data/visual_features_embeddings.json');
       final data = jsonDecode(raw) as Map<String, dynamic>;
+      _embeddingConfig = data['embedding_config'] as Map<String, dynamic>?;
       final list = data['species'];
       _speciesList = (list is List)
           ? List<Map<String, dynamic>>.from(list.cast<Map<String, dynamic>>())
           : [];
+
+      // Unpack only tax + vis embeddings (skip tags).
+      final N = _speciesList!.length;
+      final total = _totalDim;
+      _embeddings = Float32List(N * total);
+      for (int i = 0; i < N; i++) {
+        final sp = _speciesList![i];
+        final offset = i * total;
+        int pos = offset;
+
+        final tax = sp['embedding_taxonomy'] as List<dynamic>;
+        for (int j = 0; j < tax.length && j < _taxDim; j++) {
+          _embeddings![pos++] = (tax[j] as num).toDouble();
+        }
+
+        final vis = sp['embedding_visual'] as List<dynamic>;
+        for (int j = 0; j < vis.length && j < _visDim; j++) {
+          _embeddings![pos++] = (vis[j] as num).toDouble();
+        }
+      }
+
       debugPrint(
-          'VisualFeaturesSearchService: loaded ${_speciesList!.length} species');
+          'VisualFeaturesSearchService: loaded ${_speciesList!.length} species, '
+          '${_taxDim}t+${_visDim}v = $total dims');
     } catch (e) {
       debugPrint('VisualFeaturesSearchService: failed to load index — $e');
       _speciesList = [];
+      _embeddings = Float32List(0);
     }
   }
 
   /// Find up to [topK] species similar to the query.
-  ///
-  /// Returns [SimilarSpeciesResult] objects sorted by [score] descending.
   List<SimilarSpeciesResult> findSimilarSpecies({
     required String taxClass,
     required String order,
@@ -109,16 +165,16 @@ class VisualFeaturesSearchService {
     required String genus,
     required Map<String, String> visualFeatures,
     int topK = 5,
-    double stage1Boost = 1.2,
   }) {
     final species = _speciesList;
+    final emb = _embeddings;
     if (species == null || species.isEmpty) return [];
 
     final genusQ = genus.trim().toLowerCase();
 
-    // --- Stage 1: genus anchor → MiniLM pre-computed similar_species ---
+    // --- Stage 1: genus anchor → nearest-neighbor in embedding space ---
     List<SimilarSpeciesResult> stage1 = [];
-    if (genusQ.isNotEmpty) {
+    if (emb != null && genusQ.isNotEmpty) {
       final anchor = _findBestAnchor(
         species: species,
         taxClass: taxClass,
@@ -128,11 +184,11 @@ class VisualFeaturesSearchService {
         visualFeatures: visualFeatures,
       );
       if (anchor != null) {
-        stage1 = _extractPrecomputed(anchor, topK);
+        stage1 = _nearestNeighbors(anchor, topK);
       }
     }
 
-    // --- Stage 2: score ALL species with weighted token overlap ---
+    // --- Stage 2: score ALL with combined token + embedding ---
     final stage2 = _scoreAllSpecies(
       species: species,
       taxClass: taxClass,
@@ -143,28 +199,23 @@ class VisualFeaturesSearchService {
       topK: topK,
     );
 
-    // --- Merge: boost stage1 scores, then rank purely by score ---
+    // --- Merge (O(N) dedup via Set) ---
+    final merged = <SimilarSpeciesResult>[];
+    final seen = <String>{};
 
-    final boostedStage1 = stage1.map((r) => SimilarSpeciesResult(
-      scientificName: r.scientificName,
-      commonName: r.commonName,
-      genus: r.genus,
-      visualFeatures: r.visualFeatures,
-      score: (r.score * stage1Boost).clamp(0.0, 1.0),
-      taxonomyScore: r.taxonomyScore,
-      visualScore: r.visualScore,
-    )).toList();
-
-    // Deduplicate by scientificName — stage1 entry wins if same species appears
-    // in both (it carries the boosted score).
-    final seen = <String, SimilarSpeciesResult>{};
-    for (final r in [...boostedStage1, ...stage2]) {
-      seen.putIfAbsent(r.scientificName, () => r);
+    // Stage1 entries first (get priority on ties).
+    for (final r in stage1) {
+      if (seen.add(r.scientificName)) {
+        merged.add(r);
+      }
+    }
+    for (final r in stage2) {
+      if (seen.add(r.scientificName)) {
+        merged.add(r);
+      }
     }
 
-    final merged = seen.values.toList()
-      ..sort((a, b) => b.score.compareTo(a.score));
-
+    merged.sort((a, b) => b.score.compareTo(a.score));
     return merged.take(topK).toList();
   }
 
@@ -212,9 +263,12 @@ class VisualFeaturesSearchService {
 
     for (final sp in species) {
       final spGenus = (sp['genus'] as String? ?? '').trim().toLowerCase();
+
       // Only consider genus matches for the anchor
-      if (spGenus.isEmpty) continue;
-      if (!spGenus.contains(genus) && !genus.contains(spGenus)) continue;
+       if (spGenus.isEmpty) continue;
+
+      // Handle abbreviations, typos, OCR noise, partial genus names.
+      if (_tokenOverlap(spGenus, genus) < 0.3) continue;
 
       final score = _computeWeightedScore(
         sp: sp,
@@ -232,28 +286,45 @@ class VisualFeaturesSearchService {
     return best;
   }
 
-  /// Converts a species entry's `similar_species` list into typed results.
-  List<SimilarSpeciesResult> _extractPrecomputed(
+  /// Nearest neighbors in taxonomy + visual embedding space.
+  List<SimilarSpeciesResult> _nearestNeighbors(
     Map<String, dynamic> anchor,
     int topK,
   ) {
-    final raw = anchor['similar_species'];
-    if (raw is! List) return [];
-    return raw.take(topK).map<SimilarSpeciesResult>((item) {
-      final m = item as Map<String, dynamic>;
-      final rawVf = m['visual_features'] as Map<String, dynamic>? ?? {};
+    final emb = _embeddings;
+    final species = _speciesList;
+    if (emb == null || species == null || species.isEmpty) return [];
+
+    final anchorIdx = (anchor['id'] as int?) ?? -1;
+    if (anchorIdx < 0) return [];
+    final N = species.length;
+    final total = _totalDim;
+
+    final anchorOffset = anchorIdx * total;
+    final scores = <_DistScore>[];
+    for (int i = 0; i < N; i++) {
+      if (i == anchorIdx) continue;
+      double dot = 0;
+      final offset = i * total;
+      for (int j = 0; j < total; j++) {
+        dot += emb[anchorOffset + j] * emb[offset + j];
+      }
+      scores.add(_DistScore(i, dot));
+    }
+    scores.sort((a, b) => b.score.compareTo(a.score));
+
+    return scores.take(topK).map((s) {
+      final sp = species[s.idx];
+      final rawVf = sp['visual_features'] as Map<String, dynamic>? ?? {};
       final vf = <String, String>{
         for (final k in _vfKeys) k: (rawVf[k] as String? ?? ''),
       };
-      final score = (m['score'] as num?)?.toDouble() ?? 0.0;
       return SimilarSpeciesResult(
-        scientificName: m['scientific_name'] as String? ?? '',
-        commonName: m['common_name'] as String? ?? '',
-        genus: m['genus'] as String? ?? '',
+        scientificName: sp['latin_name'] as String? ?? '',
+        commonName: sp['common_name'] as String? ?? '',
+        genus: sp['genus'] as String? ?? '',
         visualFeatures: vf,
-        // Pre-computed score is already MiniLM cosine similarity.
-        // Report it as-is; sub-scores are unavailable from pre-computation.
-        score: score,
+        score: s.score.clamp(0.0, 1.0),
         taxonomyScore: double.nan,
         visualScore: double.nan,
       );
@@ -261,8 +332,6 @@ class VisualFeaturesSearchService {
   }
 
   /// Scores every species in the DB and returns the top-K.
-  ///
-  /// combined = (taxScore × 1 + visScore × 2) / 3
   List<SimilarSpeciesResult> _scoreAllSpecies({
     required List<Map<String, dynamic>> species,
     required String taxClass,
@@ -272,44 +341,34 @@ class VisualFeaturesSearchService {
     required Map<String, String> visualFeatures,
     required int topK,
   }) {
-    final scored = <(double, double, double, Map<String, dynamic>)>[];
+    final results = <SimilarSpeciesResult>[];
 
     for (final sp in species) {
-      final combined = _computeWeightedScore(
-        sp: sp,
-        taxClass: taxClass,
-        order: order,
-        family: family,
-        genus: genus,
-        visualFeatures: visualFeatures,
-      );
-      // Re-compute sub-scores for the result object
-      final tax = _taxonomyScore(sp, taxClass, order, family, genus);
-      final vis = _visualScore(sp, visualFeatures);
-      scored.add((combined, tax, vis, sp));
-    }
+      final taxToken = _taxonomyScore(sp, taxClass, order, family, genus);
+      final visToken = _visualScore(sp, visualFeatures);
 
-    scored.sort((a, b) => b.$1.compareTo(a.$1));
+      // Uses token overlap only (no query embedding available).
+      final finalVis = _blendDim(visToken, double.nan, visualWeight: 0.4, embWeight: 0.6);
+      final finalTax = _blendDim(taxToken, double.nan, visualWeight: 0.7, embWeight: 0.3);
 
-    return scored.take(topK).map((t) {
-      final sp = t.$4;
-      final rawVf = sp['visual_features'] as Map<String, dynamic>? ?? {};
-      final vf = <String, String>{
-        for (final k in _vfKeys) k: (rawVf[k] as String? ?? ''),
-      };
-      return SimilarSpeciesResult(
-        scientificName: sp['scientific_name'] as String? ?? '',
+      final combined = finalVis * 0.67 + finalTax * 0.33;
+
+      results.add(SimilarSpeciesResult(
+        scientificName: sp['latin_name'] as String? ?? '',
         commonName: sp['common_name'] as String? ?? '',
         genus: sp['genus'] as String? ?? '',
-        visualFeatures: vf,
-        score: t.$1,
-        taxonomyScore: t.$2,
-        visualScore: t.$3,
-      );
-    }).toList();
+        visualFeatures: _extractVf(sp),
+        score: combined.clamp(0.0, 1.0),
+        taxonomyScore: finalTax,
+        visualScore: finalVis,
+      ));
+    }
+
+    results.sort((a, b) => b.score.compareTo(a.score));
+    return results.take(topK).toList();
   }
 
-  /// Combined weighted score ∈ [0, 1] for one species entry.
+  /// Combined weighted score ∈ [0, 1] for anchor search (token-only fallback).
   double _computeWeightedScore({
     required Map<String, dynamic> sp,
     required String taxClass,
@@ -320,15 +379,26 @@ class VisualFeaturesSearchService {
   }) {
     final tax = _taxonomyScore(sp, taxClass, order, family, genus);
     final vis = _visualScore(sp, visualFeatures);
-    // Mirrors Python: weight_tax=1, weight_vis=2 → divide by 3
-    return (tax * 1.0 + vis * 2.0) / 3.0;
+    return vis * 0.67 + tax * 0.33;
   }
 
-  /// Taxonomy similarity ∈ [0, 1].
+  /// Blend one dimension's token score with its embedding score.
   ///
-  /// Scores each of (class, order, family, genus) with substring containment
-  /// and averages them. Genus gets an extra 0.5 bonus because it is the most
-  /// specific differentiator (capped at 1.0 per field).
+  /// When [embScore] is NaN (unavailable), falls back to [tokenScore] alone.
+  /// Otherwise: `tokenScore * visualWeight + embScore * embWeight`.
+  double _blendDim(
+    double tokenScore,
+    double embScore, {
+    required double visualWeight,
+    required double embWeight,
+  }) {
+    if (embScore.isNaN) return tokenScore.clamp(0.0, 1.0);
+    return (tokenScore * visualWeight + embScore * embWeight).clamp(0.0, 1.0);
+  }
+
+  /// Taxonomy similarity ∈ [0, 1] using Jaccard token overlap.
+  ///
+  /// Genus gets 1.5× weight for being the most specific differentiator.
   double _taxonomyScore(
     Map<String, dynamic> sp,
     String taxClass,
@@ -337,16 +407,16 @@ class VisualFeaturesSearchService {
     String genus,
   ) {
     double total = 0.0;
-    const fields = ['class', 'order', 'family', 'genus'];
     final queries = [taxClass, order, family, genus];
-    const weights = [1.0, 1.0, 1.0, 1.5]; // genus slightly boosted
+    const weights = [1.0, 1.0, 1.0, 1.5];
 
     double weightSum = 0;
-    for (int i = 0; i < fields.length; i++) {
-      final q = queries[i].trim().toLowerCase();
-      final s = (sp[fields[i]] as String? ?? '').trim().toLowerCase();
+    for (int i = 0; i < _taxKeys.length; i++) {
+      final q = (queries[i]).trim().toLowerCase();
+      final s = (sp[_taxKeys[i]] as String? ?? '').trim().toLowerCase();
       if (q.isEmpty || s.isEmpty) continue;
-      final match = (s.contains(q) || q.contains(s)) ? 1.0 : 0.0;
+
+      final match = _tokenOverlap(s, q);
       total += match * weights[i];
       weightSum += weights[i];
     }
@@ -374,4 +444,15 @@ class VisualFeaturesSearchService {
     }
     return counted == 0 ? 0.0 : total / counted;
   }
+
+  Map<String, String> _extractVf(Map<String, dynamic> sp) {
+    final raw = sp['visual_features'] as Map<String, dynamic>? ?? {};
+    return {for (final k in _vfKeys) k: (raw[k] as String? ?? '')};
+  }
+}
+
+class _DistScore {
+  final int idx;
+  final double score;
+  _DistScore(this.idx, this.score);
 }
