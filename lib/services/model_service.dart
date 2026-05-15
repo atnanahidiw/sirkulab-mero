@@ -16,68 +16,142 @@ import '../models/model_spec.dart';
 /// Strips ```json / ``` fences from a model response.
 String _stripJsonFences(String s) {
   var t = s.trim();
-  if (t.startsWith('```')) {
-    t = t.replaceFirst(RegExp(r'^```(?:json)?\s*'), '');
-    t = t.replaceFirst(RegExp(r'\s*```$'), '');
-  }
+
+  // Remove opening fence
+  t = t.replaceFirst(
+    RegExp(r'^```(?:json|JSON)?\s*'),
+    '',
+  );
+
+  // Remove closing fence
+  t = t.replaceFirst(
+    RegExp(r'\s*```$'),
+    '',
+  );
+
   return t.trim();
 }
 
-/// Attempts to repair a JSON string that may be:
-///   • wrapped in fences          → stripped
-///   • truncated mid-value        → open string closed, braces/brackets balanced
-///   • trailing comma before }    → comma removed
-///   • single-quoted keys/values  → converted to double-quoted
+/// Attempts to repair malformed JSON from LLM output.
+///
+/// Handles:
+/// - markdown fences
+/// - truncated JSON
+/// - dangling quotes
+/// - trailing commas
+/// - invalid control chars
+/// - garbage after final brace
+/// - simple single-quote JSON
 String _repairJson(String raw) {
   var s = _stripJsonFences(raw);
+
   if (s.isEmpty) return '{}';
 
-  // 1. Single → double quotes (simple heuristic, avoids regex for speed)
+  // Normalize line endings
+  s = s.replaceAll('\r\n', '\n');
+
+  // Remove non-printable control chars except newline/tab
+  s = s.replaceAll(
+    RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'),
+    '',
+  );
+
+  // Remove dangling quote-only lines:
+  //
+  // Example:
+  //   "
+  //   "is_endangered": true
+  //
+  s = s.replaceAll(
+    RegExp(r'^\s*"\s*$\n?', multiLine: true),
+    '',
+  );
+
+  // Simple heuristic:
+  // Convert single-quoted JSON only if no double quotes exist.
   if (!s.contains('"') && s.contains("'")) {
     s = s.replaceAll("'", '"');
   }
 
-  // 2. Remove trailing commas before } or ]
-  s = s.replaceAll(RegExp(r',\s*([}\]])'), r'\1');
+  // Remove trailing commas before } or ]
+  s = s.replaceAll(
+    RegExp(r',\s*([}\]])'),
+    r'\1',
+  );
 
-  // 3. Detect and repair truncation
-  final openStack = <String>[];   // '{' or '['
+  // Trim garbage after final closing brace/bracket
+  final lastBrace = s.lastIndexOf('}');
+  final lastBracket = s.lastIndexOf(']');
+  final cut = [lastBrace, lastBracket]
+      .where((i) => i >= 0)
+      .fold(-1, (a, b) => a > b ? a : b);
+
+  if (cut >= 0 && cut < s.length - 1) {
+    s = s.substring(0, cut + 1);
+  }
+
+  // Track structure
+  final stack = <String>[];
+
   var inString = false;
-  var escape   = false;
+  var escape = false;
 
   for (var i = 0; i < s.length; i++) {
     final ch = s[i];
-    if (escape) { escape = false; continue; }
-    if (ch == r'\') { escape = true; continue; }
+
+    if (escape) {
+      escape = false;
+      continue;
+    }
+
+    if (ch == r'\') {
+      escape = true;
+      continue;
+    }
 
     if (ch == '"') {
       inString = !inString;
-    } else if (!inString) {
+      continue;
+    }
+
+    if (!inString) {
       if (ch == '{' || ch == '[') {
-        openStack.add(ch);
+        stack.add(ch);
       } else if (ch == '}' || ch == ']') {
-        if (openStack.isNotEmpty) openStack.removeLast();
+        if (stack.isNotEmpty) {
+          stack.removeLast();
+        }
       }
     }
   }
 
-  // If we ended inside a string, close it first
   final suffix = StringBuffer();
-  if (inString) suffix.write('"');
 
-  // Close any unclosed braces/brackets in reverse order
-  for (final open in openStack.reversed) {
+  // Close dangling string
+  if (inString) {
+    suffix.write('"');
+  }
+
+  // Close open containers
+  for (final open in stack.reversed) {
     suffix.write(open == '{' ? '}' : ']');
   }
 
   if (suffix.isNotEmpty) {
-    debugPrint('[_repairJson] Truncated JSON detected — appending: $suffix');
-    s = s + suffix.toString();
-    // Re-run trailing-comma cleanup after we closed things
-    s = s.replaceAll(RegExp(r',\s*([}\]])'), r'\1');
+    debugPrint(
+      '[_repairJson] Appending recovery suffix: $suffix',
+    );
+
+    s += suffix.toString();
+
+    // Cleanup again
+    s = s.replaceAll(
+      RegExp(r',\s*([}\]])'),
+      r'\1',
+    );
   }
 
-  return s;
+  return s.trim();
 }
 
 /// Returns true when [text] contains a word or short phrase repeated
