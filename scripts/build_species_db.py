@@ -1,109 +1,103 @@
 #!/usr/bin/env python3
 """
-Build the pre-computed species SQLite database from species_data.zip
-and (optionally) visual_features_embeddings.json.
+Build the pre-computed species SQLite database from individual JSON files
+under assets/data/species_data/, applying the same token normalisation that
+the Dart reranker uses at query time so the FTS5 index and runtime queries
+are consistent.
 
 Usage:
     python tool/build_species_db.py \
-        --zip assets/data/species_data.zip \
-        --embeddings build/app/intermediates/flutter/release/flutter_assets/assets/data/visual_features_embeddings.json \
-        --output assets/data/species_retrieval.db
+        --data-dir assets/data/species_data \
+        --output assets/data/species_data.sqlite
 """
 
 import argparse
 import json
 import os
+import re
 import sqlite3
 import sys
-import zipfile
-from typing import Any, Dict, List, Optional
 
-# ── Visual feature field keys (from the structured embeddings JSON) ──
+# ── Synonym map — MUST match lib/services/species_service.dart ──────────
+_SYNONYMS = {
+    "stripes": "striped",
+    "striping": "striped",
+    "golden": "yellow",
+    "bluish": "blue",
+    "reddish": "red",
+    "greenish": "green",
+    "brownish": "brown",
+    "whitish": "white",
+    "blackish": "black",
+    "greyish": "grey",
+    "grayish": "grey",
+    "yellowish": "yellow",
+    "orangish": "orange",
+    "purplish": "purple",
+    "pinkish": "pink",
+    "spotted": "spot",
+    "spotty": "spot",
+    "stripy": "stripe",
+}
+
+_STOP_WORDS = frozenset(
+    {"and", "with", "the", "appears", "somewhat", "but", "on", "of", "in"}
+)
+
+# ── Visual feature field keys ──────────────────────────────────────────
 VF_KEYS = ["color", "body_shape", "distinctive_marks", "texture", "size_class", "pattern"]
 
-# ── All top-level fields from the species JSON ──
-ALL_FIELDS = [
-    "common_name",
-    "latin_name",
-    "kingdom",
-    "class",        # "class" is a SQL reserved word — quoted in DDL
-    "order",
-    "family",
-    "genus",
-    "visual_features",
-    "description",
-    "fun_fact",
-    "ecosystem_role",
-    "what_students_can_do",
-    "human_connection",
-    "threats",
-    "habitat",
-    "habitat_tags",
-    "conservation_status",
-    "population_estimate",
-    "population_estimate_source_uri",
-]
+
+def normalise_token(t: str) -> str:
+    """Normalise a single token via synonym lookup."""
+    t = t.lower()
+    return _SYNONYMS.get(t, t)
 
 
-def load_species_from_zip(zip_path: str) -> List[Dict[str, Any]]:
-    """Read all JSON files from species_data.zip and return a list of dicts."""
-    species = []
-    with zipfile.ZipFile(zip_path) as z:
-        for name in z.namelist():
-            if not name.endswith(".json"):
-                continue
-            data = json.loads(z.read(name))
-            species.append(data)
-    return species
-
-
-def load_structured_vf(embeddings_path: Optional[str]) -> Dict[str, Dict[str, str]]:
+def normalise_text(text: str) -> str:
     """
-    Load the structured visual features from the embeddings JSON.
-    Returns a dict keyed by latin_name (lowercased).
+    Tokenise, synonym‑normalise, and rejoin.
+    Removes stop‑words and single‑character tokens — same as Dart _tokens().
     """
-    if embeddings_path is None or not os.path.isfile(embeddings_path):
-        return {}
-
-    with open(embeddings_path) as f:
-        data = json.load(f)
-
-    result: Dict[str, Dict[str, str]] = {}
-    for sp in data.get("species", []):
-        latin = (sp.get("latin_name") or "").strip().lower()
-        if not latin:
-            continue
-        raw_vf = sp.get("visual_features", {})
-        if isinstance(raw_vf, dict):
-            result[latin] = {k: (raw_vf.get(k) or "") for k in VF_KEYS}
-    return result
+    tokens = re.findall(r"\w+", text.lower())
+    out = [
+        normalise_token(t)
+        for t in tokens
+        if len(t) > 1 and t not in _STOP_WORDS
+    ]
+    return " ".join(out)
 
 
-def json_val(val: Any) -> str:
-    """Serialise a JSON value to a JSON string for TEXT storage."""
-    return json.dumps(val, ensure_ascii=False) if val is not None else ""
+def json_val(val) -> str:
+    """Serialise a list to a JSON string for TEXT storage."""
+    return json.dumps(val, ensure_ascii=False) if val else "[]"
 
 
-def build_visual_blob(species: Dict[str, Any],
-                      structured_vf: Optional[Dict[str, str]]) -> str:
+def build_visual_blob(species: dict) -> str:
     """
-    Build a consolidated visual description blob for FTS5 indexing.
-
-    If structured visual features are available (color, body_shape, …),
-    concatenate their values. Otherwise fall back to the raw visual_features
-    description text.
+    Build a consolidated, synonym‑normalised visual description blob
+    for FTS5 indexing — consistent with the Dart reranker's _tokens().
     """
-    if structured_vf:
-        parts = [v for v in structured_vf.values() if v.strip()]
-        if parts:
-            return "  ".join(parts)
-    raw = species.get("visual_features")
-    return raw.strip() if isinstance(raw, str) and raw.strip() else ""
+    vf = species.get("visual_features", {})
+    if not isinstance(vf, dict):
+        vf = {}
+    parts = []
+    for k in VF_KEYS:
+        raw = str(vf.get(k, "")).strip()
+        if raw:
+            parts.append(normalise_text(raw))
+    return "  ".join(parts)
 
 
-def build_db(zip_path: str,
-             embeddings_path: Optional[str],
-             output_path: str) -> int:
+def walk_json_files(data_dir: str):
+    """Yield every JSON file path under data_dir recursively."""
+    for root, _dirs, files in os.walk(data_dir):
+        for fname in files:
+            if fname.endswith(".json"):
+                yield os.path.join(root, fname)
+
+
+def build_db(data_dir: str, output_path: str) -> int:
     """Build the SQLite DB and return the number of species inserted."""
 
     if os.path.exists(output_path):
@@ -111,12 +105,11 @@ def build_db(zip_path: str,
 
     conn = sqlite3.connect(output_path)
     conn.execute("PRAGMA journal_mode=WAL;")
-    conn.execute("PRAGMA synchronous=OFF;")  # faster offline build
+    conn.execute("PRAGMA synchronous=OFF;")
 
     cur = conn.cursor()
 
     # ── Schema ──────────────────────────────────────────────────────────
-    # Single table mirroring all JSON fields.
     cur.execute("""
         CREATE TABLE species (
             id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -149,12 +142,11 @@ def build_db(zip_path: str,
             size_class         TEXT NOT NULL DEFAULT '',
             pattern            TEXT NOT NULL DEFAULT '',
 
-            -- Consolidated FTS5 blob (built from structured fields or fallback).
+            -- Consolidated FTS5 blob (normalised at build time).
             visual_blob        TEXT NOT NULL DEFAULT ''
         )
     """)
 
-    # FTS5 on visual_blob with porter stemmer.
     cur.execute("""
         CREATE VIRTUAL TABLE species_fts USING fts5(
             visual_blob,
@@ -165,25 +157,17 @@ def build_db(zip_path: str,
     """)
 
     # ── Data ────────────────────────────────────────────────────────────
-    species_list = load_species_from_zip(zip_path)
-    structured_map = load_structured_vf(embeddings_path)
-
     inserted = 0
-    for sp in species_list:
-        latin = (sp.get("latin_name") or "").strip().lower()
-        structured = structured_map.get(latin)
 
-        blob = build_visual_blob(sp, structured)
+    for filepath in sorted(walk_json_files(data_dir)):
+        with open(filepath) as f:
+            sp = json.load(f)
 
-        # Extract structured VF sub-fields.
-        vf = {}
-        if structured:
-            vf = structured
-        else:
-            raw_vf = sp.get("visual_features")
-            if isinstance(raw_vf, dict):
-                for k in VF_KEYS:
-                    vf[k] = (raw_vf.get(k) or "").strip()
+        blob = build_visual_blob(sp)
+
+        vf = sp.get("visual_features", {})
+        if not isinstance(vf, dict):
+            vf = {}
 
         cur.execute(
             """
@@ -217,7 +201,7 @@ def build_db(zip_path: str,
                 sp.get("order", ""),
                 sp.get("family", ""),
                 sp.get("genus", ""),
-                sp.get("visual_features", ""),
+                json.dumps(vf),
                 sp.get("description", ""),
                 json_val(sp.get("fun_fact", [])),
                 sp.get("ecosystem_role", ""),
@@ -248,17 +232,12 @@ def build_db(zip_path: str,
 
     conn.commit()
 
-    # Set user_version for Drift compatibility (matches schemaVersion = 1).
+    # Set user_version for Drift compatibility (must match schemaVersion = 1).
     cur.execute("PRAGMA user_version = 1")
     conn.commit()
 
-    # ── Verify ──────────────────────────────────────────────────────────
     total = cur.execute("SELECT COUNT(*) FROM species").fetchone()[0]
-    with_vf = cur.execute(
-        "SELECT COUNT(*) FROM species WHERE visual_blob != ''"
-    ).fetchone()[0]
-
-    print(f"✅  {total} species inserted ({with_vf} with visual_blob)")
+    print(f"✅  {total} species inserted")
     print(f"📁  Output: {os.path.abspath(output_path)}")
     print(f"💾  Size:   {os.path.getsize(output_path) / 1024:.1f} KB")
 
@@ -268,33 +247,25 @@ def build_db(zip_path: str,
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Build the pre-computed species retrieval DB."
+        description="Build the pre-computed species retrieval DB from JSON files."
     )
     parser.add_argument(
-        "--zip",
-        default="assets/data/species_data.zip",
-        help="Path to species_data.zip (default: assets/data/species_data.zip)",
-    )
-    parser.add_argument(
-        "--embeddings",
-        default=None,
-        help=(
-            "Optional path to visual_features_embeddings.json for structured "
-            "visual feature fields"
-        ),
+        "--data-dir",
+        default="assets/data/species_data",
+        help="Directory containing species JSON files",
     )
     parser.add_argument(
         "--output",
         default="assets/data/species_data.sqlite",
-        help="Output path for the SQLite DB (default: assets/data/species_data.sqlite)",
+        help="Output path for the SQLite DB",
     )
     args = parser.parse_args()
 
-    if not os.path.isfile(args.zip):
-        print(f"❌  Zip not found: {args.zip}")
+    if not os.path.isdir(args.data_dir):
+        print(f"❌  Data dir not found: {args.data_dir}")
         sys.exit(1)
 
-    build_db(args.zip, args.embeddings, args.output)
+    build_db(args.data_dir, args.output)
 
 
 if __name__ == "__main__":

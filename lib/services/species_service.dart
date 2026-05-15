@@ -234,12 +234,12 @@ class SpeciesService {
 
     if (queryParts.isEmpty) return [];
 
-    // Clean terms and convert to set to naturally deduplicate query tokens
+    // Clean terms, apply synonyms (match build-time normalisation), deduplicate.
     final cleanTerms = queryParts
         .join(' ')
         .replaceAll(RegExp(r'[^\w\s]'), ' ')
         .split(RegExp(r'\s+'))
-        .map((w) => w.toLowerCase().trim())
+        .map((w) => (_synonyms[w] ?? w).toLowerCase().trim())
         .where((w) => w.length > 1 && !_stopWords.contains(w))
         .toSet();
 
