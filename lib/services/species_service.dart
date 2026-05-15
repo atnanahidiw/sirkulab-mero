@@ -182,7 +182,9 @@ class SpeciesService {
     int topK = 5,
   }) async {
     await _visualFeaturesSearch.load();
+    final queryText = 'genus: $genus ${visualFeature.entries.map((e) => '${e.key}: ${e.value}').join(' ')}';
     return _visualFeaturesSearch.findSimilarFormatted(
+      queryText: queryText,
       taxClass: taxClass,
       order: order,
       family: family,
@@ -202,7 +204,9 @@ class SpeciesService {
     int topK = 5,
   }) async {
     await _visualFeaturesSearch.load();
+    final queryText = 'genus: $genus ${visualFeature.entries.map((e) => '${e.key}: ${e.value}').join(' ')}';
     return _visualFeaturesSearch.findSimilarSpecies(
+      queryText: queryText,
       taxClass: taxClass,
       order: order,
       family: family,
