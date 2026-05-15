@@ -1,10 +1,11 @@
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_onnxruntime/flutter_onnxruntime.dart';
+import 'package:onnxruntime/onnxruntime.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'visual_features_service.dart';
@@ -153,12 +154,11 @@ Future<String> _extractModelZip({
 }
 
 // ============================================================================
-// BGE Embedder — flutter_onnxruntime + BERT Tokenizer
+// BGE Embedder — onnxruntime + BERT Tokenizer
 // ============================================================================
 
 class BgeEmbedder implements TextEmbedder {
   final BertTokenizer _tokenizer = BertTokenizer();
-  final OnnxRuntime _ort = OnnxRuntime();
   OrtSession? _session;
   bool _loaded = false;
   bool _disposed = false;
@@ -167,6 +167,7 @@ class BgeEmbedder implements TextEmbedder {
   static const int _maxLen = 512;
 
   String? _modelDir;
+  List<OrtValue> _allocatedTensors = [];
 
   @override
   bool get isLoaded => _loaded && !_disposed;
@@ -178,6 +179,8 @@ class BgeEmbedder implements TextEmbedder {
     String zipAssetPath = 'assets/models/bge-small-en-v1.5.zip',
     String? cacheDir,
   }) async {
+    OrtEnv.instance.init();
+
     final appDir = await getApplicationDocumentsDirectory();
     final extractDir = cacheDir ?? p.join(appDir.path, 'bge-small-en-v1.5');
     await _extractModelZip(zipAssetPath: zipAssetPath, extractDir: extractDir);
@@ -188,13 +191,18 @@ class BgeEmbedder implements TextEmbedder {
         await File(p.join(extractDir, 'vocab.txt')).readAsString();
     await _tokenizer.load(vocabContent);
 
-    // Create ONNX session with CoreML provider
+    // Create ONNX session
     final modelPath = p.join(extractDir, 'model_q4f16.onnx');
-    final opts = OrtSessionOptions(
-      intraOpNumThreads: 2,
-      providers: [OrtProvider.CORE_ML, OrtProvider.CPU],
-    );
-    _session = await _ort.createSession(modelPath, options: opts);
+    final opts = OrtSessionOptions();
+    opts.setIntraOpNumThreads(2);
+    opts.setSessionGraphOptimizationLevel(GraphOptimizationLevel.ortEnableAll);
+
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      opts.appendCoreMLProvider(CoreMLFlags.useNone);
+    }
+    opts.appendCPUProvider(CPUFlags.useArena);
+
+    _session = OrtSession.fromFile(File(modelPath), opts);
     _loaded = true;
     debugPrint(
         'BgeEmbedder: loaded — inputs: ${_session!.inputNames}, outputs: ${_session!.outputNames}');
@@ -211,50 +219,68 @@ class BgeEmbedder implements TextEmbedder {
     final types = List<int>.filled(_maxLen, 0);
 
     // Create input tensors: [1, maxLen]
-    const shape = [1, 512];
-
-    final inIds = await OrtValue.fromList(
+    final inIds = OrtValueTensor.createTensorWithDataList(
       Int32List.fromList(ids),
-      shape,
+      [1, 512],
     );
-    final inAttn = await OrtValue.fromList(
+    final inAttn = OrtValueTensor.createTensorWithDataList(
       Int32List.fromList(attn),
-      shape,
+      [1, 512],
     );
-    final inTypes = await OrtValue.fromList(
+    final inTypes = OrtValueTensor.createTensorWithDataList(
       Int32List.fromList(types),
-      shape,
+      [1, 512],
     );
+
+    _allocatedTensors.addAll([inIds, inAttn, inTypes]);
 
     // Run inference
-    final outputMap = await session.run({
+    final runOptions = OrtRunOptions();
+    final inputs = {
       'input_ids': inIds,
       'attention_mask': inAttn,
       'token_type_ids': inTypes,
-    });
+    };
+    final outputNames = session.outputNames;
+    final outputs = session.run(runOptions, inputs, outputNames);
 
     // Extract sentence_embedding output
-    final embTensor = outputMap['sentence_embedding']!;
-    final embList = await embTensor.asFlattenedList();
-
+    final embIdx = outputNames.indexOf('sentence_embedding');
     final result = Float32List(embDim);
-    final n = math.min(embList.length, embDim);
-    for (int i = 0; i < n; i++) {
-      result[i] = (embList[i] as num).toDouble();
+
+    if (embIdx >= 0 && embIdx < outputs.length) {
+      final embTensor = outputs[embIdx] as OrtValueTensor?;
+      if (embTensor != null) {
+        final raw = embTensor.value;
+        // Shape is [1, 384] → nested list: [[f0, f1, ..., f383]]
+        if (raw is List && raw.isNotEmpty) {
+          final inner = raw[0] as List;
+          final n = math.min(inner.length, embDim);
+          for (int i = 0; i < n; i++) {
+            result[i] = (inner[i] as num).toDouble();
+          }
+        }
+      }
     }
 
-    // Cleanup
-    await inIds.dispose();
-    await inAttn.dispose();
-    await inTypes.dispose();
-    await embTensor.dispose();
+    // Cleanup tensors
+    for (final t in _allocatedTensors) {
+      t.release();
+    }
+    _allocatedTensors.clear();
+    runOptions.release();
 
     return result;
   }
 
   @override
   Future<void> dispose() async {
-    await _session?.close();
+    _session?.release();
+    for (final t in _allocatedTensors) {
+      t.release();
+    }
+    _allocatedTensors.clear();
+    OrtEnv.instance.release();
     _disposed = true;
   }
 
