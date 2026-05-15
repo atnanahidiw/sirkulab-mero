@@ -46,6 +46,7 @@ class _ResultPageState extends State<ResultPage>
 
   Map<String, dynamic>? _parsedJson;
   bool _hintsInitialized = false;
+  bool _recognitionFailed = false;
   AppLocalizations? _l10n;
 
   @override
@@ -63,8 +64,12 @@ class _ResultPageState extends State<ResultPage>
 
     _parseResultJson();
 
-    // Apply preloaded species immediately — no skeleton, no flash.
+    // Apply preloaded species.
     _species = widget.preloadedSpecies;
+
+    // Recognition failed only if NO DB hit AND NO parsed JSON name.
+    _recognitionFailed = _species == null &&
+        (_jsonScientificName == null || _jsonScientificName!.isEmpty);
   }
 
   @override
@@ -116,8 +121,8 @@ class _ResultPageState extends State<ResultPage>
   String? get _jsonScientificName =>
       _parsedJson?['scientific_name'] as String?;
 
-  /// Chat is enabled when we have a species.
-  bool get _chatEnabled => _species != null;
+  /// Chat enabled when AI identified something, even if not in DB.
+  bool get _chatEnabled => !_recognitionFailed;
 
   // ── Hints & welcome message ──────────────────────────────────────────────
 
@@ -422,6 +427,7 @@ class _ResultPageState extends State<ResultPage>
               child: _SpeciesInfoCard(
                 species: _species,
                 isListed: _isListed,
+                recognitionFailed: _recognitionFailed,
                 notListedName: _jsonCommonName,
                 notListedLatinName: _jsonScientificName,
                 colorScheme: colorScheme,
@@ -577,6 +583,7 @@ class _ResultPageState extends State<ResultPage>
 class _SpeciesInfoCard extends StatelessWidget {
   final SpeciesDetail? species;
   final bool isListed;
+  final bool recognitionFailed;
   final String? notListedName;
   final String? notListedLatinName;
   final ColorScheme colorScheme;
@@ -587,6 +594,7 @@ class _SpeciesInfoCard extends StatelessWidget {
   const _SpeciesInfoCard({
     required this.species,
     required this.isListed,
+    required this.recognitionFailed,
     required this.notListedName,
     required this.notListedLatinName,
     required this.colorScheme,
@@ -606,7 +614,7 @@ class _SpeciesInfoCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            if (species == null) ...[
+            if (recognitionFailed) ...[
               Icon(
                 Icons.image_search_outlined,
                 size: 36,

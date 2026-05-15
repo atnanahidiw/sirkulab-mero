@@ -47,6 +47,9 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   String _currentMessage = '';
   int _messageIndex = 0;
   Timer? _messageTimer;
+  bool _messageTimerInitialized = false;
+  late final Uint8List _displayBytes;
+  bool _imageLoaded = false;
 
   // Species service — used to pre-resolve the DB lookup before navigating,
   // so ResultPage always receives fully-loaded data with no loading flash.
@@ -56,32 +59,46 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   void initState() {
     super.initState();
 
+    _displayBytes = widget.rawImageBytes;
+
     _pulseController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 2200),
     )..repeat(reverse: true);
 
     _glowController = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 2000),
+      duration: const Duration(milliseconds: 1800),
     )..repeat(reverse: true);
 
     _pulseAnimation = Tween<double>(begin: 0.97, end: 1.03).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
 
-    _glowAnimation = Tween<double>(begin: 0.1, end: 0.3).animate(
+    _glowAnimation = Tween<double>(begin: 0.08, end: 0.32).animate(
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
 
     _startAnalysis();
   }
 
-  void _setupMessageTimer(AppLocalizations l10n) {
-    if (_messageTimer != null) return;
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // ✅ Safe to call here — context (and l10n) is fully available.
+    //    Guard flag prevents re-initialisation on subsequent dependency changes.
+    if (!_messageTimerInitialized) {
+      _initMessageTimer();
+      _messageTimerInitialized = true;
+    }
+  }
 
+  void _initMessageTimer() {
+    final l10n = AppLocalizations.of(context)!;
     final messages = _getMessages(l10n);
-    _currentMessage = messages[Random().nextInt(messages.length)];
+
+    _messageIndex = Random().nextInt(messages.length);
+    _currentMessage = messages[_messageIndex];
 
     _messageTimer = Timer.periodic(const Duration(seconds: 12), (_) {
       if (mounted) {
@@ -97,23 +114,23 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     // Give enough time for the transition to finish and for HomePage to dispose the camera
     // This ensures RAM is fully cleared before we start heavy inference
     await Future.delayed(const Duration(milliseconds: 600));
+    if (!mounted) return;
 
     final modelService = Provider.of<ModelService>(context, listen: false);
 
     final compressedBytes = await ImageUtils.compressImage(
-      widget.rawImageBytes,
-      maxWidth: 1080,
-      maxHeight: 1080,  // https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4
+      _displayBytes,
+      maxWidth: 768,
+      maxHeight: 768,  // https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4
       quality: 92,
     );
 
     // Step 1 — run the model to identify the species
-    String result;
+    String result = '';
     try {
       result = await modelService.identifySpecies(compressedBytes, 'jpeg');
     } catch (e) {
       debugPrint('[AnalyzingPage] identifySpecies failed: $e');
-      result = '';
     }
 
     // Step 2 — resolve the species in the DB while still on the analyzing
@@ -125,6 +142,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
     if (!mounted) return;
 
+    // Small pause so the animation doesn't snap away too abruptly.
     await Future.delayed(const Duration(milliseconds: 100));
 
     // Return the results to HomePage instead of navigating here.
@@ -146,8 +164,8 @@ class _AnalyzingPageState extends State<AnalyzingPage>
       if (fence != null) jsonStr = fence.group(1)!.trim();
 
       final parsed    = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final sciName   = parsed['scientific_name'] as String? ?? '';
-      final comName   = parsed['common_name']     as String? ?? '';
+      final sciName   = (parsed['scientific_name'] as String? ?? '').trim();
+      final comName   = (parsed['common_name'] as String? ?? '').trim();
 
       if (sciName.isEmpty) return null;
 
@@ -190,8 +208,6 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     final textTheme = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
 
-    _setupMessageTimer(l10n);
-
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
@@ -213,45 +229,37 @@ class _AnalyzingPageState extends State<AnalyzingPage>
             Expanded(
               flex: 3,
               child: Center(
-                child: AnimatedBuilder(
-                  animation: Listenable.merge([_pulseAnimation, _glowAnimation]),
-                  builder: (context, child) {
-                    return Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        // Glow ring
-                        Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 24),
+                child: RepaintBoundary(
+                  child: AnimatedBuilder(
+                    animation: Listenable.merge(
+                        [_pulseController, _glowController]
+                    ),
+                    builder: (context, child) {
+                      return Transform.scale(
+                        scale: _pulseAnimation.value,
+                        child: Container(
+                          margin:
+                              const EdgeInsets.symmetric(horizontal: 32),
                           decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(24),
+                            borderRadius: BorderRadius.circular(20),
                             boxShadow: [
                               BoxShadow(
                                 color: colorScheme.primary
                                     .withValues(alpha: _glowAnimation.value),
-                                blurRadius: 40,
-                                spreadRadius: 8,
+                                blurRadius: 24,
+                                spreadRadius: 6,
                               ),
                             ],
                           ),
-                          child: const SizedBox.shrink(),
+                          child: child,
                         ),
-                        // Image card
-                        Transform.scale(
-                          scale: _pulseAnimation.value,
-                          child: Card(
-                            margin: const EdgeInsets.symmetric(horizontal: 32),
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(20),
-                              child: Image.memory(
-                                widget.rawImageBytes,
-                                fit: BoxFit.cover,
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
-                    );
-                  },
+                      );
+                    },
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: _buildImage(),
+                    ),
+                  ),
                 ),
               ),
             ),
@@ -311,6 +319,49 @@ class _AnalyzingPageState extends State<AnalyzingPage>
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildImage() {
+    return Image.memory(
+      _displayBytes,
+      fit: BoxFit.cover,
+      gaplessPlayback: true,
+      // frameBuilder fades the image in smoothly instead of blinking
+      // blank → image. frame == null means the image is still decoding.
+      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
+        if (wasSynchronouslyLoaded || frame != null) {
+          // Image is ready — mark loaded so we could conditionally hide
+          // a placeholder if we ever add one.
+          if (!_imageLoaded) {
+            // Schedule outside build so we don't call setState mid-build.
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) setState(() => _imageLoaded = true);
+            });
+          }
+          return child;
+        }
+        // Image is still decoding — show a neutral surface placeholder
+        // the exact same size so the layout doesn't jump.
+        return ColoredBox(
+          color: Theme.of(context).colorScheme.surfaceContainerHighest,
+          child: const AspectRatio(aspectRatio: 1),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        debugPrint('[AnalyzingPage] Image.memory decode error: $error');
+        return ColoredBox(
+          color: Theme.of(context).colorScheme.errorContainer,
+          child: AspectRatio(
+            aspectRatio: 1,
+            child: Icon(
+              Icons.broken_image_outlined,
+              color: Theme.of(context).colorScheme.onErrorContainer,
+              size: 48,
+            ),
+          ),
+        );
+      },
     );
   }
 }
