@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:archive/archive.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'bge_embedder.dart';
 import 'visual_features_service.dart';
 
 /// Detailed species entry from the per-species JSON files bundled in the zip.
@@ -95,16 +96,23 @@ class SpeciesDetail {
 }
 
 class SpeciesService {
-  final VisualFeaturesSearchService _visualFeaturesSearch = VisualFeaturesSearchService();
+  final BgeEmbedder _bge = BgeEmbedder();
+  VisualFeaturesSearchService? _vfsBacking;
+
+  VisualFeaturesSearchService get _visualFeaturesSearch {
+    _vfsBacking ??= VisualFeaturesSearchService(embedder: _bge);
+    return _vfsBacking!;
+  }
 
   static const String _zipPath = 'assets/data/species_data.zip';
 
   Map<String, List<SpeciesDetail>>? _genusDb;
 
-  /// Pre-loads the genus DB and the embedding index in parallel.
+  /// Pre-loads the genus DB, BGE embedder, and the embedding index in parallel.
   Future<void> preloadAll() async {
     await Future.wait([
       loadGenusDb(),
+      _bge.load(),
       _visualFeaturesSearch.load(),
     ]);
   }
@@ -166,13 +174,7 @@ class SpeciesService {
         .join(' | ');
   }
 
-  /// Semantic similarity search: returns up to [topK] species ranked by
-  ///   combined = (taxonomy × 1 + visual_features × 2) / 3
-  ///
-  /// Stage 1 — if the query genus is in the pre-computed index
-  ///   MiniLM cosine-similarity results (semantically richer).
-  /// Stage 2 — otherwise, falls back to weighted token-overlap scoring
-  ///   across the entire index.
+  /// Semantic similarity search: returns up to [topK] species
   Future<String> findSimilarByFeatures({
     required String taxClass,
     required String order,
@@ -182,9 +184,7 @@ class SpeciesService {
     int topK = 5,
   }) async {
     await _visualFeaturesSearch.load();
-    final queryText = 'genus: $genus ${visualFeature.entries.map((e) => '${e.key}: ${e.value}').join(' ')}';
     return _visualFeaturesSearch.findSimilarFormatted(
-      queryText: queryText,
       taxClass: taxClass,
       order: order,
       family: family,
@@ -204,9 +204,7 @@ class SpeciesService {
     int topK = 5,
   }) async {
     await _visualFeaturesSearch.load();
-    final queryText = 'genus: $genus ${visualFeature.entries.map((e) => '${e.key}: ${e.value}').join(' ')}';
     return _visualFeaturesSearch.findSimilarSpecies(
-      queryText: queryText,
       taxClass: taxClass,
       order: order,
       family: family,

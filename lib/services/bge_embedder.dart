@@ -129,10 +129,20 @@ Future<String> _extractModelZip({
   final bytes = raw.buffer.asUint8List(raw.offsetInBytes, raw.lengthInBytes);
   final archive = ZipDecoder().decodeBytes(bytes);
 
+  // Determine common root prefix from first entry to strip it.
+  String prefix = '';
+  if (archive.isNotEmpty && archive.first.name.contains('/')) {
+    prefix = archive.first.name.split('/').first + '/';
+  }
+
   await dir.create(recursive: true);
   for (final entry in archive) {
     if (entry.isFile) {
-      final file = File(p.join(extractDir, entry.name));
+      // Strip common prefix so files go directly into extractDir.
+      final relPath = entry.name.startsWith(prefix)
+          ? entry.name.substring(prefix.length)
+          : entry.name;
+      final file = File(p.join(extractDir, relPath));
       await file.create(recursive: true);
       await file.writeAsBytes(entry.content);
     }

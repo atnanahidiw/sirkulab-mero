@@ -49,8 +49,6 @@ flutter:
   assets:
     - assets/data/species_data.zip
     - assets/data/visual_features_embeddings.json
-    - assets/data/visual_features_similarity_v3.json
-    - assets/data/visual_features_similarity_v3.csv
     - assets/models/bge-small-en-v1.5.zip
     - .env
 

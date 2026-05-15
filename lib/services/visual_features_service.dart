@@ -3,12 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 
-// ============================================================================
-// On-device text embedder interface (BGE-small-en-v1.5)
-// ============================================================================
-
 /// Abstract interface for on-device text embedding.
-///
 /// Implementation: convert BGE-small-en-v1.5 → ONNX → `onnxruntime` package.
 abstract class TextEmbedder {
   /// Returns a 384-dim vector for [text] (NOT necessarily unit-norm).
@@ -17,10 +12,6 @@ abstract class TextEmbedder {
   bool get isLoaded;
   Future<void> dispose();
 }
-
-// ============================================================================
-// Lightweight token normalization for biological descriptions
-// ============================================================================
 
 /// Stemmer — "stripes"/"striped"/"stripe" → normalized token.
 String _normalizeToken(String t) {
@@ -43,7 +34,6 @@ Set<String> _tokenize(String text) => text
     .toSet();
 
 /// Dice coefficient ∈ [0, 1].
-///
 /// Dice = 2|A∩B| / (|A| + |B|). Better than Jaccard for short
 /// biological descriptions — less aggressive on low-token-count matches.
 double _tokenOverlap(String a, String b) {
@@ -55,10 +45,6 @@ double _tokenOverlap(String a, String b) {
   if (intersection == 0) return 0.0;
   return (2.0 * intersection) / (ta.length + tb.length);
 }
-
-// ============================================================================
-// Result model
-// ============================================================================
 
 class SimilarSpeciesResult {
   final String scientificName;
@@ -90,10 +76,6 @@ class SimilarSpeciesResult {
   });
 }
 
-// ============================================================================
-// Main service
-// ============================================================================
-
 class VisualFeaturesSearchService {
   static const _vfKeys = [
     'color',
@@ -105,8 +87,6 @@ class VisualFeaturesSearchService {
   ];
 
   static const _taxKeys = ['class', 'order', 'family', 'genus'];
-
-  // --- Weights ---
 
   /// Biologically-informed VF field weights.
   static const _vfWeights = {
@@ -124,15 +104,12 @@ class VisualFeaturesSearchService {
   static const _wToken = 0.20;
   static const _wTaxonomy = 0.25;
 
-  // --- State ---
-
   final TextEmbedder? _embedder;
 
   /// Species metadata (id-indexed).
   List<Map<String, dynamic>>? _speciesList;
 
   /// Pre-normalized combined embeddings (384-dim per species).
-  /// Loaded from binary .bin file.
   Float32List? _embeddings;
   final int _embDim = 384;
 
@@ -144,10 +121,12 @@ class VisualFeaturesSearchService {
   Future<void> load() => _loadFuture ??= _doLoad();
 
   Future<void> _doLoad() async {
-    // Phase 1: metadata from JSON.
+    // Load metadata + concatenated embeddings from JSON.
+    // NOTE: reading from JSON for simplicity. Will be changed to .bin
+    // in the future for faster startup and lower memory footprint.
     try {
       final raw = await rootBundle
-          .loadString('assets/data/visual_features_similarity_v3.json');
+          .loadString('assets/data/visual_features_embeddings.json');
       final data = jsonDecode(raw) as Map<String, dynamic>;
       final list = data['species'];
       _speciesList = (list is List)
@@ -155,61 +134,45 @@ class VisualFeaturesSearchService {
           : [];
       debugPrint(
           'VFS: loaded ${_speciesList!.length} species from JSON metadata');
-    } catch (e) {
-      debugPrint('VFS: failed to load metadata JSON — $e');
-      _speciesList = [];
-    }
 
-    // Phase 2: binary embeddings + normalize.
-    try {
-      final bin = await rootBundle
-          .load('assets/data/visual_features_similarity_v3.bin');
-      final bytes =
-          bin.buffer.asUint8List(bin.offsetInBytes, bin.lengthInBytes);
-      final raw = Float32List.view(
-          bytes.buffer, bytes.offsetInBytes, bytes.lengthInBytes ~/ 4);
+      // Phase 2: build combined embedding (384) by concatenating
+      // embedding_taxonomy (128) + embedding_visual (256), then L2-normalize.
+      // TODO: migrate to loading from a dedicated .bin file (float32 rows).
+      const taxDim = 128;
+      const visDim = 256;
+      final speciesList = _speciesList!;
+      final nSpecies = speciesList.length;
+      _embeddings = Float32List(nSpecies * _embDim);
 
-      // ── guard: verify row packing ──
-      final nSpecies = _speciesList?.length ?? 0;
-      final expected = nSpecies * _embDim;
-      if (raw.length < expected) {
-        debugPrint('VFS: embedding file corrupted — got ${raw.length} floats, expected $expected');
-        _embeddings = null;
-        return;
-      }
-      _embeddings = Float32List(raw.length);
       for (int i = 0; i < nSpecies; i++) {
-        final offset = i * _embDim;
-        double sqSum = 0.0;
-        for (int j = 0; j < _embDim; j++) {
-          final v = raw[offset + j];
-          sqSum += v * v;
+        final tax = speciesList[i]['embedding_taxonomy'] as List<dynamic>?;
+        final vis = speciesList[i]['embedding_visual'] as List<dynamic>?;
+        if (tax == null || tax.length < taxDim ||
+            vis == null || vis.length < visDim) {
+          debugPrint('VFS: species $i missing taxonomy/visual embedding');
+          continue;
         }
-        final norm = math.sqrt(sqSum);
-        if (norm > 0) {
-          for (int j = 0; j < _embDim; j++) {
-            _embeddings![offset + j] = raw[offset + j] / norm;
-          }
-        } else {
-          // Zero vector — leave as-is.
-          for (int j = 0; j < _embDim; j++) {
-            _embeddings![offset + j] = raw[offset + j];
-          }
+        // Build combined vector, normalize via existing helper, then store.
+        final combined = Float32List(_embDim);
+        for (int j = 0; j < taxDim; j++) {
+          combined[j] = (tax[j] as num).toDouble();
         }
+        for (int j = 0; j < visDim; j++) {
+          combined[taxDim + j] = (vis[j] as num).toDouble();
+        }
+        _normalize(combined);
+        _embeddings!.setRange(i * _embDim, i * _embDim + _embDim, combined);
       }
-      final binKb = bin.lengthInBytes ~/ 1024;
+
       debugPrint(
-          'VFS: loaded & normalized $nSpecies x $_embDim = ${raw.length} floats '
-          '($binKb KB)');
+          'VFS: built & normalized $nSpecies x $_embDim combined embeddings '
+          '(taxonomy 128 + visual 256 = 384) from JSON');
     } catch (e) {
-      debugPrint('VFS: failed to load binary embeddings — $e');
+      debugPrint('VFS: failed to load visual_features_embeddings.json — $e');
+      _speciesList = [];
       _embeddings = null;
     }
   }
-
-  // =======================================================================
-  //  Pipeline: 3 independent signals → blended score
-  // =======================================================================
 
   /// Find up to [topK] species similar to the query.
   ///
@@ -218,7 +181,6 @@ class VisualFeaturesSearchService {
   ///   2. **Semantic**: cosine(queryEmb, storedEmb) via dot
   ///   3. **Token**: Dice on VF text (weighted fields)
   ///   4. **Taxonomy**: Dice on taxonomy fields (genus boosted)
-  ///   5. Blend: semantic×0.55 + token×0.20 + taxonomy×0.25
   Future<List<SimilarSpeciesResult>> findSimilarSpecies({
     String queryText = '',
     required String taxClass,
@@ -231,9 +193,35 @@ class VisualFeaturesSearchService {
     final species = _speciesList;
     if (species == null || species.isEmpty) return [];
 
-    // ═══════════════════════════════════════════
+    // Step 0: rebuild query text from structured fields if empty.
+    if (queryText.trim().isEmpty) {
+      final taxParts = <String>[];
+      if (taxClass.isNotEmpty) taxParts.add('class: $taxClass');
+      if (order.isNotEmpty) taxParts.add('order: $order');
+      if (family.isNotEmpty) taxParts.add('family: $family');
+      if (genus.isNotEmpty) taxParts.add('genus: $genus');
+      final taxText = taxParts.join(' | ');
+
+      final visParts = <String>[];
+      for (final key in ['color', 'body_shape', 'distinctive_marks',
+                         'texture', 'size_class', 'pattern']) {
+        final v = visualFeatures[key];
+        if (v != null && v.isNotEmpty) {
+          visParts.add('$key: $v');
+        }
+      }
+      final visText = visParts.join(' | ');
+
+      // Match the weighting used when building stored embeddings:
+      // taxonomy x1 + visual x2 (128 + 256 dims proportion ~0.33 + 0.67).
+      queryText = taxText.isNotEmpty && visText.isNotEmpty
+          ? '$taxText $visText $visText'
+          : taxText.isNotEmpty
+              ? taxText
+              : visText;
+    }
+
     // Step 1: embed query → L2-normalize
-    // ═══════════════════════════════════════════
     Float32List? queryEmb;
     if (_embedder != null &&
         _embedder!.isLoaded &&
@@ -249,9 +237,7 @@ class VisualFeaturesSearchService {
       }
     }
 
-    // ═══════════════════════════════════════════
     // Step 2-4: score all species (3 independent signals)
-    // ═══════════════════════════════════════════
     final scored = <_ScoredSpecies>[];
 
     for (int i = 0; i < species.length; i++) {
@@ -272,6 +258,7 @@ class VisualFeaturesSearchService {
       final taxScore = _taxonomyOverlap(sp, taxClass, order, family, genus);
 
       // ── Blend ──
+      // semantic×0.55 + token×0.20 + taxonomy×0.25
       final blended = semantic * _wSemantic +
           tokenScore * _wToken +
           taxScore * _wTaxonomy;
@@ -287,16 +274,10 @@ class VisualFeaturesSearchService {
       ));
     }
 
-    // ═══════════════════════════════════════════
     // Step 5: sort + return top-K
-    // ═══════════════════════════════════════════
     scored.sort((a, b) => b.score.compareTo(a.score));
     return scored.take(topK).map((e) => e.toResult()).toList();
   }
-
-  // =======================================================================
-  //  Entry points
-  // =======================================================================
 
   /// Text-only query (no structured VF). Falls back to semantic + taxonomy.
   Future<List<SimilarSpeciesResult>> findSimilarByText({
@@ -343,13 +324,9 @@ class VisualFeaturesSearchService {
     return results.map((r) {
       final pct = (r.score * 100).toStringAsFixed(0);
       final vfStr = vfToToolString(r.visualFeatures);
-      return '${r.scientificName} (genus: ${r.genus}) -- $pct% -- $vfStr';
+      return '${r.scientificName} (genus: ${r.genus})  -- $vfStr';
     }).join(' | ');
   }
-
-  // =======================================================================
-  //  Scoring
-  // =======================================================================
 
   /// L2-normalize a vector IN PLACE and return it.
   Float32List _normalize(Float32List v) {
@@ -383,10 +360,7 @@ class VisualFeaturesSearchService {
     return dot; // raw cosine [-1, 1]; both vectors pre-normalized
   }
 
-  // -----------------------------------------------------------------------
   // Taxonomy score (Jaccard, genus boosted)
-  // -----------------------------------------------------------------------
-
   double _taxonomyOverlap(
     Map<String, dynamic> sp,
     String taxClass,
@@ -409,10 +383,7 @@ class VisualFeaturesSearchService {
     return weightSum == 0 ? 0.0 : math.min(total / weightSum, 1.0);
   }
 
-  // -----------------------------------------------------------------------
   // VF token score (biologically weighted fields)
-  // -----------------------------------------------------------------------
-
   double _weightedVisualOverlap(
     Map<String, dynamic> sp,
     Map<String, String> queryVf,
@@ -433,19 +404,11 @@ class VisualFeaturesSearchService {
     return weightSum == 0 ? 0.0 : total / weightSum;
   }
 
-  // -----------------------------------------------------------------------
-  // Utilities
-  // -----------------------------------------------------------------------
-
   Map<String, String> _extractVf(Map<String, dynamic> sp) {
     final raw = sp['visual_features'] as Map<String, dynamic>? ?? {};
     return {for (final k in _vfKeys) k: (raw[k] as String? ?? '')};
   }
 }
-
-// ============================================================================
-// Helpers
-// ============================================================================
 
 String vfToToolString(Map<String, String> vf) {
   const fields = [
@@ -463,10 +426,7 @@ String vfToToolString(Map<String, String> vf) {
   return parts.isEmpty ? 'no visual data' : parts.join(', ');
 }
 
-// ============================================================================
 // Internal data holders
-// ============================================================================
-
 class _ScoredSpecies {
   final int idx;
   final Map<String, dynamic> species;
