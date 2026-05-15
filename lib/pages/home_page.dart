@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:camera/camera.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:provider/provider.dart';
@@ -8,6 +9,7 @@ import '../l10n/app_localizations.dart';
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
 import 'analyzing_page.dart';
+import 'result_page.dart';
 import 'settings_page.dart';
 
 class HomePage extends StatefulWidget {
@@ -22,6 +24,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   late List<CameraDescription> _cameras;
   bool _isCameraReady = false;
   bool _isProcessing = false;
+  bool _shouldCameraBeRunning = true;
 
   @override
   void initState() {
@@ -31,6 +34,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   }
 
   Future<void> _initializeCamera() async {
+    if (!_shouldCameraBeRunning) return;
     final currentContext = context;
 
     try {
@@ -54,11 +58,12 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       _controller = CameraController(
         _cameras[0],
-        ResolutionPreset.medium,
+        ResolutionPreset.veryHigh,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
       await _controller!.initialize();
+      await _controller!.lockCaptureOrientation(DeviceOrientation.portraitUp);
       setState(() {
         _isCameraReady = true;
       });
@@ -206,16 +211,55 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (!currentContext.mounted) return;
 
-      // Navigate to analyzing page
-      Navigator.push(
+      // Set flag to false so lifecycle changes don't restart it
+      _shouldCameraBeRunning = false;
+
+      // Navigate first for a smoother transition
+      final navigationFuture = Navigator.push(
         currentContext,
         AppPageRoute.fadeScale((_) => AnalyzingPage(rawImageBytes: bytes)),
-      ).then((_) {
-        Future.delayed(const Duration(milliseconds: 200), () {
+      );
+
+      // Then turn off camera to free up RAM for the AI process
+      // Giving it a bit more time to ensure the transition is well underway
+      Future.delayed(const Duration(milliseconds: 250), () async {
+        if (_controller != null) {
           if (mounted) {
-            _initializeCamera();
+            setState(() {
+              _isCameraReady = false;
+            });
           }
-        });
+          // Ensure the widget tree has updated before disposal
+          await Future.delayed(const Duration(milliseconds: 100));
+          await _controller?.dispose();
+          _controller = null;
+          debugPrint('Camera disposed after navigation');
+        }
+      });
+
+      // Navigate to analyzing page and WAIT for results
+      final analysisResult = await navigationFuture;
+
+      // If analysis succeeded, navigate to ResultPage and WAIT again
+      if (analysisResult is Map<String, dynamic> && currentContext.mounted) {
+        await Navigator.push(
+          currentContext,
+          AppPageRoute.slideUp(
+            (_) => ResultPage(
+              imageBytes: analysisResult['imageBytes'],
+              analysisResult: analysisResult['analysisResult'],
+              preloadedSpecies: analysisResult['preloadedSpecies'],
+            ),
+          ),
+        );
+      }
+
+      // Only now, re-enable and re-initialize camera
+      _shouldCameraBeRunning = true;
+      Future.delayed(const Duration(milliseconds: 200), () {
+        if (mounted) {
+          _initializeCamera();
+        }
       });
     } catch (e) {
       if (currentContext.mounted) {
@@ -297,7 +341,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         setState(() => _isCameraReady = false);
         break;
       case AppLifecycleState.resumed:
-        _initializeCamera();
+        if (_shouldCameraBeRunning) {
+          _initializeCamera();
+        }
         break;
       case AppLifecycleState.paused:
       case AppLifecycleState.hidden:
