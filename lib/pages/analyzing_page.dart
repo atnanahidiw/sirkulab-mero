@@ -140,10 +140,14 @@ class _AnalyzingPageState extends State<AnalyzingPage>
       preloadedSpecies = await _resolveSpecies(result);
     }
 
+    // ToDo: Parse 'N/A'
+
     if (!mounted) return;
 
     // Small pause so the animation doesn't snap away too abruptly.
     await Future.delayed(const Duration(milliseconds: 100));
+
+    debugPrint('[AnalyzingPage] result: $result\npreloadedSpecies: $preloadedSpecies');
 
     // Return the results to HomePage instead of navigating here.
     // This allows HomePage to keep the camera off during ResultPage.
@@ -232,14 +236,13 @@ class _AnalyzingPageState extends State<AnalyzingPage>
                 child: RepaintBoundary(
                   child: AnimatedBuilder(
                     animation: Listenable.merge(
-                        [_pulseController, _glowController]
+                      [_pulseController, _glowController]
                     ),
                     builder: (context, child) {
                       return Transform.scale(
                         scale: _pulseAnimation.value,
                         child: Container(
-                          margin:
-                              const EdgeInsets.symmetric(horizontal: 32),
+                          margin: const EdgeInsets.symmetric(horizontal: 32),
                           decoration: BoxDecoration(
                             borderRadius: BorderRadius.circular(20),
                             boxShadow: [

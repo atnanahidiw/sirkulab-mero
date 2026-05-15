@@ -33,125 +33,65 @@ String _stripJsonFences(String s) {
 }
 
 /// Attempts to repair malformed JSON from LLM output.
-///
-/// Handles:
-/// - markdown fences
-/// - truncated JSON
-/// - dangling quotes
-/// - trailing commas
-/// - invalid control chars
-/// - garbage after final brace
-/// - simple single-quote JSON
-String _repairJson(String raw) {
+String _sanitizeBrokenJson(String raw) {
   var s = _stripJsonFences(raw);
 
-  if (s.isEmpty) return '{}';
-
-  // Normalize line endings
+  // Normalize line breaks
   s = s.replaceAll('\r\n', '\n');
 
-  // Remove non-printable control chars except newline/tab
-  s = s.replaceAll(
-    RegExp(r'[\x00-\x08\x0B\x0C\x0E-\x1F]'),
-    '',
+  final lines = s.split('\n');
+
+  final buffer = StringBuffer();
+  buffer.writeln('{');
+
+  final keyValue = RegExp(
+    r'"([^"]+)"\s*:\s*(.+?)(,)?\s*$',
   );
 
-  // Remove dangling quote-only lines:
-  //
-  // Example:
-  //   "
-  //   "is_endangered": true
-  //
-  s = s.replaceAll(
-    RegExp(r'^\s*"\s*$\n?', multiLine: true),
-    '',
-  );
+  bool first = true;
 
-  // Simple heuristic:
-  // Convert single-quoted JSON only if no double quotes exist.
-  if (!s.contains('"') && s.contains("'")) {
-    s = s.replaceAll("'", '"');
-  }
+  for (final line in lines) {
+    final trimmed = line.trim();
 
-  // Remove trailing commas before } or ]
-  s = s.replaceAll(
-    RegExp(r',\s*([}\]])'),
-    r'\1',
-  );
+    // Skip empty lines, braces, and broken commas
+    if (trimmed.isEmpty) continue;
+    if (trimmed == '{' || trimmed == '}') continue;
+    if (trimmed == ',' || trimmed == ',,') continue;
 
-  // Trim garbage after final closing brace/bracket
-  final lastBrace = s.lastIndexOf('}');
-  final lastBracket = s.lastIndexOf(']');
-  final cut = [lastBrace, lastBracket]
-      .where((i) => i >= 0)
-      .fold(-1, (a, b) => a > b ? a : b);
+    final match = keyValue.firstMatch(trimmed);
 
-  if (cut >= 0 && cut < s.length - 1) {
-    s = s.substring(0, cut + 1);
-  }
-
-  // Track structure
-  final stack = <String>[];
-
-  var inString = false;
-  var escape = false;
-
-  for (var i = 0; i < s.length; i++) {
-    final ch = s[i];
-
-    if (escape) {
-      escape = false;
+    if (match == null) {
+      // ❌ junk like "," or standalone quotes → drop
       continue;
     }
 
-    if (ch == r'\') {
-      escape = true;
-      continue;
+    final key = match.group(1)!;
+    var value = match.group(2)!.trim();
+
+    // Remove trailing commas safely
+    if (value.endsWith(',')) {
+      value = value.substring(0, value.length - 1).trim();
     }
 
-    if (ch == '"') {
-      inString = !inString;
-      continue;
+    // Ensure valid JSON string values
+    if (!value.startsWith('"') &&
+        !value.startsWith('{') &&
+        !value.startsWith('[') &&
+        value != 'true' &&
+        value != 'false' &&
+        double.tryParse(value) == null) {
+      value = '"$value"';
     }
 
-    if (!inString) {
-      if (ch == '{' || ch == '[') {
-        stack.add(ch);
-      } else if (ch == '}' || ch == ']') {
-        if (stack.isNotEmpty) {
-          stack.removeLast();
-        }
-      }
-    }
+    if (!first) buffer.writeln(',');
+    buffer.write('  "$key": $value');
+    first = false;
   }
 
-  final suffix = StringBuffer();
+  buffer.writeln();
+  buffer.write('}');
 
-  // Close dangling string
-  if (inString) {
-    suffix.write('"');
-  }
-
-  // Close open containers
-  for (final open in stack.reversed) {
-    suffix.write(open == '{' ? '}' : ']');
-  }
-
-  if (suffix.isNotEmpty) {
-    debugPrint(
-      '[_repairJson] Appending recovery suffix: $suffix',
-    );
-
-    s += suffix.toString();
-
-    // Cleanup again
-    s = s.replaceAll(
-      RegExp(r',\s*([}\]])'),
-      r'\1',
-    );
-  }
-
-  return s.trim();
+  return buffer.toString();
 }
 
 /// Returns true when [text] contains a word or short phrase repeated
@@ -1847,19 +1787,20 @@ class ModelService extends ChangeNotifier {
         systemInstruction: ChatPrompts.identifySystemInstruction,
         imageBytes: imageBytes,
         toolSpecs: [searchSpec],
-        temperature: 0.3,
-        topK: 64,
-        topP: 0.85,
+        temperature: 0.6,
+        topK: 100,
+        topP: 0.9,
         onProgress: (phase, progress) {
           debugPrint('Progress: $phase ($progress)');
         },
       );
 
-      // Strip fences then repair common truncation patterns before parsing
-      final repaired = _repairJson(_stripJsonFences(result));
+      // Strip fences then rsanitize common truncation patterns before parsing
+      final repaired = _sanitizeBrokenJson(_stripJsonFences(result));
 
+      Map<String, dynamic> repairedMap;
       try {
-        jsonDecode(repaired);
+        repairedMap = jsonDecode(repaired) as Map<String, dynamic>;
       } catch (_) {
         debugPrint('[identifySpecies] Garbage result detected — rejecting response.');
         throw Exception('Model returned an unparseable response. Please try again.');
@@ -1872,10 +1813,17 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      return result;
+      // Safely read confidence
+      final confidence = repairedMap['confidence']?.toString().toLowerCase();
+
+      // Reject low confidence
+      if (confidence == 'low') {
+        return '{}';
+      }
+
+      return repaired;
     } catch (e) {
-      final errorMessage = 'Identification failed: $e';
-      await _markError(errorMessage, phase: ModelBootPhase.failed);
+      debugPrint('[identifySpecies] Identification failed (model is fine): $e');
       rethrow;
     }
   }
