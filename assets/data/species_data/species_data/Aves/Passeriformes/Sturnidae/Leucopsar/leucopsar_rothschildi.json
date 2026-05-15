@@ -1,0 +1,53 @@
+{
+  "common_name": "Bali Myna",
+  "latin_name": "Leucopsar rothschildi",
+  "kingdom": "Animalia",
+  "class": "Aves",
+  "order": "Passeriformes",
+  "family": "Sturnidae",
+  "genus": "Leucopsar",
+  "visual_features": {
+    "color": "white",
+    "body_shape": "compact and somewhat plump",
+    "distinctive_marks": "prominent bright blue head and face, black markings on wings and tail",
+    "texture": "smooth (feathers)",
+    "size_class": "small to medium",
+    "pattern": "white body with distinct black accents"
+  },
+  "description": "Leucopsar rothschildi, known locally as jalak Bali, is the only endemic vertebrate species on the island of Bali, Indonesia. First described in 1912 by German ornithologist Erwin Stresemann, named in honor of Walter Rothschild. Critically endangered, with fewer than 50 adults in the wild as of 2020. In its natural habitat it is inconspicuous, using tree tops for cover — unlike other starlings, it usually comes to the ground only to drink or find nesting materials. The diet includes fruit, seeds, worms, and insects. Breeds during Bali's rainy season. Males attract females by calling loudly and bobbing up and down. Nests in tree cavities, laying 2-3 eggs. Designated the faunal emblem of Bali in 1991 and featured on the Indonesian 200 rupiah coin.",
+  "conservation_status": "Critically Endangered",
+  "population_estimate": "Fewer than 50 mature adults in the wild as of 2020. About 1,000 believed to survive in captivity. In 2018, only three locations in Bali had wild populations: West Bali National Park, Nusa Penida island, and a release site at Melinggih Kelod, Payangan. Illegal wildlife trade severely impacts the population.",
+  "habitat": "Range restricted to northwest Bali and its offshore islands (Nusa Penida, Nusa Lembongan, Nusa Ceningan) in Indonesia. Inhabits tropical lowland forests, woodlands, and tree savannas. Uses tree tops for cover. Comes to ground only to drink or find nesting materials. Prefers areas with tree cavities for nesting.",
+  "habitat_tags": [
+    "forest",
+    "tropical",
+    "lowland",
+    "woodland",
+    "Bali",
+    "endemic"
+  ],
+  "threats": [
+    "Illegal wildlife trade and poaching for the pet trade (black market demand is double the legal captive trade)",
+    "Illegal trapping for the caged bird trade — the single greatest threat",
+    "Habitat loss and degradation in Bali",
+    "Small population size makes it vulnerable to stochastic events",
+    "Illegal capture despite being listed in CITES Appendix I"
+  ],
+  "ecosystem_role": "Important seed disperser in Bali's lowland forests, eating fruits and spreading seeds. Controls insect populations through insectivorous feeding. Pollination agent through flower visitation. Flagship species for Bali's conservation efforts — protecting it protects entire forest ecosystems.",
+  "human_connection": "Cultural icon of Bali — designated the faunal emblem of Bali in 1991 and featured on the Indonesian 200 rupiah coin. Known locally as jalak Bali. Intensive captive breeding programs exist at Begawan Foundation, with releases supported by local communities using traditional Balinese village regulations (awik-awik) to protect birds. Conservation involves local villages in breeding and release programs. Dr. Jane Goodall participated in releasing Bali mynas in 2014.",
+  "what_students_can_do": [
+    "Never buy a Bali myna as a pet — the black market is driving extinction",
+    "Support ethical ecotourism to Bali that funds conservation programs",
+    "Learn about community-based conservation models like the Balinese awik-awik",
+    "Spread awareness about the illegal wildlife trade crisis in Southeast Asia",
+    "Support organizations like Begawan Foundation that breed and release Bali mynas"
+  ],
+  "fun_fact": [
+    "The Bali myna is Bali's ONLY endemic vertebrate species — it lives nowhere else on Earth!",
+    "It is featured on the Indonesian 200 rupiah coin — a national treasure worth about 1 US cent",
+    "Its Latin name Leucopsar rothschildi means 'Rothschild's white starling' — named after the famous banker and zoologist Walter Rothschild",
+    "Unlike other starlings, this bird rarely lands on the ground — it's adapted to stay in the trees to avoid predators",
+    "Dr. Jane Goodall personally released two Bali mynas into the wild in 2014 in Sibang, Bali"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/22710912/129874226"
+}

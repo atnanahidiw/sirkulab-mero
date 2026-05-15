@@ -1,0 +1,50 @@
+{
+  "common_name": "Pandan",
+  "latin_name": "Pandanus benstoneoides",
+  "kingdom": "Plantae",
+  "class": "Liliopsida",
+  "order": "Pandanales",
+  "family": "Pandanaceae",
+  "genus": "Pandanus",
+  "visual_features": {
+    "color": "various shades of green",
+    "body_shape": "clumping, upright, strap-like leaves",
+    "distinctive_marks": "thick, fleshy leaves, tightly packed developing buds/flowers",
+    "texture": "smooth to slightly ribbed on leaves",
+    "size_class": "medium",
+    "pattern": "dense foliage with prominent vertical leaf structure"
+  },
+  "description": "Pandanus benstoneoides is a species of pandan (screw-pine) endemic to the island of Halmahera in the Moluccas (Maluku Islands), Indonesia. It was described as a new species along with Pandanus halmaherensis in a taxonomic revision of the genus Pandanus on Halmahera by Callmander, Buerki & Phillipson. The scientific publication identified ten Pandanus species on Halmahera, three of which were new to science and not known elsewhere. The Moluccas, together with Sulawesi and the surrounding islands, form the Wallacea biodiversity hotspot - a biogeographic region of exceptional conservation importance lying between Borneo and New Guinea. No formal IUCN Red List assessment has been published for this species. It is categorized as Endangered in this dataset based on its restricted range and ongoing habitat threats in Wallacea.",
+  "conservation_status": "Endangered",
+  "population_estimate": "No formal population estimate exists. The species is known only from Halmahera Island in the Moluccas, Indonesia. As a newly described species (2014-2015) with a highly restricted range, its population is likely very small and fragmented. Deforestation on Halmahera for mining, logging and agricultural expansion poses significant threats to the species. No IUCN Red List assessment has been formally published for this species.",
+  "habitat": "Endemic to Halmahera Island in the Moluccas (Maluku Islands), Indonesia. The species is part of the Wallacea biodiversity hotspot. Specific habitat details for this species are limited in published literature, but Pandanus species in the region typically grow in lowland to montane forests, often in wet or swampy areas, along rivers, and in coastal vegetation. Halmahera features tropical rainforest with significant areas of ultramafic (nickel-rich) soils that support unique plant communities.",
+  "habitat_tags": [
+    "Halmahera endemic",
+    "Wallacea",
+    "Moluccas",
+    "lowland forest",
+    "Indonesia endemic",
+    "pandan"
+  ],
+  "threats": [
+    "Deforestation on Halmahera for mining operations (especially nickel mining on ultramafic soils)",
+    "Logging and agricultural expansion",
+    "Very restricted geographic range making the species vulnerable to stochastic events",
+    "No known ex situ conservation or protection in botanical gardens"
+  ],
+  "ecosystem_role": "As an endemic Pandanus species on Halmahera, this plant contributes to the unique biodiversity of the Wallacea region - a biogeographic transition zone with exceptionally high endemism. Pandanus species provide food and shelter for various animals including birds, bats, insects, and reptiles. Their fruits are dispersed by fruit bats and birds, while their dense root systems help stabilize soil along riverbanks and coastal areas. The species represents part of the understudied plant diversity of eastern Indonesia.",
+  "human_connection": "Pandanus benstoneoides is part of the extraordinary plant diversity of Wallacea, a region named after Alfred Russel Wallace who first identified its unique biogeography. The Moluccas (Spice Islands) have a long history of human exploration and trade, yet many of their endemic plant species remain poorly known. The species' scientific name honors an individual (Benstone) in the Pandanus taxonomic community. Its conservation is tied to protecting Halmahera's forests from nickel mining and other extractive industries that threaten the island's unique biodiversity.",
+  "what_students_can_do": [
+    "Learn about the Wallacea biodiversity hotspot and why it is globally important for conservation",
+    "Understand how species endemism works - species found only on a single island are extremely vulnerable",
+    "Support conservation of Indonesian biodiversity through organizations working in eastern Indonesia",
+    "Study the economic pressures (mining, palm oil) that threaten unique island ecosystems",
+    "Recognize that many newly discovered species are already threatened with extinction"
+  ],
+  "fun_fact": [
+    "Pandanus benstoneoides was only scientifically described in 2014-2015 - it was discovered as part of the first comprehensive survey of Pandanus on Halmahera Island.",
+    "The Moluccas (Maluku Islands) are part of Wallacea - a unique biogeographic zone where Asian and Australian flora and fauna mix, named after Alfred Russel Wallace.",
+    "Pandanus plants produce 'walking' prop roots that help them stabilize in soft, wet soil and even appear to move slightly as new roots grow."
+  ],
+  "population_estimate_source_uri": "https://bioone.org/journals/candollea/volume-70/issue-2/c2015v702a2/The-Genus-Pandanus-Parkinson-Pandanaceae-on-Halmahera-Island-Moluccas-Indonesia/10.15553/c2015v702a2.full"
+}

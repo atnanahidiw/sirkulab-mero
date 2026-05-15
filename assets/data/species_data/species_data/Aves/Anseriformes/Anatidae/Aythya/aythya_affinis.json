@@ -1,0 +1,56 @@
+{
+  "common_name": "Lesser Scaup",
+  "latin_name": "Aythya affinis",
+  "kingdom": "Animalia",
+  "class": "Aves",
+  "order": "Anseriformes",
+  "family": "Anatidae",
+  "genus": "Aythya",
+  "visual_features": {
+    "color": "black, white",
+    "body_shape": "streamlined, torpedo-like",
+    "distinctive_marks": "bright yellow eye, white patch on the chest and belly",
+    "texture": "smooth (feathers) with wet sheen",
+    "size_class": "medium",
+    "pattern": "solid dark coloration"
+  },
+  "description": "Lesser scaup are highly social diving ducks with fascinating life histories and behaviors. They breed in the interior boreal forests and parklands of Alaska and Canada, extending into the northern United States. These birds are known for being one of the latest nesting ducks in North America, with nesting activity peaking in June. This timing allows them to take advantage of increasing amphipod prey abundance later in the season. They form monogamous pairs during late spring migration, though mate-switching is common and forced extra-pair copulations occur frequently. Their reproductive strategy is flexible, allowing them to maximize success when resources vary temporally. After breeding, males abandon females during incubation, and females raise the precocial ducklings that can feed themselves shortly after hatching.",
+  "conservation_status": "Least Concern",
+  "population_estimate": "Historically one of the most abundant diving ducks in North America with average breeding population estimates around 5.5 million, though winter populations have declined by about half since the 1960s. Current populations are below North American Waterfowl Management Plan targets.",
+  "habitat": "Lesser scaup rely on wetland habitats throughout their annual cycle. During breeding, they prefer semi-permanent or seasonal wetlands with emergent vegetation like cattails and bulrushes, or submergent vegetation like pondweed, water milfoil, hornwort, and muskgrass. They are most abundant in ponds with high amphipod abundance and intact wetland margins. These ducks use freshwater or slightly brackish wetland areas including ponds, lakes, river impoundments, and coastal bays. During winter, they migrate to the Pacific coastal states, southern states including Florida, the Atlantic coast to Massachusetts, the southern Great Lakes region, Mexico, Central America, the Antilles, and even the Hawaiian Islands.",
+  "threats": [
+    "Hunting pressure during migration",
+    "Habitat degradation and wetland destruction",
+    "Pollution including high selenium levels in some regions",
+    "Nutrient stress affecting female body condition and reproductive success",
+    "Predation on eggs, ducklings, and adults by various birds and mammals",
+    "Climate change affecting wetland habitats and migration patterns",
+    "Disease susceptibility including avian influenza, cholera, botulism, and aspergillosis",
+    "Parasite infestations including gizzard worms and various blood parasites"
+  ],
+  "ecosystem_role": "Lesser scaup play important roles as predators of aquatic invertebrates in northern boreal lakes, helping control populations of amphipods, midges, leeches, mollusks, and other invertebrates. They serve as prey for numerous predators including bald eagles, great horned owls, peregrine falcons, snapping turtles, and various mammalian predators. Their diving activities contribute to nutrient cycling and water oxygenation in wetland systems. They also participate in complex ecological relationships as both hosts and parasites for various duck species through nest parasitism. Additionally, they serve as indicators of wetland health due to their sensitivity to environmental changes and pollution.",
+  "human_connection": "Lesser scaup are highly valued by waterfowl hunters and are an important game species in North America. They contribute to local economies through hunting activities and associated tourism. Their presence in wetlands makes them important species for birdwatching and ecotourism. Scientifically, they serve as model organisms for studying waterfowl ecology, behavior, and wetland ecosystem dynamics. They also face conflicts with human activities through hunting pressure and habitat loss, requiring careful management to balance conservation with sustainable use. Their decline in some regions has raised awareness about the importance of wetland conservation.",
+  "what_students_can_do": [
+    "Support wetland conservation and restoration projects",
+    "Participate in citizen science projects tracking waterfowl populations",
+    "Learn about sustainable hunting practices and conservation efforts",
+    "Reduce pollution that affects aquatic ecosystems",
+    "Support organizations working on waterfowl habitat protection"
+  ],
+  "fun_fact": [
+    "Lesser scaup are one of the latest nesting ducks in North America, timing their breeding to coincide with peak abundance of amphipod prey later in the season",
+    "They form massive flocks during winter and migration, with reports of flocks as large as 500,000 individuals creating spectacular aerial displays",
+    "Male lesser scaup have distinctive deep yellow irises, while females have brownish irises, making them one of the few duck species where eye color reliably distinguishes the sexes",
+    "These ducks have a complex system of nest parasitism, both parasitizing other ducks' nests and having their nests parasitized by numerous species including redheads, canvasbacks, and ruddy ducks",
+    "Lesser scaup are difficult to distinguish from greater scaup at a distance, requiring careful observation of subtle differences in head shape and bill color for accurate identification"
+  ],
+  "population_estimate_source_uri": "https://animaldiversity.org/accounts/Aythya_affinis/",
+  "habitat_tags": [
+    "freshwater",
+    "wetland",
+    "temperate",
+    "lake",
+    "boreal",
+    "north_america"
+  ]
+}

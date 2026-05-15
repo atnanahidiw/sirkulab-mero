@@ -1,0 +1,51 @@
+{
+  "common_name": "Leathery Viburnum",
+  "latin_name": "Viburnum coriaceum",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Dipsacales",
+  "family": "Viburnaceae",
+  "genus": "Viburnum",
+  "visual_features": {
+    "color": "Green to brownish-green",
+    "body_shape": "Branching, somewhat elongated leaves",
+    "distinctive_marks": "some small white or light-colored specks visible on the leaves",
+    "texture": "leathery/smooth (inferred from leaf appearance)",
+    "size_class": "medium",
+    "pattern": "dense, varied leaf arrangement"
+  },
+  "description": "Viburnum coriaceum, commonly known as Leathery Viburnum or Ghode khari, is an evergreen shrub in the family Viburnaceae. It is native to the temperate biome of South Asia, found in Bangladesh, Bhutan, India, Myanmar, and Nepal. It typically grows at the margins of shola forests in mountainous regions. The leathery texture of its leaves gives the species its scientific name. Listed as Endangered on the IUCN Red List, it faces significant threats from deforestation and habitat loss across its range.",
+  "conservation_status": "Endangered",
+  "population_estimate": "Endangered (IUCN). Decreasing population trend. Threatened by deforestation and habitat loss across its range in the Himalayan and South Asian regions.",
+  "habitat": "Native to Bangladesh, Bhutan, India, Myanmar, and Nepal. Found in temperate biomes, typically at the margins of shola forests (montane evergreen forests) and in subtropical mountain regions.",
+  "habitat_tags": [
+    "shola forest",
+    "temperate forest",
+    "montane forest",
+    "subtropical mountain",
+    "forest margin"
+  ],
+  "threats": [
+    "Deforestation and habitat conversion for agriculture",
+    "Climate change affecting montane forest ecosystems",
+    "Loss of shola forest habitat in the Western Ghats and Himalayas",
+    "Fragmentation of remaining populations",
+    "Land clearing for development"
+  ],
+  "ecosystem_role": "As a native understory shrub, it provides food (berries) and shelter for birds and small mammals. Its white flowers support local pollinators including bees and butterflies. It contributes to forest biodiversity as part of the understory vegetation in shola and temperate forest ecosystems.",
+  "human_connection": "This shrub plays a role in maintaining healthy forest ecosystems in the Himalayan and South Asian regions, which provide critical water resources and ecosystem services for local communities. Its bright red berries and white flowers make it a visually appealing native species. The decline of shola forests affects the entire ecosystem, including this species.",
+  "what_students_can_do": [
+    "Learn about the importance of shola forest ecosystems in South Asia",
+    "Support reforestation and forest conservation efforts in the Himalayas",
+    "Study and document native plant species in local forests",
+    "Participate in citizen science projects tracking plant populations",
+    "Spread awareness about endangered plant species and forest protection"
+  ],
+  "fun_fact": [
+    "The species name 'coriaceum' comes from Latin meaning 'leathery', referring to its thick, leathery leaves that retain moisture.",
+    "Its small red berry-like fruits (drupes) turn bright red when fully ripe and are attractive to birds.",
+    "It belongs to the Viburnaceae family, which includes many popular ornamental garden shrubs grown for their flowers and colorful fruits.",
+    "It is also known as 'Ghode khari' in the local languages of the Himalayan region."
+  ],
+  "population_estimate_source_uri": "https://lml-database.icimod.org/detail/viburnum-coriaceum"
+}

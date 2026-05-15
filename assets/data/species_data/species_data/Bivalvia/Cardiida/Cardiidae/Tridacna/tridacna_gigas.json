@@ -1,0 +1,52 @@
+{
+  "common_name": "Giant Clam",
+  "latin_name": "Tridacna gigas",
+  "kingdom": "Animalia",
+  "class": "Bivalvia",
+  "order": "Cardiida",
+  "family": "Cardiidae",
+  "genus": "Tridacna",
+  "visual_features": {
+    "color": "dark brown, black, with patches of greenish-blue and yellow",
+    "body_shape": "irregular, lobed, and somewhat amorphous",
+    "distinctive_marks": "wavy, ruffled edges, bumpy surface",
+    "texture": "bumpy and fleshy",
+    "size_class": "medium",
+    "pattern": "Irregular, mottled, and speckled"
+  },
+  "description": "Tridacna gigas, the giant clam, is the best-known species of the giant clam genus Tridacna. Native to the shallow coral reefs of the South Pacific and Indian Oceans, it also occurs in the Philippines, South China Sea, Malaysia, and the Great Barrier Reef. It has an obligate symbiotic relationship with zooxanthellae (single-celled algae) that provide 65-70% of its nutrition through photosynthesis. It is hermaphroditic, reproducing through broadcast spawning and releasing over 500 million eggs at a time. Its average lifespan in the wild exceeds 100 years. Larvae are planktonic, becoming sessile as adults. In 2024, the IUCN reassessed it from Vulnerable to Critically Endangered due to dramatic population declines.",
+  "conservation_status": "Critically Endangered",
+  "population_estimate": "Critically Endangered (IUCN 2024). Population has plunged by more than 80% in recent decades due to overexploitation. Extinct in many areas where once common. NOAA Fisheries proposes listing it as Endangered under the U.S. Endangered Species Act (2024). Listed on CITES Appendix II.",
+  "habitat": "Found in shallow coral reefs throughout the Tropical Indo-Pacific region, from the South China Seas in the north to the northern coasts of Australia, and from the Nicobar Islands in the west to Fiji in the east. It lives in flat coral sand or broken coral at depths of up to 20 m (66 ft). It is most common in shallow lagoons and reef flats, typically embedded in sandy substrates or coral rubble.",
+  "habitat_tags": [
+    "coral reef",
+    "lagoon",
+    "shallow marine",
+    "tropical reef flat"
+  ],
+  "threats": [
+    "Overexploitation for meat and shells (adductor muscle considered a delicacy)",
+    "Illegal harvesting for the aquarium trade",
+    "Ocean acidification affecting shell formation",
+    "Coral reef habitat destruction",
+    "Climate change impacting symbiotic algae",
+    "Past and ongoing harvest has driven population collapse"
+  ],
+  "ecosystem_role": "Filter feeder that cleans surrounding water by removing plankton. Provides shelter for small marine organisms within its mantle cavity. Its calcium carbonate shells contribute to reef structure and complexity. Hosts symbiotic zooxanthellae algae, functioning as a natural bioreactor. Its iridescent cells (iridocytes) channel sunlight to algae with ~67% photon-to-electron conversion efficiency - among the most efficient natural solar-energy harvesting systems known.",
+  "human_connection": "Giant clams have been known to indigenous peoples of East Asia for thousands of years, documented by Venetian explorer Antonio Pigafetta in 1521. The adductor muscle is considered a delicacy. Their shells are highly valued for decoration. They are major tourist attractions on coral reefs. Overharvesting for food and shells has caused population collapse, and their decline signals broader coral reef degradation.",
+  "what_students_can_do": [
+    "Learn about the importance of coral reef conservation and giant clams as keystone species",
+    "Support sustainable seafood choices and avoid consuming giant clam products",
+    "Never buy or collect giant clam shells for decoration",
+    "Participate in marine conservation programs and reef monitoring",
+    "Spread awareness that giant clams are now Critically Endangered"
+  ],
+  "fun_fact": [
+    "The largest known giant clam weighed 340 kg (750 lb) alive - found in 1956 off Ishigaki Island, Japan.",
+    "Giant clams have hundreds of tiny eyespots on their mantle that can detect changing light, movement, and even UV light - unique among molluscs.",
+    "They are among the most efficient natural solar-energy harvesting systems known, achieving about 67% energy conversion efficiency.",
+    "A single adult T. gigas can release more than 500 million eggs at one time during spawning.",
+    "They can live for more than 100 years in the wild."
+  ],
+  "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Giant_clam"
+}

@@ -1,0 +1,55 @@
+{
+  "common_name": "Bornean Orangutan",
+  "latin_name": "Pongo pygmaeus",
+  "kingdom": "Animalia",
+  "class": "Mammalia",
+  "order": "Primates",
+  "family": "Hominidae",
+  "genus": "Pongo",
+  "visual_features": {
+    "color": "dark brown to black",
+    "body_shape": "slender and muscular",
+    "distinctive_marks": "dark facial features, prominent arms",
+    "texture": "shaggy and coarse fur",
+    "size_class": "medium",
+    "pattern": "solid dark coloration"
+  },
+  "description": "The Bornean orangutan (Pongo pygmaeus) is an orangutan species endemic to the island of Borneo. It is the largest of the three Pongo species and belongs to the only genus of great apes native to Asia. There are three subspecies: the northwest Bornean orangutan (P. p. pygmaeus), the central Bornean orangutan (P. p. wurmbii), and the northeast Bornean orangutan (P. p. morio). Highly intelligent, displaying tool use and distinct cultural patterns. They have exceptionally slow metabolisms relative to their large body size, allowing them to store fat during food scarcity periods. The name 'orangutan' comes from Malay meaning 'person of the forest.' The species name pygmaeus derives from the Greek word for 'dwarf.'",
+  "conservation_status": "Critically Endangered (IUCN 3.1)",
+  "population_estimate": "55,000–104,700 individuals remaining in the wild, representing a decline from an estimated 288,500 individuals in 1973 — a loss of over 50% of the historic population in only 40 years",
+  "habitat": "Borneo lowland rain forests and Borneo montane rain forests up to an elevation of 1,500 m (4,900 ft). Inhabits primary and secondary tropical rainforests, swamp forests, and mangrove forests. Found across the island of Borneo in Indonesia (largest population), Malaysia (Sabah and Sarawak), and Brunei. They spend more than 90% of their time in trees, being the largest truly arboreal mammal.",
+  "habitat_tags": [
+    "tropical rainforest",
+    "lowland forest",
+    "montane forest",
+    "swamp forest",
+    "mangrove",
+    "arboreal",
+    "Borneo"
+  ],
+  "threats": [
+    "Deforestation for palm oil plantations",
+    "Illegal logging",
+    "Hunting for bushmeat and pet trade",
+    "Forest fires",
+    "Human-wildlife conflict",
+    "Climate change affecting fruit availability"
+  ],
+  "ecosystem_role": "Bornean orangutans are 'gardeners of the forest' playing a crucial role in seed dispersal. They consume 400–500 different types of food and spread seeds throughout the forest as they move, maintaining plant diversity and forest health. Their geophagy behavior (eating soil) helps distribute minerals and combat toxins in the ecosystem. As frugivores, they are key seed dispersers for many rainforest tree species with large seeds.",
+  "human_connection": "Orangutans share approximately 97% of their DNA with humans and are one of our closest living relatives. The name 'orangutan' means 'person of the forest' in Indonesian and Malay languages. They have been subjects of extensive research on intelligence, tool use, and culture. Their declining numbers due to palm oil expansion has made them a flagship species for the 'sustainable palm oil' movement globally.",
+  "what_students_can_do": [
+    "Choose RSPO-certified sustainable palm oil products",
+    "Support Bornean rainforest conservation organizations",
+    "Study orangutan tool use and cognitive abilities",
+    "Raise awareness about deforestation and palm oil impacts",
+    "Participate in citizen science projects tracking orangutan populations"
+  ],
+  "fun_fact": [
+    "Bornean orangutans build elaborate new nests in the treetops every single night — they never reuse a nest",
+    "They are about seven times stronger than a human, with arm spans reaching 1.5 meters",
+    "Orangutans intentionally eat soil and small rocks (geophagy) to obtain minerals and neutralize toxins from their diet",
+    "They have been observed using large leaves as umbrellas during tropical rainstorms",
+    "Males have throat sacs that allow their loud calls to carry up to 1 km (0.6 miles) through dense forest"
+  ],
+  "population_estimate_source_uri": "https://en.wikipedia.org/wiki/Bornean_orangutan"
+}

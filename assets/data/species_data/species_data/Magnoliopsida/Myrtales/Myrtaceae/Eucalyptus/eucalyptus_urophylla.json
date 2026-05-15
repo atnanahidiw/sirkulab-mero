@@ -1,0 +1,53 @@
+{
+  "common_name": "Ampupu",
+  "latin_name": "Eucalyptus urophylla",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Myrtales",
+  "family": "Myrtaceae",
+  "genus": "Eucalyptus",
+  "visual_features": {
+    "color": "green, brown, tan",
+    "body_shape": "mountainous/rocky terrain with dense shrubbery",
+    "distinctive_marks": "steep cliff face, patches of lighter green vegetation",
+    "texture": "Rough, leafy",
+    "size_class": "Small to medium shrubs/trees",
+    "pattern": "Dense, irregular canopy"
+  },
+  "description": "Eucalyptus urophylla, commonly known as Timor white gum, Timor mountain gum, popo or ampupu, is a species of eucalypt native to the Lesser Sunda Islands of Indonesia (Timor, Alor, Wetar, Flores, Adonara, Lembata, Pantar). It is the floral emblem of East Timor. First described in 1977 by botanist Stanley Thatcher Blake. It has the largest altitudinal range of any eucalypt, from sea level up to approximately 3,000 m. Widely planted as a plantation timber tree in Brazil, China, Vietnam, Congo, and elsewhere. The specific epithet 'urophylla' means 'with leaves having an elongated tail-like tip'.",
+  "conservation_status": "Endangered",
+  "population_estimate": "Natural populations are severely fragmented and declining throughout its native range on seven islands in the Lesser Sunda archipelago. Exact population numbers are not documented but wild populations are considered critically low due to habitat loss. Over 200,000 hectares of plantations exist in Vietnam alone.",
+  "habitat": "Native to monsoonal areas of the Lesser Sunda Islands with 2-8 dry months per year. Dominates in open, often secondary montane forests on mountain slopes and valleys. Found on volcanic soils derived from basalt, schist and slate, rarely on limestone. Elevation range from sea level to 3,000 m. Prefers damp, well-aerated nutrient-poor soils.",
+  "habitat_tags": [
+    "tropical",
+    "montane_forest",
+    "secondary_forest",
+    "monsoonal",
+    "volcanic_soil"
+  ],
+  "threats": [
+    "Habitat loss due to deforestation and land conversion across native range",
+    "Small, fragmented populations limiting genetic diversity",
+    "Hybridization with plantation cultivars and other Eucalyptus species",
+    "Climate change affecting montane ecosystems",
+    "Recognized as invasive weed where introduced (e.g. Brazil)",
+    "Forest fires and agricultural expansion"
+  ],
+  "ecosystem_role": "Plays an important role in watershed management and soil conservation in montane ecosystems. Its extensive root system helps prevent erosion on mountain slopes. Often forms the dominant canopy species in secondary montane forests, providing habitat for various bird and insect species. Contributes to nutrient cycling through leaf litter. Its flowers provide nectar resources for pollinators.",
+  "human_connection": "The tree is economically important for timber production (heavy construction, furniture, flooring, pulp, charcoal, fiberboard). It is the floral emblem of East Timor. Widely cultivated in plantation forestry globally as a fast-growing hardwood. Used for reforestation in its native range. 'Lyptus' is a popular hybrid timber from crossing E. urophylla with E. grandis.",
+  "what_students_can_do": [
+    "Support sustainable forestry practices and responsible timber sourcing",
+    "Participate in native tree planting initiatives in degraded areas",
+    "Learn to distinguish native Eucalyptus species from plantation hybrids",
+    "Educate others about the importance of conserving native tree species",
+    "Support protected areas that conserve remaining natural populations"
+  ],
+  "fun_fact": [
+    "Eucalyptus urophylla is the parent species of 'Lyptus' timber, a hybrid with Eucalyptus grandis popular worldwide for furniture and flooring",
+    "It has the largest altitudinal range of any eucalypt — from sea level to 3,000 m",
+    "The tree flowers after only 2-3 years during the dry season and has excellent coppicing ability",
+    "The scientific name 'urophylla' comes from Greek 'uro-' (tail) and '-phyllus' (leaved) referring to leaves with elongated tail-like tips",
+    "First described as recently as 1977 by botanist Stanley Thatcher Blake"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/133377485/133377487"
+}

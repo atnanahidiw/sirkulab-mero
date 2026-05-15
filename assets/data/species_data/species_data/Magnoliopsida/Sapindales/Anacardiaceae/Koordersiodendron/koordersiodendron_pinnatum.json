@@ -1,0 +1,52 @@
+{
+  "common_name": "Amugis",
+  "latin_name": "Koordersiodendron pinnatum",
+  "kingdom": "Plantae",
+  "class": "Magnoliopsida",
+  "order": "Sapindales",
+  "family": "Anacardiaceae",
+  "genus": "Koordersiodendron",
+  "visual_features": {
+    "color": "Green",
+    "body_shape": "bushy/dense foliage",
+    "distinctive_marks": "Leaves are deeply lobed or compound, fruits are small and dark",
+    "texture": "smooth (leaves) with a slightly glossy appearance",
+    "size_class": "small to medium shrub/groundcover",
+    "pattern": "dense, overlapping foliage"
+  },
+  "description": "Koordersiodendron pinnatum, known locally as amugis (Philippines) or ranggu (elsewhere), is a species of tree in the cashew family (Anacardiaceae). It is the sole species in the genus Koordersiodendron. Widely distributed throughout the Philippines, northern Borneo, Sulawesi, the Moluccas, and northern Irian Jaya. The fruit is edible and reportedly tastes sweet. The exudates (gum) are used in local medicine. Studies show the leaves, bark, and exudates may have anticancer, antioxidant, and antibacterial properties. The wood is moderately durable, heavy, dark red, with uniform color excellent for furniture, flooring, and general construction.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Assessed as Vulnerable (VU) under IUCN criteria A2cd (last assessed 2023). Widely distributed but nowhere abundant. Found in scattered locations in lowland forests. Population decreasing due to deforestation.",
+  "habitat": "Found in humid evergreen lowland forest. In the Philippines, occurs mainly on fringes of lowland forest from near sea level up to 450(-800) meters altitude. Found in undisturbed forests up to 800 m, usually below 500 m. Also present in secondary forests as pre-disturbance remnant. Distributed across Philippines (most islands and provinces), Borneo (including Sabah), Sulawesi, Moluccas, and New Guinea.",
+  "habitat_tags": [
+    "forest",
+    "lowland",
+    "tropical",
+    "evergreen",
+    "rainforest",
+    "Southeast Asia"
+  ],
+  "threats": [
+    "Deforestation and habitat conversion for agriculture and development",
+    "Overexploitation for its high-quality timber",
+    "Low population density makes it vulnerable to local extinction",
+    "Climate change affecting flowering and fruiting patterns"
+  ],
+  "ecosystem_role": "Produces oxygen and sequesters carbon as a large canopy tree. Provides food (edible fruits) for wildlife. Stabilizes soil with extensive root system. Regulates water cycles. Provides shade and habitat for birds, insects, and epiphytes. The flowers attract pollinators including bees.",
+  "human_connection": "Wood is highly valued for furniture, flooring, cabinet-making, and construction due to its durability, heaviness, and uniform dark red color. Bark and exudates used in traditional medicine with studies showing anticancer, antioxidant, and antibacterial properties. Fruit is edible and sweet. Used in urban greening as a fast-growing shade tree. An important native tree species in Philippine reforestation programs.",
+  "what_students_can_do": [
+    "Plant native trees like amugis in school or community reforestation projects",
+    "Learn about sustainable forestry vs. illegal logging",
+    "Support forest conservation efforts in the Philippines and Southeast Asia",
+    "Research the medicinal properties of native trees",
+    "Avoid buying furniture made from illegally logged tropical hardwood"
+  ],
+  "fun_fact": [
+    "This tree is the only species in its entire genus (Koordersiodendron) — it's truly one of a kind!",
+    "It is related to the cashew tree — so technically its fruits are in the same family as cashew nuts and mangoes",
+    "The fruit is edible and sweet, but despite being related to cashews, it's not commonly cultivated",
+    "Its uniform dark red wood is so prized that trees are selectively harvested, contributing to its vulnerable status",
+    "The bright red leaf veins make the leaves quite distinctive and beautiful even from a distance"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/61957221/61957223"
+}

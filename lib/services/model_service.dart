@@ -13,10 +13,71 @@ import 'species_service.dart';
 import '../models/chat_prompts.dart';
 import '../models/model_spec.dart';
 
-/// Strip markdown code fences (```json ... ```) around model JSON output.
-String _stripJsonFences(String raw) {
-  final match = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```').firstMatch(raw);
-  return match?.group(1)?.trim() ?? raw.trim();
+/// Strips ```json / ``` fences from a model response.
+String _stripJsonFences(String s) {
+  var t = s.trim();
+  if (t.startsWith('```')) {
+    t = t.replaceFirst(RegExp(r'^```(?:json)?\s*'), '');
+    t = t.replaceFirst(RegExp(r'\s*```$'), '');
+  }
+  return t.trim();
+}
+
+/// Attempts to repair a JSON string that may be:
+///   • wrapped in fences          → stripped
+///   • truncated mid-value        → open string closed, braces/brackets balanced
+///   • trailing comma before }    → comma removed
+///   • single-quoted keys/values  → converted to double-quoted
+String _repairJson(String raw) {
+  var s = _stripJsonFences(raw);
+  if (s.isEmpty) return '{}';
+
+  // 1. Single → double quotes (simple heuristic, avoids regex for speed)
+  if (!s.contains('"') && s.contains("'")) {
+    s = s.replaceAll("'", '"');
+  }
+
+  // 2. Remove trailing commas before } or ]
+  s = s.replaceAll(RegExp(r',\s*([}\]])'), r'\1');
+
+  // 3. Detect and repair truncation
+  final openStack = <String>[];   // '{' or '['
+  var inString = false;
+  var escape   = false;
+
+  for (var i = 0; i < s.length; i++) {
+    final ch = s[i];
+    if (escape) { escape = false; continue; }
+    if (ch == r'\') { escape = true; continue; }
+
+    if (ch == '"') {
+      inString = !inString;
+    } else if (!inString) {
+      if (ch == '{' || ch == '[') {
+        openStack.add(ch);
+      } else if (ch == '}' || ch == ']') {
+        if (openStack.isNotEmpty) openStack.removeLast();
+      }
+    }
+  }
+
+  // If we ended inside a string, close it first
+  final suffix = StringBuffer();
+  if (inString) suffix.write('"');
+
+  // Close any unclosed braces/brackets in reverse order
+  for (final open in openStack.reversed) {
+    suffix.write(open == '{' ? '}' : ']');
+  }
+
+  if (suffix.isNotEmpty) {
+    debugPrint('[_repairJson] Truncated JSON detected — appending: $suffix');
+    s = s + suffix.toString();
+    // Re-run trailing-comma cleanup after we closed things
+    s = s.replaceAll(RegExp(r',\s*([}\]])'), r'\1');
+  }
+
+  return s;
 }
 
 /// Returns true when [text] contains a word or short phrase repeated
@@ -1300,11 +1361,11 @@ class ModelService extends ChangeNotifier {
     }
 
     try {
-      await _speciesService.loadGenusDb();
+      await _speciesService.preloadAll();
       _speciesLoaded = true;
       debugPrint('Loaded species genus database');
     } catch (e) {
-      debugPrint('Failed to load species data: $e');
+      debugPrint('Failed to load species DB: $e');
     }
   }
 
@@ -1667,12 +1728,31 @@ class ModelService extends ChangeNotifier {
         description: ChatPrompts.speciesSearchToolDef['description'] as String,
         parameters: ChatPrompts.speciesSearchToolDef['parameters']
             as Map<String, dynamic>,
-        execute: (args) => _speciesService.searchSpeciesByTaxonomy(
-          args['class'] as String? ?? '',
-          args['order'] as String? ?? '',
-          args['family'] as String? ?? '',
-          args['genus'] as String? ?? '',
-        ),
+        execute: (args) async {
+          final results = await _speciesService.searchSimilarByFeatures(
+            color: args['color'] as String? ?? '',
+            bodyShape: args['body_shape'] as String? ?? '',
+            distinctiveMarks: args['distinctive_marks'] as String? ?? '',
+            texture: args['texture'] as String? ?? '',
+            sizeClass: args['size_class'] as String? ?? '',
+            pattern: args['pattern'] as String? ?? '',
+            taxClass: args['taxClass'] as String? ?? '',
+            taxOrder: args['taxOrder'] as String? ?? '',
+            taxFamily: args['taxFamily'] as String? ?? '',
+            taxGenus: args['taxGenus'] as String? ?? '',
+            topK: 5,
+          );
+          if (results.isEmpty) {
+            return 'No matching endangered species found. Try different traits.';
+          }
+          return results
+              .map((r) =>
+                  '${r.detail.scientificName} (${r.detail.commonName}) -- '
+                  'score: ${r.score.toStringAsFixed(1)}, '
+                  'confidence: ${r.confidence.toStringAsFixed(0)}% -- '
+                  '${r.detail.visualFeatures}')
+              .join(' | ');
+        },
         subsequentPrompt: Message.text(
           text: ChatPrompts.identifySynthesisPrompt,
           isUser: true,
@@ -1701,11 +1781,11 @@ class ModelService extends ChangeNotifier {
         },
       );
 
-      // Strip markdown code fences (```json ... ```) before parsing
-      final cleaned = _stripJsonFences(result);
+      // Strip fences then repair common truncation patterns before parsing
+      final repaired = _repairJson(_stripJsonFences(result));
 
       try {
-        jsonDecode(cleaned);
+        jsonDecode(repaired);
       } catch (_) {
         debugPrint('[identifySpecies] Garbage result detected — rejecting response.');
         throw Exception('Model returned an unparseable response. Please try again.');

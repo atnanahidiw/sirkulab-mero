@@ -1,0 +1,54 @@
+{
+  "common_name": "Staghorn Coral",
+  "latin_name": "Isopora palifera",
+  "kingdom": "Animalia",
+  "class": "Anthozoa",
+  "order": "Scleractinia",
+  "family": "Acroporidae",
+  "genus": "Isopora",
+  "visual_features": {
+    "color": "brown, reddish-brown, orange",
+    "body_shape": "branching, bushy, irregular",
+    "distinctive_marks": "numerous small, finger-like projections or tentacles",
+    "texture": "Porous, bumpy, rough",
+    "size_class": "medium (as a reef structure)",
+    "pattern": "dense, clustered branching"
+  },
+  "description": "Isopora palifera is a species of stony coral in the family Acroporidae, first described by Jean-Baptiste Lamarck in 1816. It is a vigorous and aggressive reef-building coral — where it contacts other corals, it will overgrow and kill their tissues. Has a porous, fragile structure easily damaged by storms, but detached pieces can re-establish in suitable locations. Hosts symbiotic dinoflagellates (Symbiodinium phylotypes C and D) that provide nutrients through photosynthesis. Susceptible to black band disease and white band disease. Closely resembles Isopora cuneata. First appears in the fossil record in Papua New Guinea from the Pliocene era.",
+  "conservation_status": "Endangered",
+  "population_estimate": "No specific global population count available. Listed as Near Threatened on the IUCN Red List (2014 assessment). It is the commonest coral species in the northern Great Barrier Reef. Overall population trend is decreasing due to climate change and ocean acidification.",
+  "habitat": "Found across the Indo-Pacific Ocean: from South Africa and Madagascar to East Africa, Aldabra, Chagos, India, China, Japan, Indonesia, and Australia. Commonest coral in the northern Great Barrier Reef. Occurs subtidally on reef flats, edges, walls, and slopes in shallow water. Found in varying water conditions from strong currents to calm, still conditions.",
+  "habitat_tags": [
+    "marine",
+    "coral reef",
+    "tropical",
+    "subtidal",
+    "reef flat",
+    "reef slope",
+    "Indo-Pacific"
+  ],
+  "threats": [
+    "Coral bleaching from rising sea temperatures (zooxanthellae expelled, leading to death)",
+    "Ocean acidification reducing calcification rates",
+    "Black band disease and white band disease",
+    "Storm damage due to fragile porous structure",
+    "Destructive fishing practices"
+  ],
+  "ecosystem_role": "Reef-building coral that creates structural habitat for thousands of marine species. Hosts symbiotic zooxanthellae that photosynthesize and provide organic compounds. Aggressive overgrower that outcompetes other corals for space. Forms part of the foundation of coral reef ecosystems, among the most biodiverse on Earth.",
+  "human_connection": "Builds the reef structures that protect coastlines from storm surge and erosion. Coral reefs support fisheries that feed millions of people worldwide. Listed in CITES Appendix II, regulating international trade. Studied for understanding coral bleaching and climate change impacts. Her beauty and diversity draw tourism to reef destinations.",
+  "what_students_can_do": [
+    "Reduce carbon footprint to help slow ocean warming and acidification",
+    "Avoid buying coral souvenirs or jewelry",
+    "Use reef-safe sunscreen when swimming near coral reefs",
+    "Support marine protected areas that safeguard coral reefs",
+    "Participate in beach cleanups to reduce pollution entering oceans"
+  ],
+  "fun_fact": [
+    "This coral can change its entire growth form depending on water conditions — from flat encrusting in strong currents to branching in calm waters!",
+    "It gets its color from tiny algae (zooxanthellae) that live inside its tissues and photosynthesize — a built-in solar food factory",
+    "It is aggressively competitive: when it touches other corals, it simply grows over and kills them",
+    "If broken by a storm, detached pieces can re-attach and start growing again in a new location",
+    "It has fluorescent granules that glow, especially in bright sunlight — a natural sunscreen!"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/133139/54202066"
+}

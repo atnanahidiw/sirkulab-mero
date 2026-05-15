@@ -1,0 +1,56 @@
+{
+  "common_name": "Hedgehog Coral",
+  "latin_name": "Echinopora lamellosa",
+  "kingdom": "Animalia",
+  "class": "Anthozoa",
+  "order": "Scleractinia",
+  "family": "Merulinidae",
+  "genus": "Echinopora",
+  "visual_features": {
+    "color": "pale blue to grayish-purple",
+    "body_shape": "branching/frond-like",
+    "distinctive_marks": "highly convoluted, ruffled edges",
+    "texture": "bumpy, porous, convoluted",
+    "size_class": "small to medium (as a coral colony)",
+    "pattern": "dense, repeating, and irregular"
+  },
+  "description": "Echinopora lamellosa is a colonial stony coral species in the family Merulinidae. It is a zooxanthellate coral that relies on symbiotic algae (zooxanthellae) living within its tissues for most of its nutritional needs, supplemented by capturing plankton with its tentacles at night. It grows in shallow protected reef slopes and lagoons, typically at depths of 3-30 m. The species is found across the Indo-West Pacific Ocean from the Red Sea and Eastern Africa to the Maldives, Southeast Asia, and as far east as Fiji, Samoa, and New Caledonia, and south to Australia.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Listed as Vulnerable on the IUCN Red List with a decreasing population trend. Population data is limited but the species is threatened by widespread coral reef degradation across its Indo-Pacific range, with significant local declines observed in areas affected by bleaching events and coastal development.",
+  "habitat": "Found in shallow protected reef slopes, reef flats, backreefs, and lagoons in the Indo-West Pacific Ocean, at depths of 3 to 40 m. Occurs from the Red Sea and Eastern Africa through the Maldives, Malaysia, Singapore, Philippines, Indonesia, Marshall Islands, Fiji, Solomon Islands, Samoa, New Caledonia, and Australia. Prefers clear, well-lit waters suitable for its symbiotic zooxanthellae.",
+  "habitat_tags": [
+    "coral_reef",
+    "tropical",
+    "reef_slope",
+    "lagoon",
+    "indo_pacific",
+    "shallow_reef",
+    "backreef",
+    "reef_flat"
+  ],
+  "threats": [
+    "Coral bleaching from rising sea temperatures due to climate change",
+    "Ocean acidification reducing calcification rates",
+    "Coastal development and land reclamation",
+    "Pollution and sedimentation from human activities",
+    "Destructive fishing practices (blast fishing, cyanide fishing)",
+    "Over-collection for the aquarium trade",
+    "Trampling by careless reef visitors in intertidal zones"
+  ],
+  "ecosystem_role": "As a reef-building (hermatypic) coral, Echinopora lamellosa contributes to the physical structure of coral reefs, creating complex three-dimensional habitat that shelters fish, crustaceans, and other marine organisms. Its calcium carbonate skeleton adds to the reef framework. The species provides microhabitats for small invertebrates and juvenile fish. Through its symbiotic relationship with zooxanthellae, it contributes to primary productivity within the reef ecosystem.",
+  "human_connection": "Coral species like Echinopora lamellosa build the reef structures that protect coastlines from erosion and storm surge, support fisheries that feed millions of people, and generate tourism revenue for coastal communities. Coral reefs built by species like this are estimated to provide ecosystem services worth trillions of dollars annually. Reefs also hold cultural significance for many coastal and island communities across the Indo-Pacific, providing food security and sustaining traditional ways of life.",
+  "what_students_can_do": [
+    "Reduce carbon footprint to help mitigate ocean warming and acidification",
+    "Use reef-safe sunscreen to avoid damaging coral with toxic chemicals",
+    "Practice responsible snorkeling and diving (don't touch coral)",
+    "Support marine protected areas that safeguard coral reef habitats",
+    "Reduce plastic pollution that can smother and damage coral colonies"
+  ],
+  "fun_fact": [
+    "Echinopora lamellosa extends its tentacles only at night to feed on plankton, while its symbiotic algae produce food through photosynthesis during the day",
+    "The species name 'lamellosa' refers to its thin, plate-like (lamellate) growth form",
+    "Corals like Echinopora are actually colonies of thousands of individual animals called polyps, not single organisms",
+    "Although classified as Vulnerable globally, some Echinopora species found in Singapore are listed as Near Threatened on the IUCN Red List"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/133453/0"
+}

@@ -1,0 +1,55 @@
+{
+  "common_name": "Sambar",
+  "latin_name": "Rusa unicolor",
+  "kingdom": "Animalia",
+  "class": "Mammalia",
+  "order": "Cetartiodactyla",
+  "family": "Cervidae",
+  "genus": "Rusa",
+  "visual_features": {
+    "color": "dark brown to black",
+    "body_shape": "robust and muscular",
+    "distinctive_marks": "prominent antlers",
+    "texture": "thick and shaggy fur",
+    "size_class": "medium",
+    "pattern": "solid dark coloration"
+  },
+  "description": "The sambar is one of the largest deer species in Asia, native to the Indian subcontinent, South China, and Southeast Asia with seven recognised subspecies. It is the favourite prey of Bengal tigers and Asiatic lions, comprising up to 45% of tiger biomass consumption in India. Fossil sambar are known from the early Pleistocene, showing an ancient lineage. Listed as Vulnerable since 2008 due to substantial population declines from hunting, insurgency, and industrial habitat exploitation. The Bonin sambar (R. u. boninensis) from Japan is now extinct.",
+  "conservation_status": "Vulnerable",
+  "population_estimate": "Population in India exceeds 50,000; over 5,000 introduced in Australia. Global population declining substantially due to hunting, insurgency, and industrial habitat exploitation. Listed as Vulnerable on IUCN Red List since 2008.",
+  "habitat": "Wide variety of forest types: tropical dry forests, tropical seasonal forests, subtropical mixed forests with conifers, montane grasslands, broadleaved deciduous and evergreen forests, and tropical rainforests. Prefers dense cover of deciduous shrubs and grasses. Ranges from sea level to 3,500 m elevation. Always found near water sources. Home ranges up to 1,500 ha for males and 300 ha for females in India.",
+  "habitat_tags": [
+    "tropical",
+    "forest",
+    "montane",
+    "subtropical",
+    "grassland",
+    "south_asia",
+    "southeast_asia"
+  ],
+  "threats": [
+    "Hunting and poaching for meat, antlers, and sport",
+    "Industrial exploitation of habitat including logging and plantations",
+    "Local insurgency affecting protected areas in parts of range",
+    "Deforestation and habitat fragmentation",
+    "Crop raiding leading to retaliatory killings",
+    "Competition with domestic livestock"
+  ],
+  "ecosystem_role": "Sambar are a keystone prey species for large predators including Bengal tigers (up to 45% of tiger diet in India), Asiatic lions, leopards, and dholes. Disperse seeds as they forage on a wide variety of vegetation including grasses, foliage, browse, fruit, and water plants. Their presence indicates healthy, functioning forest ecosystems with intact predator-prey dynamics.",
+  "human_connection": "Sambar have been hunted for millennia for food, antlers, and sport. In Taiwan, raised on farms for antlers prized for knife handles and handgun grips. In Australia, hunting sambar is a popular sport. The Malayan sambar (R. u. equina) was introduced to multiple countries. The Bonin sambar (R. u. boninensis) from Japan's Bonin Islands is now extinct, demonstrating the impact of human exploitation on isolated populations.",
+  "what_students_can_do": [
+    "Study the role of sambar as a keystone prey species in tiger and lion conservation",
+    "Learn about the impacts of introduced sambar populations in Australia and New Zealand",
+    "Research sambar vocalizations including the distinctive 'pooking' alarm call",
+    "Advocate for habitat connectivity between protected areas in South and Southeast Asia",
+    "Investigate the unique throat gland found only in sambar deer"
+  ],
+  "fun_fact": [
+    "When sensing danger, a sambar stamps its feet and makes a ringing call known as 'pooking' or 'belling'",
+    "Sambar are capable of bipedalism - stags stand on hind legs to mark tree branches with their antlers",
+    "Females readily defend their young from predators, unusual among deer - they lower head with erect mane and lash at attackers, preferring to fight in shallow water",
+    "Male sambar spray urine on their own face using a highly mobile penis as a form of self-marking",
+    "Among all living deer species, only the moose and elk can attain larger sizes than the sambar"
+  ],
+  "population_estimate_source_uri": "https://www.iucnredlist.org/species/41790/22156207"
+}
