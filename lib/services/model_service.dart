@@ -10,6 +10,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'model_boot_state.dart';
+import 'app_settings_service.dart';
 import 'species_service.dart';
 import '../models/chat_prompts.dart';
 import '../models/model_spec.dart';
@@ -469,6 +470,7 @@ class ModelService extends ChangeNotifier {
 
   final ModelDownloadBackend _downloader;
   final ModelRuntime _runtime;
+  final AppSettingsService _settingsService;
   final ModelBootStateStore? _stateStoreOverride;
 
   bool _isBootstrapping = false;
@@ -498,6 +500,7 @@ class ModelService extends ChangeNotifier {
   ModelService({
     ModelDownloadBackend? downloader,
     ModelRuntime? runtime,
+    AppSettingsService? settingsService,
     ModelBootStateStore? stateStore,
     bool autoInitialize = true,
   })  : _downloader = downloader ?? BackgroundModelDownloadBackend(),
@@ -505,6 +508,7 @@ class ModelService extends ChangeNotifier {
             FlutterGemmaModelRuntime(
               modelType: modelType,
             ),
+        _settingsService = settingsService ?? AppSettingsService(),
         _stateStoreOverride = stateStore {
     if (autoInitialize) {
       unawaited(_bootstrap());
@@ -1611,45 +1615,6 @@ class ModelService extends ChangeNotifier {
     return null;
   }
 
-  /// Request storage permission for Android
-  Future<bool> _requestStoragePermission() async {
-    if (!Platform.isAndroid) return true;
-
-    // Keep asking until permission is granted or user cancels
-    while (true) {
-      // Check if we already have permission
-      if (await Permission.manageExternalStorage.isGranted) return true;
-      if (await Permission.storage.isGranted) return true;
-
-      // Request permissions with explanation
-      final status = await Permission.storage.request();
-      if (status.isGranted) return true;
-
-      final manageStatus = await Permission.manageExternalStorage.request();
-      if (manageStatus.isGranted) return true;
-
-      // If permanently denied, open settings and loop back
-      if (status.isPermanentlyDenied || manageStatus.isPermanentlyDenied) {
-        await openAppSettings();
-        // Wait a bit for user to interact with settings
-        await Future.delayed(const Duration(seconds: 2));
-        continue;
-      }
-
-      // If user denied (not permanently), wait and ask again
-      if (status.isDenied || manageStatus.isDenied) {
-        // Wait 2 seconds before asking again
-        await Future.delayed(const Duration(seconds: 2));
-        continue;
-      }
-
-      // If anything else, break and return false
-      break;
-    }
-
-    return false;
-  }
-
   Future<void> clearModel() async {
     if (_model != null) {
       // Use optimized cleanup for FlutterGemmaModelRuntime
@@ -1721,22 +1686,27 @@ class ModelService extends ChangeNotifier {
       final activeModel = await _ensureActiveModel();
       onProgress?.call('Model activated', 0.12);
 
-      final searchSpec = ToolSpec(
-        name: ChatPrompts.speciesSearchToolDef['name'] as String,
-        description: ChatPrompts.speciesSearchToolDef['description'] as String,
-        parameters: ChatPrompts.speciesSearchToolDef['parameters']
-            as Map<String, dynamic>,
-        execute: (args) => _speciesService.searchSpeciesByTaxonomy(
-          args['class'] as String? ?? '',
-          args['order'] as String? ?? '',
-          args['family'] as String? ?? '',
-          args['genus'] as String? ?? '',
-        ),
-        subsequentPrompt: Message.text(
-          text: ChatPrompts.identifySynthesisPrompt,
-          isUser: true,
-        ),
-      );
+      final bool toolsEnabled = _settingsService.toolsEnabled;
+      final List<ToolSpec> toolSpecs = toolsEnabled
+          ? [
+              ToolSpec(
+                name: ChatPrompts.speciesSearchToolDef['name'] as String,
+                description: ChatPrompts.speciesSearchToolDef['description'] as String,
+                parameters: ChatPrompts.speciesSearchToolDef['parameters']
+                    as Map<String, dynamic>,
+                execute: (args) => _speciesService.searchSpeciesByTaxonomy(
+                  args['class'] as String? ?? '',
+                  args['order'] as String? ?? '',
+                  args['family'] as String? ?? '',
+                  args['genus'] as String? ?? '',
+                ),
+                subsequentPrompt: Message.text(
+                  text: ChatPrompts.identifySynthesisPrompt,
+                  isUser: true,
+                ),
+              ),
+            ]
+          : const [];
 
       _commitState(
         _state.copyWith(
@@ -1748,10 +1718,14 @@ class ModelService extends ChangeNotifier {
       final result = await (_runtime as FlutterGemmaModelRuntime)
           .generateOptimizedResponse(
         activeModel,
-        ChatPrompts.identifyInputPrompt,
-        systemInstruction: ChatPrompts.identifySystemInstruction,
+        toolsEnabled
+            ? ChatPrompts.identifyInputPrompt
+            : ChatPrompts.identifyNoToolsInputPrompt,
+        systemInstruction: toolsEnabled
+            ? ChatPrompts.identifySystemInstruction
+            : ChatPrompts.identifyNoToolsSystemInstruction,
         imageBytes: imageBytes,
-        toolSpecs: [searchSpec],
+        toolSpecs: toolsEnabled ? toolSpecs : null,
         temperature: 0.3,
         topK: 64,
         topP: 0.85,

@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
+import 'package:camera/camera.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import '../l10n/app_localizations.dart';
+import '../services/app_settings_service.dart';
 import '../services/locale_service.dart';
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
@@ -27,6 +29,7 @@ class SettingsPage extends StatelessWidget {
     final textTheme = theme.textTheme;
     final modelService = Provider.of<ModelService>(context);
     final localeService = Provider.of<LocaleService>(context);
+    final appSettings = Provider.of<AppSettingsService>(context);
     final l10n = AppLocalizations.of(context)!;
 
     return Scaffold(
@@ -110,6 +113,21 @@ class SettingsPage extends StatelessWidget {
                 onTap: () => _manageCameraPermission(context, l10n),
               );
             },
+          ),
+
+          // Camera controls section
+          _sectionHeader('Camera Controls', colorScheme, textTheme),
+          _cameraQualityCard(
+            appSettings: appSettings,
+            colorScheme: colorScheme,
+            textTheme: textTheme,
+          ),
+
+          // AI tools section
+          _sectionHeader('AI Tools', colorScheme, textTheme),
+          _toolsToggleCard(
+            appSettings: appSettings,
+            colorScheme: colorScheme,
           ),
 
           // App Information section
@@ -257,6 +275,156 @@ class SettingsPage extends StatelessWidget {
         padding: const EdgeInsets.symmetric(horizontal: 4),
       ),
       onTap: onTap,
+    );
+  }
+
+  Widget _cameraQualityCard({
+    required AppSettingsService appSettings,
+    required ColorScheme colorScheme,
+    required TextTheme textTheme,
+  }) {
+    final valueLabel = '${appSettings.cameraImageQuality}%';
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Icon(Icons.tune_outlined, color: colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Camera capture preset',
+                          style: textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'This controls the camera preview and capture resolution.',
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<ResolutionPreset>(
+                initialValue: appSettings.cameraResolutionPreset,
+                decoration: InputDecoration(
+                  filled: true,
+                  fillColor: colorScheme.surfaceContainerHighest,
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(12),
+                    borderSide: BorderSide.none,
+                  ),
+                  contentPadding:
+                      const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                ),
+                items: const [
+                  DropdownMenuItem(
+                    value: ResolutionPreset.low,
+                    child: Text('Low'),
+                  ),
+                  DropdownMenuItem(
+                    value: ResolutionPreset.medium,
+                    child: Text('Medium'),
+                  ),
+                  DropdownMenuItem(
+                    value: ResolutionPreset.high,
+                    child: Text('High'),
+                  ),
+                  DropdownMenuItem(
+                    value: ResolutionPreset.veryHigh,
+                    child: Text('Very high'),
+                  ),
+                  DropdownMenuItem(
+                    value: ResolutionPreset.ultraHigh,
+                    child: Text('Ultra high'),
+                  ),
+                  DropdownMenuItem(
+                    value: ResolutionPreset.max,
+                    child: Text('Max'),
+                  ),
+                ],
+                onChanged: (value) {
+                  if (value != null) {
+                    appSettings.setCameraResolutionPreset(value);
+                  }
+                },
+              ),
+              const SizedBox(height: 16),
+              Row(
+                children: [
+                  Icon(Icons.high_quality_outlined, color: colorScheme.primary),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Photo compression quality',
+                          style: textTheme.titleMedium,
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          'Higher values keep more detail after capture.',
+                          style: textTheme.bodySmall,
+                        ),
+                      ],
+                    ),
+                  ),
+                  Text(
+                    valueLabel,
+                    style: textTheme.titleMedium?.copyWith(
+                      color: colorScheme.primary,
+                    ),
+                  ),
+                ],
+              ),
+              Slider(
+                value: appSettings.cameraImageQuality.toDouble(),
+                min: 50,
+                max: 100,
+                divisions: 10,
+                label: valueLabel,
+                onChanged: (value) {
+                  appSettings.setCameraImageQuality(value.round());
+                },
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _toolsToggleCard({
+    required AppSettingsService appSettings,
+    required ColorScheme colorScheme,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Card(
+        child: SwitchListTile(
+          secondary: Icon(Icons.extension_outlined, color: colorScheme.primary),
+          title: const Text('Enable tools'),
+          subtitle: const Text(
+            'Let the model call the species search tool during identification.',
+          ),
+          value: appSettings.toolsEnabled,
+          onChanged: (value) {
+            appSettings.setToolsEnabled(value);
+          },
+        ),
+      ),
     );
   }
 

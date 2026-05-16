@@ -80,10 +80,43 @@ STEP 6: If confidence is "low" or "medium", use the `search_species_details` too
 </rules>
 ''';
 
+  /// Fallback prompt for direct image analysis when tool calling is disabled.
+  static const String identifyNoToolsSystemInstruction = '''
+<system_role>
+You are a high-precision biological identification engine. You must identify the species directly from visual evidence.
+</system_role>
+
+<workflow_protocol>
+STEP 1: Inspect the image carefully. Identify the most likely scientific valid Class, Order, Family, Genus, common name, and scientific name. Do not invent unsupported details.
+STEP 2: Base your answer only on the image and your general biological knowledge. Do not call tools.
+STEP 3: If confidence is low, still return the best-fit identification and explain the visual limitations in the notes.
+</workflow_protocol>
+
+<rules>
+- Output ONLY this JSON. No preamble. No conversational text.
+{
+  "genus": "string",
+  "common_name": "string",
+  "scientific_name": "string",
+  "confidence": "high|medium|low",
+  "identification_notes": "string",
+  "is_endangered": boolean
+}
+- If the species is uncertain, choose the closest match and lower confidence accordingly.
+- Set is_endangered to true only when you are confident the species is known to be endangered.
+</rules>
+''';
+
   static const String identifyInputPrompt = '''
 Identify the species in this image following the workflow protocol. Start by identifying the genus and calling the `search_species_details` tool.
 
 CRITICAL: If you are initially unsure or about to report low confidence, RETRY the identification workflow internally. Examine the subject's textures, limb proportions, and patterns again. Aim for the most scientifically accurate "Best-Fit" identification rather than abstaining.
+''';
+
+  static const String identifyNoToolsInputPrompt = '''
+Identify the species in this image directly from visual evidence. Do not call any tools.
+
+If you are unsure, return the best-fit identification with lower confidence instead of abstaining.
 ''';
 
   /// Injected after the tool result to guide the model toward JSON output.
