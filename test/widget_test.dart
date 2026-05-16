@@ -151,7 +151,11 @@ class FakeModelService extends ModelService {
 
   @override
   Future<String> identifySpecies(
-      Uint8List imageBytes, String imageFormat) async {
+    Uint8List imageBytes,
+    String imageFormat, {
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
+  }) async {
     return '';
   }
 

@@ -295,6 +295,27 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyzeTitle => 'Analyzing...';
 
   @override
+  String get analyzeStatusWakingUpAi => 'Waking up AI...';
+
+  @override
+  String get analyzeStatusSearching => 'Analyzing...';
+
+  @override
+  String get analyzeStatusGeneratingResponse => 'Generating response...';
+
+  @override
+  String get analyzeStatusWakingUpHint => 'Activating the on-device model';
+
+  @override
+  String get analyzeStatusSearchingHint => 'Searching the species database';
+
+  @override
+  String get analyzeStatusStreamingHint => 'Streaming the final answer';
+
+  @override
+  String get analyzeStatusIdleHint => 'Preparing the analysis flow';
+
+  @override
   String get analyzeFailed => 'Analysis failed';
 
   @override

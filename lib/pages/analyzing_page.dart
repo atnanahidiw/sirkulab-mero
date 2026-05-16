@@ -50,6 +50,11 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   bool _messageTimerInitialized = false;
   late final Uint8List _displayBytes;
   bool _imageLoaded = false;
+  bool _modelActivating = true;
+  bool _toolCalling = false;
+  bool _streamStarted = false;
+  bool _streamCompleted = false;
+  final StringBuffer _streamBuffer = StringBuffer();
 
   // Species service — used to pre-resolve the DB lookup before navigating,
   // so ResultPage always receives fully-loaded data with no loading flash.
@@ -128,9 +133,36 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     // Step 1 — run the model to identify the species
     String result = '';
     try {
-      result = await modelService.identifySpecies(compressedBytes, 'jpeg');
+      result = await modelService.identifySpecies(
+        compressedBytes,
+        'jpeg',
+        onProgress: (phase, progress) {
+          if (!mounted) return;
+          setState(() {
+            if (phase == 'Activating model...') {
+              _modelActivating = true;
+            } else if (phase == 'Model activated') {
+              _modelActivating = false;
+            }
+
+            if (phase.startsWith('Running tool:')) {
+              _toolCalling = true;
+            }
+          });
+        },
+        onToken: (token) {
+          if (!mounted) return;
+          setState(() {
+            if (!_streamStarted) {
+              _streamStarted = true;
+            }
+            _streamBuffer.write(token);
+          });
+        },
+      );
     } catch (e) {
       debugPrint('[AnalyzingPage] identifySpecies failed: $e');
+      result = ModelService.noDetectionFallbackJson;
     }
 
     // Step 2 — resolve the species in the DB while still on the analyzing
@@ -207,6 +239,8 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
+    final headline = _analysisHeadline(l10n);
+    final subhead = _analysisSubhead(l10n);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -215,15 +249,60 @@ class _AnalyzingPageState extends State<AnalyzingPage>
           children: [
             const SizedBox(height: 24),
 
-            Text(
-              l10n.analyzeTitle,
-              style: textTheme.headlineSmall?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.16),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: Text(
+                headline,
+                key: ValueKey<String>(headline),
+                textAlign: TextAlign.center,
+                style: textTheme.headlineSmall?.copyWith(
+                  color: colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: -0.2,
+                ),
               ),
             ),
 
             const SizedBox(height: 32),
+
+            AnimatedSwitcher(
+              duration: const Duration(milliseconds: 300),
+              transitionBuilder: (child, animation) {
+                return FadeTransition(
+                  opacity: animation,
+                  child: SlideTransition(
+                    position: Tween<Offset>(
+                      begin: const Offset(0, 0.15),
+                      end: Offset.zero,
+                    ).animate(animation),
+                    child: child,
+                  ),
+                );
+              },
+              child: Text(
+                subhead,
+                key: ValueKey<String>(subhead),
+                textAlign: TextAlign.center,
+                style: textTheme.bodyMedium?.copyWith(
+                  color: colorScheme.onSurfaceVariant,
+                  height: 1.4,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 28),
 
             // Animated image with glow ring
             Expanded(
@@ -282,35 +361,43 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
             const SizedBox(height: 32),
 
-            // Rotating fun messages
             Expanded(
               flex: 1,
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.3),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: Column(
+                  children: [
+                    Expanded(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        child: AnimatedSwitcher(
+                          duration: const Duration(milliseconds: 500),
+                          transitionBuilder: (child, animation) {
+                            return FadeTransition(
+                              opacity: animation,
+                              child: SlideTransition(
+                                position: Tween<Offset>(
+                                  begin: const Offset(0, 0.3),
+                                  end: Offset.zero,
+                                ).animate(animation),
+                                child: child,
+                              ),
+                            );
+                          },
+                          child: Text(
+                            _currentMessage,
+                            key: ValueKey<String>(_currentMessage),
+                            textAlign: TextAlign.center,
+                            style: textTheme.bodyLarge?.copyWith(
+                              color: colorScheme.onSurfaceVariant,
+                              fontStyle: FontStyle.italic,
+                              height: 1.4,
+                            ),
+                          ),
+                        ),
                       ),
-                    );
-                  },
-                  child: Text(
-                    _currentMessage,
-                    key: ValueKey<String>(_currentMessage),
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontStyle: FontStyle.italic,
-                      height: 1.4,
                     ),
-                  ),
+                  ],
                 ),
               ),
             ),
@@ -363,5 +450,31 @@ class _AnalyzingPageState extends State<AnalyzingPage>
         );
       },
     );
+  }
+
+  String _analysisHeadline(AppLocalizations l10n) {
+    if (_modelActivating) {
+      return l10n.analyzeStatusWakingUpAi;
+    }
+    if (_toolCalling) {
+      return l10n.analyzeStatusSearching;
+    }
+    if (_streamStarted) {
+      return l10n.analyzeStatusGeneratingResponse;
+    }
+    return l10n.analyzeStatusWakingUpAi;
+  }
+
+  String _analysisSubhead(AppLocalizations l10n) {
+    if (_modelActivating) {
+      return l10n.analyzeStatusWakingUpHint;
+    }
+    if (_toolCalling) {
+      return l10n.analyzeStatusSearchingHint;
+    }
+    if (_streamStarted) {
+      return l10n.analyzeStatusStreamingHint;
+    }
+    return l10n.analyzeStatusIdleHint;
   }
 }

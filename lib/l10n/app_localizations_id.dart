@@ -297,6 +297,27 @@ class AppLocalizationsId extends AppLocalizations {
   String get analyzeTitle => 'Menganalisis...';
 
   @override
+  String get analyzeStatusWakingUpAi => 'Membangunkan AI...';
+
+  @override
+  String get analyzeStatusSearching => 'Menganalisis...';
+
+  @override
+  String get analyzeStatusGeneratingResponse => 'Membuat respons...';
+
+  @override
+  String get analyzeStatusWakingUpHint => 'Mengaktifkan model di perangkat';
+
+  @override
+  String get analyzeStatusSearchingHint => 'Mencari di basis data spesies';
+
+  @override
+  String get analyzeStatusStreamingHint => 'Mengalirkan jawaban akhir';
+
+  @override
+  String get analyzeStatusIdleHint => 'Menyiapkan alur analisis';
+
+  @override
   String get analyzeFailed => 'Analisis gagal';
 
   @override

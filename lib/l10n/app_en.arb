@@ -144,6 +144,13 @@
   "settingsPrivacyDescription": "All processing happens on your device for privacy. No images are uploaded to servers.",
 
   "analyzeTitle": "Analyzing...",
+  "analyzeStatusWakingUpAi": "Waking up AI...",
+  "analyzeStatusSearching": "Analyzing...",
+  "analyzeStatusGeneratingResponse": "Generating response...",
+  "analyzeStatusWakingUpHint": "Activating the on-device model",
+  "analyzeStatusSearchingHint": "Searching the species database",
+  "analyzeStatusStreamingHint": "Streaming the final answer",
+  "analyzeStatusIdleHint": "Preparing the analysis flow",
   "analyzeFailed": "Analysis failed",
   "analyzeGoBack": "Go Back",
   "analyzeMsg1": "Consulting the wildlife encyclopedia... 📚",

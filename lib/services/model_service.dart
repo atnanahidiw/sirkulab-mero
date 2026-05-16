@@ -382,7 +382,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           await for (final response in chat.generateChatResponseAsync()) {
             if (response is TextResponse) {
               responseBuffer.write(response.token);
-              if (!useToolCalling) onToken?.call(response.token);
+              onToken?.call(response.token);
             } else if (response is ThinkingResponse) {
               debugPrint('[Pass $pass] Thinking: ${response.content}');
             } else if (response is FunctionCallResponse) {
@@ -464,6 +464,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 class ModelService extends ChangeNotifier {
   static const String _downloadGroup = 'mero_model_downloads';
   static const String _downloadTaskId = 'mero_gemma_model';
+  static const String noDetectionFallbackJson =
+      '{"genus":"","common_name":"","scientific_name":"","confidence":"low","identification_notes":"No confident species detected.","is_endangered":false}';
 
   final ModelDownloadBackend _downloader;
   final ModelRuntime _runtime;
@@ -1680,9 +1682,15 @@ class ModelService extends ChangeNotifier {
   Future<String> identifySpecies(
     Uint8List imageBytes,
     String imageFormat,
+    {
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
+  }
   ) async {
     try {
+      onProgress?.call('Activating model...', 0.05);
       final activeModel = await _ensureActiveModel();
+      onProgress?.call('Model activated', 0.12);
 
       final searchSpec = ToolSpec(
         name: ChatPrompts.speciesSearchToolDef['name'] as String,
@@ -1718,9 +1726,15 @@ class ModelService extends ChangeNotifier {
         temperature: 0.3,
         topK: 64,
         topP: 0.85,
-        onProgress: (phase, progress) {
-          debugPrint('Progress: $phase ($progress)');
-        },
+        onProgress: onProgress == null
+            ? (phase, progress) {
+                debugPrint('Progress: $phase ($progress)');
+              }
+            : (phase, progress) {
+                debugPrint('Progress: $phase ($progress)');
+                onProgress(phase, progress);
+              },
+        onToken: onToken,
       );
 
       // Strip markdown code fences (```json ... ```) before parsing
@@ -1728,9 +1742,15 @@ class ModelService extends ChangeNotifier {
 
       try {
         jsonDecode(cleaned);
-      } catch (_) {
-        debugPrint('[identifySpecies] Garbage result detected — rejecting response.');
-        throw Exception('Model returned an unparseable response. Please try again.');
+      } catch (e) {
+        debugPrint('[identifySpecies] Garbage result detected — treating as no detection: $e');
+        _commitState(
+          _state.copyWith(
+            status: 'No confident species detected',
+            phase: ModelBootPhase.ready,
+          ),
+        );
+        return noDetectionFallbackJson;
       }
 
       _commitState(
