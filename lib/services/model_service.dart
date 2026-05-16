@@ -5,10 +5,12 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 import 'model_boot_state.dart';
+import 'app_settings_service.dart';
 import 'species_service.dart';
 import '../models/chat_prompts.dart';
 import '../models/model_spec.dart';
@@ -244,7 +246,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         }),
       ]);
 
-      // Clear cached model after installation to ensure fresh loading
+      // Clear cached model after installation. The active model is loaded
+      // lazily on first use after startup completes.
       _cachedModel = null;
       _isInitialized = false;
     } catch (e) {
@@ -380,7 +383,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           await for (final response in chat.generateChatResponseAsync()) {
             if (response is TextResponse) {
               responseBuffer.write(response.token);
-              if (!useToolCalling) onToken?.call(response.token);
+              onToken?.call(response.token);
             } else if (response is ThinkingResponse) {
               debugPrint('[Pass $pass] Thinking: ${response.content}');
             } else if (response is FunctionCallResponse) {
@@ -462,9 +465,11 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 class ModelService extends ChangeNotifier {
   static const String _downloadGroup = 'mero_model_downloads';
   static const String _downloadTaskId = 'mero_gemma_model';
+  static const String noDetectionFallbackJson = '{"genus":"","common_name":"","scientific_name":"","confidence":"low","identification_notes":"No confident species detected.","is_endangered":false}';
 
   final ModelDownloadBackend _downloader;
   final ModelRuntime _runtime;
+  final AppSettingsService _settingsService;
   final ModelBootStateStore? _stateStoreOverride;
 
   bool _isBootstrapping = false;
@@ -494,6 +499,7 @@ class ModelService extends ChangeNotifier {
   ModelService({
     ModelDownloadBackend? downloader,
     ModelRuntime? runtime,
+    AppSettingsService? settingsService,
     ModelBootStateStore? stateStore,
     bool autoInitialize = true,
   })  : _downloader = downloader ?? BackgroundModelDownloadBackend(),
@@ -501,6 +507,7 @@ class ModelService extends ChangeNotifier {
             FlutterGemmaModelRuntime(
               modelType: modelType,
             ),
+        _settingsService = settingsService ?? AppSettingsService(),
         _stateStoreOverride = stateStore {
     if (autoInitialize) {
       unawaited(_bootstrap());
@@ -526,6 +533,21 @@ class ModelService extends ChangeNotifier {
   String? get downloadFilePath => _state.downloadFilePath;
 
   String? get downloadPhase => _state.downloadPhase;
+
+  DateTime get updatedAt {
+    final path = downloadFilePath;
+    if (path != null) {
+      try {
+        final file = File(path);
+        if (file.existsSync()) {
+          return file.lastModifiedSync();
+        }
+      } catch (e) {
+        debugPrint('Error getting model file modification date: $e');
+      }
+    }
+    return _state.updatedAt;
+  }
 
   InferenceModel? get model => _model;
 
@@ -647,10 +669,24 @@ class ModelService extends ChangeNotifier {
     } else {
       try {
         final downloadsDir = await getDownloadsDirectory();
-        dirPath = downloadsDir?.path ??
-            (await getApplicationDocumentsDirectory()).path;
+        if (downloadsDir != null) {
+          dirPath = downloadsDir.path;
+        } else {
+          try {
+            dirPath = (await getApplicationDocumentsDirectory()).path;
+          } catch (e) {
+            debugPrint('Could not get app documents directory: $e');
+            dirPath = Directory.systemTemp.path;
+          }
+        }
       } catch (e) {
-        dirPath = (await getApplicationDocumentsDirectory()).path;
+        debugPrint('Could not get downloads directory: $e');
+        try {
+          dirPath = (await getApplicationDocumentsDirectory()).path;
+        } catch (inner) {
+          debugPrint('Could not get app documents directory: $inner');
+          dirPath = Directory.systemTemp.path;
+        }
       }
     }
 
@@ -677,9 +713,19 @@ class ModelService extends ChangeNotifier {
       await persistentDir.create(recursive: true);
     }
 
-    final (baseDirectory, directory, filename) = await Task.split(
-      filePath: persistentPath,
-    );
+    late final BaseDirectory baseDirectory;
+    late final String directory;
+    late final String filename;
+    try {
+      (baseDirectory, directory, filename) = await Task.split(
+        filePath: persistentPath,
+      );
+    } catch (e) {
+      debugPrint('Falling back to root download task path: $e');
+      baseDirectory = BaseDirectory.root;
+      directory = p.dirname(persistentPath);
+      filename = p.basename(persistentPath);
+    }
 
     return DownloadTask(
       taskId: _downloadTaskId,
@@ -727,7 +773,7 @@ class ModelService extends ChangeNotifier {
     try {
       // Install with timeout to prevent hanging
       await _runtime.installFromFile(filePath);
-      _model = await _getActiveVisionModel();
+      await _ensureActiveModel();
       await _markReady(status: 'Model ready');
     } catch (e) {
       debugPrint('Model installation failed: $e');
@@ -896,7 +942,7 @@ class ModelService extends ChangeNotifier {
   }
 
   void _commitState(ModelBootState nextState) {
-    _state = nextState.copyWith(updatedAt: DateTime.now());
+    _state = nextState;
     notifyListeners();
     unawaited(_persistState());
   }
@@ -1050,7 +1096,7 @@ class ModelService extends ChangeNotifier {
 
   Future<bool> _tryActivateExistingModel() async {
     try {
-      _model = await _getActiveVisionModel();
+      await _ensureActiveModel();
       await _markReady(status: 'Model ready');
       return true;
     } catch (e) {
@@ -1281,7 +1327,7 @@ class ModelService extends ChangeNotifier {
     try {
       // Install with timeout to prevent hanging
       await _runtime.installFromFile(filePath);
-      _model = await _getActiveVisionModel();
+      await _ensureActiveModel();
       await _markReady(status: 'Model ready');
     } catch (e) {
       debugPrint('Existing model installation failed: $e');
@@ -1318,6 +1364,7 @@ class ModelService extends ChangeNotifier {
         error: null,
         downloadProgress: null,
         phase: ModelBootPhase.ready,
+        updatedAt: DateTime.now(),
       ),
     );
   }
@@ -1585,45 +1632,6 @@ class ModelService extends ChangeNotifier {
     return null;
   }
 
-  /// Request storage permission for Android
-  Future<bool> _requestStoragePermission() async {
-    if (!Platform.isAndroid) return true;
-
-    // Keep asking until permission is granted or user cancels
-    while (true) {
-      // Check if we already have permission
-      if (await Permission.manageExternalStorage.isGranted) return true;
-      if (await Permission.storage.isGranted) return true;
-
-      // Request permissions with explanation
-      final status = await Permission.storage.request();
-      if (status.isGranted) return true;
-
-      final manageStatus = await Permission.manageExternalStorage.request();
-      if (manageStatus.isGranted) return true;
-
-      // If permanently denied, open settings and loop back
-      if (status.isPermanentlyDenied || manageStatus.isPermanentlyDenied) {
-        await openAppSettings();
-        // Wait a bit for user to interact with settings
-        await Future.delayed(const Duration(seconds: 2));
-        continue;
-      }
-
-      // If user denied (not permanently), wait and ask again
-      if (status.isDenied || manageStatus.isDenied) {
-        // Wait 2 seconds before asking again
-        await Future.delayed(const Duration(seconds: 2));
-        continue;
-      }
-
-      // If anything else, break and return false
-      break;
-    }
-
-    return false;
-  }
-
   Future<void> clearModel() async {
     if (_model != null) {
       // Use optimized cleanup for FlutterGemmaModelRuntime
@@ -1636,6 +1644,19 @@ class ModelService extends ChangeNotifier {
     }
 
     await cancelDownload();
+
+    // Delete the actual model file if it exists
+    final filePath = _state.downloadFilePath ?? await _getDownloadDestination();
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+        debugPrint('Deleted model file: $filePath');
+      }
+    } catch (e) {
+      debugPrint('Failed to delete model file: $e');
+    }
+
     await _stateStore?.clear();
 
     _commitState(
@@ -1653,31 +1674,56 @@ class ModelService extends ChangeNotifier {
     );
   }
 
+  Future<void> deactivateActiveModel() async {
+    _runtime.dispose();
+    _model = null;
+  }
+
+  Future<InferenceModel> _ensureActiveModel() async {
+    final currentModel = _model;
+    if (currentModel != null) {
+      return currentModel;
+    }
+
+    final activeModel = await _getActiveVisionModel();
+    _model = activeModel;
+    return activeModel;
+  }
+
   Future<String> identifySpecies(
     Uint8List imageBytes,
     String imageFormat,
+    {
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
+  }
   ) async {
-    if (_model == null) {
-      throw Exception('Model not loaded. Please wait for model to download.');
-    }
-
     try {
-      final searchSpec = ToolSpec(
-        name: ChatPrompts.speciesSearchToolDef['name'] as String,
-        description: ChatPrompts.speciesSearchToolDef['description'] as String,
-        parameters: ChatPrompts.speciesSearchToolDef['parameters']
-            as Map<String, dynamic>,
-        execute: (args) => _speciesService.searchSpeciesByTaxonomy(
-          args['class'] as String? ?? '',
-          args['order'] as String? ?? '',
-          args['family'] as String? ?? '',
-          args['genus'] as String? ?? '',
-        ),
-        subsequentPrompt: Message.text(
-          text: ChatPrompts.identifySynthesisPrompt,
-          isUser: true,
-        ),
-      );
+      onProgress?.call('Activating model...', 0.05);
+      final activeModel = await _ensureActiveModel();
+      onProgress?.call('Model activated', 0.12);
+
+      final bool toolsEnabled = _settingsService.toolsEnabled;
+      final List<ToolSpec> toolSpecs = toolsEnabled
+          ? [
+              ToolSpec(
+                name: ChatPrompts.speciesSearchToolDef['name'] as String,
+                description: ChatPrompts.speciesSearchToolDef['description'] as String,
+                parameters: ChatPrompts.speciesSearchToolDef['parameters']
+                    as Map<String, dynamic>,
+                execute: (args) => _speciesService.searchSpeciesByTaxonomy(
+                  args['class'] as String? ?? '',
+                  args['order'] as String? ?? '',
+                  args['family'] as String? ?? '',
+                  args['genus'] as String? ?? '',
+                ),
+                subsequentPrompt: Message.text(
+                  text: ChatPrompts.identifySynthesisPrompt,
+                  isUser: true,
+                ),
+              ),
+            ]
+          : const [];
 
       _commitState(
         _state.copyWith(
@@ -1688,17 +1734,27 @@ class ModelService extends ChangeNotifier {
 
       final result = await (_runtime as FlutterGemmaModelRuntime)
           .generateOptimizedResponse(
-        _model!,
-        ChatPrompts.identifyInputPrompt,
-        systemInstruction: ChatPrompts.identifySystemInstruction,
+        activeModel,
+        toolsEnabled
+            ? ChatPrompts.identifyInputPrompt
+            : ChatPrompts.identifyNoToolsInputPrompt,
+        systemInstruction: toolsEnabled
+            ? ChatPrompts.identifySystemInstruction
+            : ChatPrompts.identifyNoToolsSystemInstruction,
         imageBytes: imageBytes,
-        toolSpecs: [searchSpec],
+        toolSpecs: toolsEnabled ? toolSpecs : null,
         temperature: 0.3,
         topK: 64,
         topP: 0.85,
-        onProgress: (phase, progress) {
-          debugPrint('Progress: $phase ($progress)');
-        },
+        onProgress: onProgress == null
+            ? (phase, progress) {
+                debugPrint('Progress: $phase ($progress)');
+              }
+            : (phase, progress) {
+                debugPrint('Progress: $phase ($progress)');
+                onProgress(phase, progress);
+              },
+        onToken: onToken,
       );
 
       // Strip markdown code fences (```json ... ```) before parsing
@@ -1706,9 +1762,15 @@ class ModelService extends ChangeNotifier {
 
       try {
         jsonDecode(cleaned);
-      } catch (_) {
-        debugPrint('[identifySpecies] Garbage result detected — rejecting response.');
-        throw Exception('Model returned an unparseable response. Please try again.');
+      } catch (e) {
+        debugPrint('[identifySpecies] Garbage result detected — treating as no detection: $e');
+        _commitState(
+          _state.copyWith(
+            status: 'No confident species detected',
+            phase: ModelBootPhase.ready,
+          ),
+        );
+        return noDetectionFallbackJson;
       }
 
       _commitState(
@@ -1734,7 +1796,7 @@ class ModelService extends ChangeNotifier {
     void Function(String token)? onToken,
   }) async {
     if (_model == null) {
-      throw Exception('Model not loaded. Please wait for model to download.');
+      throw Exception('Model not loaded. Please analyze an image first.');
     }
 
     try {
@@ -1783,11 +1845,11 @@ class ModelService extends ChangeNotifier {
 
   /// Translate [text] to [targetLang] using the on-device Gemma model.
   Future<String> translate(String text, String targetLang) async {
-    if (_model == null) {
-      throw Exception('Model not loaded. Please wait for model to download.');
-    }
-
     final prompt = ChatPrompts.translatePrompt(targetLang, text);
+
+    if (_model == null) {
+      throw Exception('Model not loaded. Please analyze an image first.');
+    }
 
     try {
       final response = await (_runtime as FlutterGemmaModelRuntime)

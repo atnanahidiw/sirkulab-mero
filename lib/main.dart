@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import 'core/theme/app_theme.dart';
 import 'l10n/app_localizations.dart';
+import 'services/app_settings_service.dart';
 import 'services/locale_service.dart';
 import 'services/model_service.dart';
 import 'widgets/startup_gate.dart';
@@ -25,14 +26,16 @@ void main() async {
     maxDownloadRetries: 10,
   );
 
-  final modelService = ModelService();
   final localeService = LocaleService();
+  final appSettingsService = AppSettingsService();
+  final modelService = ModelService(settingsService: appSettingsService);
 
   runApp(
     MultiProvider(
       providers: [
         ChangeNotifierProvider<ModelService>.value(value: modelService),
         ChangeNotifierProvider<LocaleService>.value(value: localeService),
+        ChangeNotifierProvider<AppSettingsService>.value(value: appSettingsService),
       ],
       child: const MeroApp(),
     ),

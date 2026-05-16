@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
@@ -6,20 +8,59 @@ import '../services/model_boot_state.dart';
 import '../services/model_service.dart';
 import 'model_boot_splash.dart';
 
-class StartupGate extends StatelessWidget {
+class StartupGate extends StatefulWidget {
   final Widget readyChild;
+  final Duration splashDuration;
 
   const StartupGate({
     super.key,
     this.readyChild = const HomePage(),
+    this.splashDuration = const Duration(seconds: 2),
   });
+
+  @override
+  State<StartupGate> createState() => _StartupGateState();
+}
+
+class _StartupGateState extends State<StartupGate> {
+  Timer? _timer;
+  bool _showReadyChild = false;
+  bool _delayScheduled = false;
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Consumer<ModelService>(
       builder: (context, modelService, _) {
-        if (modelService.isModelLoaded) {
-          return readyChild;
+        final canProceed = modelService.isInitialized && modelService.isModelLoaded;
+
+        if (!canProceed) {
+          _timer?.cancel();
+          _timer = null;
+          _delayScheduled = false;
+          _showReadyChild = false;
+        } else {
+          if (!_delayScheduled && !_showReadyChild) {
+            _delayScheduled = true;
+            _timer?.cancel();
+            _timer = Timer(widget.splashDuration, () {
+              if (!mounted) {
+                return;
+              }
+              setState(() {
+                _showReadyChild = true;
+              });
+            });
+          }
+
+          if (_showReadyChild) {
+            return widget.readyChild;
+          }
         }
 
         return ModelBootSplash(

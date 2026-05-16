@@ -626,6 +626,48 @@ abstract class AppLocalizations {
   /// **'Analyzing...'**
   String get analyzeTitle;
 
+  /// No description provided for @analyzeStatusWakingUpAi.
+  ///
+  /// In en, this message translates to:
+  /// **'Waking up AI...'**
+  String get analyzeStatusWakingUpAi;
+
+  /// No description provided for @analyzeStatusSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Analyzing...'**
+  String get analyzeStatusSearching;
+
+  /// No description provided for @analyzeStatusGeneratingResponse.
+  ///
+  /// In en, this message translates to:
+  /// **'Generating response...'**
+  String get analyzeStatusGeneratingResponse;
+
+  /// No description provided for @analyzeStatusWakingUpHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Activating the on-device model'**
+  String get analyzeStatusWakingUpHint;
+
+  /// No description provided for @analyzeStatusSearchingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Searching the species database'**
+  String get analyzeStatusSearchingHint;
+
+  /// No description provided for @analyzeStatusStreamingHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Streaming the final answer'**
+  String get analyzeStatusStreamingHint;
+
+  /// No description provided for @analyzeStatusIdleHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing the analysis flow'**
+  String get analyzeStatusIdleHint;
+
   /// No description provided for @analyzeFailed.
   ///
   /// In en, this message translates to:

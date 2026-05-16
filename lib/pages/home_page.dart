@@ -6,8 +6,10 @@ import 'package:provider/provider.dart';
 import 'package:flutter/foundation.dart';
 import '../core/navigation/app_page_route.dart';
 import '../l10n/app_localizations.dart';
+import '../services/app_settings_service.dart';
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
+import '../utils/image_utils.dart';
 import 'analyzing_page.dart';
 import 'result_page.dart';
 import 'settings_page.dart';
@@ -25,6 +27,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   bool _isCameraReady = false;
   bool _isProcessing = false;
   bool _shouldCameraBeRunning = true;
+  AppSettingsService? _appSettingsService;
+  ResolutionPreset? _activeResolutionPreset;
 
   @override
   void initState() {
@@ -33,8 +37,42 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     _initializeCamera();
   }
 
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    final nextSettings = Provider.of<AppSettingsService>(context);
+    if (_appSettingsService == nextSettings) {
+      return;
+    }
+
+    _appSettingsService?.removeListener(_handleSettingsChanged);
+    _appSettingsService = nextSettings;
+    _appSettingsService?.addListener(_handleSettingsChanged);
+  }
+
+  void _handleSettingsChanged() {
+    if (!mounted || _appSettingsService == null) {
+      return;
+    }
+
+    final nextPreset = _appSettingsService!.cameraResolutionPreset;
+    if (nextPreset == _activeResolutionPreset) {
+      return;
+    }
+
+    _activeResolutionPreset = nextPreset;
+
+    if (_shouldCameraBeRunning) {
+      _initializeCamera();
+    }
+  }
+
   Future<void> _initializeCamera() async {
     if (!_shouldCameraBeRunning) return;
+    final resolutionPreset = (_appSettingsService ??
+            Provider.of<AppSettingsService>(context, listen: false))
+        .cameraResolutionPreset;
     final currentContext = context;
 
     try {
@@ -56,9 +94,11 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         return;
       }
 
+      _activeResolutionPreset = resolutionPreset;
+
       _controller = CameraController(
         _cameras[0],
-        ResolutionPreset.medium,
+        resolutionPreset,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -148,6 +188,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
     final currentContext = context;
     final modelService =
         Provider.of<ModelService>(currentContext, listen: false);
+    final appSettings =
+        Provider.of<AppSettingsService>(currentContext, listen: false);
 
     final hasCameraPermission = await _checkAndRequestCameraPermission();
     if (!hasCameraPermission) {
@@ -211,13 +253,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (!currentContext.mounted) return;
 
+      final navigator = Navigator.of(currentContext);
+
+      // Compress before navigation so the analyzing screen only keeps the
+      // smaller buffer alive, not the full camera capture.
+      final compressedBytes = await ImageUtils.compressImage(
+        bytes,
+        maxWidth: 768,
+        maxHeight: 768,
+        quality: appSettings.cameraImageQuality,
+      );
+      bytes = Uint8List(0);
+
       // Set flag to false so lifecycle changes don't restart it
       _shouldCameraBeRunning = false;
 
       // Navigate first for a smoother transition
-      final navigationFuture = Navigator.push(
-        currentContext,
-        AppPageRoute.fadeScale((_) => AnalyzingPage(rawImageBytes: bytes)),
+      final navigationFuture = navigator.push(
+        AppPageRoute.fadeScale((_) => AnalyzingPage(imageBytes: compressedBytes)),
       );
 
       // Then turn off camera to free up RAM for the AI process
@@ -253,6 +306,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           ),
         );
       }
+
+      // await modelService.deactivateActiveModel();
 
       // Only now, re-enable and re-initialize camera
       _shouldCameraBeRunning = true;
@@ -354,6 +409,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
   @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _appSettingsService?.removeListener(_handleSettingsChanged);
 
     // Dispose camera controller and cancel any pending operations
     _controller?.dispose();

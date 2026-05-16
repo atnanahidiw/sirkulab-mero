@@ -144,6 +144,13 @@
   "settingsPrivacyDescription": "Semua pemrosesan terjadi di perangkat Anda untuk privasi. Tidak ada gambar yang diunggah ke server.",
 
   "analyzeTitle": "Menganalisis...",
+  "analyzeStatusWakingUpAi": "Membangunkan AI...",
+  "analyzeStatusSearching": "Menganalisis...",
+  "analyzeStatusGeneratingResponse": "Membuat respons...",
+  "analyzeStatusWakingUpHint": "Mengaktifkan model di perangkat",
+  "analyzeStatusSearchingHint": "Mencari di basis data spesies",
+  "analyzeStatusStreamingHint": "Mengalirkan jawaban akhir",
+  "analyzeStatusIdleHint": "Menyiapkan alur analisis",
   "analyzeFailed": "Analisis gagal",
   "analyzeGoBack": "Kembali",
   "analyzeMsg1": "Berkonsultasi dengan ensiklopedia satwa liar... 📚",
