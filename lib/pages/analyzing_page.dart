@@ -4,17 +4,14 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/navigation/app_page_route.dart';
 import '../l10n/app_localizations.dart';
 import '../services/model_service.dart';
 import '../services/species_service.dart';
-import '../utils/image_utils.dart';
-import 'result_page.dart';
 
 class AnalyzingPage extends StatefulWidget {
-  final Uint8List rawImageBytes;
+  final Uint8List imageBytes;
 
-  const AnalyzingPage({super.key, required this.rawImageBytes});
+  const AnalyzingPage({super.key, required this.imageBytes});
 
   @override
   State<AnalyzingPage> createState() => _AnalyzingPageState();
@@ -48,12 +45,10 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   int _messageIndex = 0;
   Timer? _messageTimer;
   bool _messageTimerInitialized = false;
-  late final Uint8List _displayBytes;
   bool _imageLoaded = false;
   bool _modelActivating = true;
   bool _toolCalling = false;
   bool _streamStarted = false;
-  bool _streamCompleted = false;
   final StringBuffer _streamBuffer = StringBuffer();
 
   // Species service — used to pre-resolve the DB lookup before navigating,
@@ -63,8 +58,6 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   @override
   void initState() {
     super.initState();
-
-    _displayBytes = widget.rawImageBytes;
 
     _pulseController = AnimationController(
       vsync: this,
@@ -116,6 +109,8 @@ class _AnalyzingPageState extends State<AnalyzingPage>
   }
 
   Future<void> _startAnalysis() async {
+    final navigator = Navigator.of(context);
+
     // Give enough time for the transition to finish and for HomePage to dispose the camera
     // This ensures RAM is fully cleared before we start heavy inference
     await Future.delayed(const Duration(milliseconds: 600));
@@ -123,18 +118,11 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
     final modelService = Provider.of<ModelService>(context, listen: false);
 
-    final compressedBytes = await ImageUtils.compressImage(
-      _displayBytes,
-      maxWidth: 768,
-      maxHeight: 768,  // https://newsletter.maartengrootendorst.com/p/a-visual-guide-to-gemma-4
-      quality: 92,
-    );
-
     // Step 1 — run the model to identify the species
     String result = '';
     try {
       result = await modelService.identifySpecies(
-        compressedBytes,
+        widget.imageBytes,
         'jpeg',
         onProgress: (phase, progress) {
           if (!mounted) return;
@@ -176,11 +164,12 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
     // Small pause so the animation doesn't snap away too abruptly.
     await Future.delayed(const Duration(milliseconds: 100));
+    if (!mounted) return;
 
     // Return the results to HomePage instead of navigating here.
     // This allows HomePage to keep the camera off during ResultPage.
-    Navigator.pop(context, {
-      'imageBytes': compressedBytes,
+    navigator.pop({
+      'imageBytes': widget.imageBytes,
       'analysisResult': result,
       'preloadedSpecies': preloadedSpecies,
     });
@@ -411,7 +400,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
   Widget _buildImage() {
     return Image.memory(
-      _displayBytes,
+      widget.imageBytes,
       fit: BoxFit.cover,
       gaplessPlayback: true,
       // frameBuilder fades the image in smoothly instead of blinking

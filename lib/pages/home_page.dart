@@ -8,6 +8,7 @@ import '../core/navigation/app_page_route.dart';
 import '../l10n/app_localizations.dart';
 import '../services/model_service.dart';
 import '../services/permission_service.dart';
+import '../utils/image_utils.dart';
 import 'analyzing_page.dart';
 import 'result_page.dart';
 import 'settings_page.dart';
@@ -211,13 +212,24 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       if (!currentContext.mounted) return;
 
+      final navigator = Navigator.of(currentContext);
+
+      // Compress before navigation so the analyzing screen only keeps the
+      // smaller buffer alive, not the full camera capture.
+      final compressedBytes = await ImageUtils.compressImage(
+        bytes,
+        maxWidth: 768,
+        maxHeight: 768,
+        quality: 92,
+      );
+      bytes = Uint8List(0);
+
       // Set flag to false so lifecycle changes don't restart it
       _shouldCameraBeRunning = false;
 
       // Navigate first for a smoother transition
-      final navigationFuture = Navigator.push(
-        currentContext,
-        AppPageRoute.fadeScale((_) => AnalyzingPage(rawImageBytes: bytes)),
+      final navigationFuture = navigator.push(
+        AppPageRoute.fadeScale((_) => AnalyzingPage(imageBytes: compressedBytes)),
       );
 
       // Then turn off camera to free up RAM for the AI process
