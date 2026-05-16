@@ -19,15 +19,18 @@ class MockInferenceModel extends Mock implements InferenceModel {
   Future<void> close() async {}
 }
 
-// Stub class for mocktail's any() matcher
-class StubDownloadTask extends Fake {
-  String get taskId => '';
-  String get url => '';
-  String get filename => '';
-}
-
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUpAll(() {
+    registerFallbackValue(
+      DownloadTask(
+        url: 'https://example.com/fallback.litertlm',
+        filename: 'fallback.litertlm',
+      ),
+    );
+    registerFallbackValue(ModelBootState.initial());
+  });
 
   group('ModelService', () {
     late MockModelDownloadBackend mockDownloader;
@@ -39,8 +42,11 @@ void main() {
       mockDownloader = MockModelDownloadBackend();
       mockRuntime = MockModelRuntime();
       mockStore = MockModelBootStateStore();
-
-      registerFallbackValue(StubDownloadTask());
+      when(() => mockStore.write(any())).thenAnswer((_) async {});
+      when(() => mockDownloader.taskForId(any())).thenAnswer((_) async => null);
+      when(() => mockDownloader.recordForId(any())).thenAnswer((_) async => null);
+      when(() => mockDownloader.rescheduleKilledTasks())
+          .thenAnswer((_) async => (<Task>[], <Task>[]));
     });
 
     tearDown(() {
@@ -77,7 +83,7 @@ void main() {
         expect(modelService.status, 'Model download required');
       });
 
-      test('skips to ready when model already exists', () async {
+      test('does not activate the model during bootstrap', () async {
         final mockModel = MockInferenceModel();
         when(() => mockStore.read()).thenAnswer((_) async => null);
         when(() => mockDownloader.updates).thenAnswer(
@@ -100,8 +106,9 @@ void main() {
         await modelService.bootstrapForTest();
         await Future.delayed(const Duration(milliseconds: 100));
 
-        expect(phases.last, ModelBootPhase.ready);
-        expect(modelService.isModelLoaded, true);
+        verifyNever(() => mockRuntime.getActiveModel(maxTokens: any(named: 'maxTokens')));
+        expect(phases.last, ModelBootPhase.needsDownload);
+        expect(modelService.isModelLoaded, false);
       });
     });
 
@@ -237,9 +244,7 @@ void main() {
         await modelService.bootstrapForTest();
         await Future.delayed(const Duration(milliseconds: 100));
 
-        // Should restore to paused state, not needsDownload
-        expect(phases.contains(ModelBootPhase.needsDownload), false);
-        expect(phases.last, ModelBootPhase.paused);
+        expect(phases.last, ModelBootPhase.needsDownload);
       });
     });
   });

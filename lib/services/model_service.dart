@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
+import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -244,7 +245,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         }),
       ]);
 
-      // Clear cached model after installation to ensure fresh loading
+      // Clear cached model after installation. The active model is loaded
+      // lazily on first use after startup completes.
       _cachedModel = null;
       _isInitialized = false;
     } catch (e) {
@@ -647,10 +649,24 @@ class ModelService extends ChangeNotifier {
     } else {
       try {
         final downloadsDir = await getDownloadsDirectory();
-        dirPath = downloadsDir?.path ??
-            (await getApplicationDocumentsDirectory()).path;
+        if (downloadsDir != null) {
+          dirPath = downloadsDir.path;
+        } else {
+          try {
+            dirPath = (await getApplicationDocumentsDirectory()).path;
+          } catch (e) {
+            debugPrint('Could not get app documents directory: $e');
+            dirPath = Directory.systemTemp.path;
+          }
+        }
       } catch (e) {
-        dirPath = (await getApplicationDocumentsDirectory()).path;
+        debugPrint('Could not get downloads directory: $e');
+        try {
+          dirPath = (await getApplicationDocumentsDirectory()).path;
+        } catch (inner) {
+          debugPrint('Could not get app documents directory: $inner');
+          dirPath = Directory.systemTemp.path;
+        }
       }
     }
 
@@ -677,9 +693,19 @@ class ModelService extends ChangeNotifier {
       await persistentDir.create(recursive: true);
     }
 
-    final (baseDirectory, directory, filename) = await Task.split(
-      filePath: persistentPath,
-    );
+    late final BaseDirectory baseDirectory;
+    late final String directory;
+    late final String filename;
+    try {
+      (baseDirectory, directory, filename) = await Task.split(
+        filePath: persistentPath,
+      );
+    } catch (e) {
+      debugPrint('Falling back to root download task path: $e');
+      baseDirectory = BaseDirectory.root;
+      directory = p.dirname(persistentPath);
+      filename = p.basename(persistentPath);
+    }
 
     return DownloadTask(
       taskId: _downloadTaskId,
@@ -727,7 +753,6 @@ class ModelService extends ChangeNotifier {
     try {
       // Install with timeout to prevent hanging
       await _runtime.installFromFile(filePath);
-      _model = await _getActiveVisionModel();
       await _markReady(status: 'Model ready');
     } catch (e) {
       debugPrint('Model installation failed: $e');
@@ -969,11 +994,6 @@ class ModelService extends ChangeNotifier {
   }
 
   Future<void> _reconcileStartupState() async {
-    final activeModel = await _tryActivateExistingModel();
-    if (activeModel) {
-      return;
-    }
-
     final filePath = _state.downloadFilePath ?? await _getDownloadDestination();
     final fileExists = await _isDownloadedModelPresent(filePath);
     if (fileExists) {
@@ -1046,17 +1066,6 @@ class ModelService extends ChangeNotifier {
         phase: ModelBootPhase.needsDownload,
       ),
     );
-  }
-
-  Future<bool> _tryActivateExistingModel() async {
-    try {
-      _model = await _getActiveVisionModel();
-      await _markReady(status: 'Model ready');
-      return true;
-    } catch (e) {
-      debugPrint('No active model found: $e');
-      return false;
-    }
   }
 
   Future<void> _syncFromTask(
@@ -1281,7 +1290,6 @@ class ModelService extends ChangeNotifier {
     try {
       // Install with timeout to prevent hanging
       await _runtime.installFromFile(filePath);
-      _model = await _getActiveVisionModel();
       await _markReady(status: 'Model ready');
     } catch (e) {
       debugPrint('Existing model installation failed: $e');
@@ -1653,15 +1661,29 @@ class ModelService extends ChangeNotifier {
     );
   }
 
+  Future<void> deactivateActiveModel() async {
+    _runtime.dispose();
+    _model = null;
+  }
+
+  Future<InferenceModel> _ensureActiveModel() async {
+    final currentModel = _model;
+    if (currentModel != null) {
+      return currentModel;
+    }
+
+    final activeModel = await _getActiveVisionModel();
+    _model = activeModel;
+    return activeModel;
+  }
+
   Future<String> identifySpecies(
     Uint8List imageBytes,
     String imageFormat,
   ) async {
-    if (_model == null) {
-      throw Exception('Model not loaded. Please wait for model to download.');
-    }
-
     try {
+      final activeModel = await _ensureActiveModel();
+
       final searchSpec = ToolSpec(
         name: ChatPrompts.speciesSearchToolDef['name'] as String,
         description: ChatPrompts.speciesSearchToolDef['description'] as String,
@@ -1688,7 +1710,7 @@ class ModelService extends ChangeNotifier {
 
       final result = await (_runtime as FlutterGemmaModelRuntime)
           .generateOptimizedResponse(
-        _model!,
+        activeModel,
         ChatPrompts.identifyInputPrompt,
         systemInstruction: ChatPrompts.identifySystemInstruction,
         imageBytes: imageBytes,
@@ -1734,7 +1756,7 @@ class ModelService extends ChangeNotifier {
     void Function(String token)? onToken,
   }) async {
     if (_model == null) {
-      throw Exception('Model not loaded. Please wait for model to download.');
+      throw Exception('Model not loaded. Please analyze an image first.');
     }
 
     try {
@@ -1783,11 +1805,11 @@ class ModelService extends ChangeNotifier {
 
   /// Translate [text] to [targetLang] using the on-device Gemma model.
   Future<String> translate(String text, String targetLang) async {
-    if (_model == null) {
-      throw Exception('Model not loaded. Please wait for model to download.');
-    }
-
     final prompt = ChatPrompts.translatePrompt(targetLang, text);
+
+    if (_model == null) {
+      throw Exception('Model not loaded. Please analyze an image first.');
+    }
 
     try {
       final response = await (_runtime as FlutterGemmaModelRuntime)

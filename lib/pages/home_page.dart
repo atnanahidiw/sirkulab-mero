@@ -254,6 +254,8 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
         );
       }
 
+      await modelService.deactivateActiveModel();
+
       // Only now, re-enable and re-initialize camera
       _shouldCameraBeRunning = true;
       Future.delayed(const Duration(milliseconds: 200), () {

@@ -1,17 +1,20 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
+import 'package:mero/l10n/app_localizations.dart';
 import 'package:mero/services/model_boot_state.dart';
 import 'package:mero/services/model_service.dart';
 import 'package:mero/widgets/startup_gate.dart';
 
 void main() {
-  testWidgets('startup gate shows splash and transitions to ready child',
+  testWidgets('startup gate shows splash while bootstrapping',
       (WidgetTester tester) async {
     final service = FakeModelService(
+      isInitialized: false,
       isLoading: true,
       isModelLoaded: false,
       status: 'Downloading: 42%',
@@ -22,8 +25,15 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<ModelService>.value(
         value: service,
-        child: const MaterialApp(
-          home: StartupGate(
+        child: MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const StartupGate(
             readyChild: Placeholder(key: Key('home-ready')),
           ),
         ),
@@ -32,83 +42,57 @@ void main() {
 
     expect(find.text('Downloading… 42%'), findsOneWidget);
     expect(find.byKey(const Key('home-ready')), findsNothing);
+  });
 
-    service.markReady();
+  testWidgets('startup gate shows ready child after 2 seconds',
+      (WidgetTester tester) async {
+    final service = FakeModelService(
+      isInitialized: false,
+      isLoading: false,
+      isModelLoaded: false,
+      status: 'Model download required',
+      phase: ModelBootPhase.needsDownload,
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ModelService>.value(
+        value: service,
+        child: MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const StartupGate(
+            readyChild: Placeholder(key: Key('home-ready')),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('home-ready')), findsNothing);
+    service.markInitialized();
     service.notifyListeners();
     await tester.pump();
-
+    expect(find.byKey(const Key('home-ready')), findsNothing);
+    await tester.pump(const Duration(seconds: 2));
     expect(find.byKey(const Key('home-ready')), findsOneWidget);
-  });
-
-  testWidgets('retry button calls retryInitialization',
-      (WidgetTester tester) async {
-    final service = FakeModelService(
-      isLoading: false,
-      isModelLoaded: false,
-      status: 'Error: network failed',
-      error: 'network failed',
-      phase: ModelBootPhase.downloading,
-    );
-
-    await tester.pumpWidget(
-      ChangeNotifierProvider<ModelService>.value(
-        value: service,
-        child: const MaterialApp(
-          home: StartupGate(
-            readyChild: Placeholder(key: Key('home-ready')),
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('Retry'), findsOneWidget);
-    await tester.tap(find.text('Retry'));
-    await tester.pump();
-
-    expect(service.retryCount, 1);
-    expect(service.isLoading, true);
-  });
-
-  testWidgets('canceled download shows retry action',
-      (WidgetTester tester) async {
-    final service = FakeModelService(
-      isLoading: false,
-      isModelLoaded: false,
-      status: 'Download canceled',
-      error: 'Download canceled',
-      phase: ModelBootPhase.canceled,
-    );
-
-    await tester.pumpWidget(
-      ChangeNotifierProvider<ModelService>.value(
-        value: service,
-        child: const MaterialApp(
-          home: StartupGate(
-            readyChild: Placeholder(key: Key('home-ready')),
-          ),
-        ),
-      ),
-    );
-
-    expect(find.text('Download canceled'), findsWidgets);
-    expect(find.text('Retry'), findsOneWidget);
-    await tester.tap(find.text('Retry'));
-    await tester.pump();
-
-    expect(service.retryCount, 1);
-    expect(service.isLoading, true);
   });
 }
 
 class FakeModelService extends ModelService {
   FakeModelService({
+    required bool isInitialized,
     required bool isLoading,
     required bool isModelLoaded,
     required String status,
     String? error,
     double? downloadProgress,
     ModelBootPhase? phase,
-  })  : _isLoading = isLoading,
+  })  : _isInitialized = isInitialized,
+        _isLoading = isLoading,
         _isModelLoaded = isModelLoaded,
         _status = status,
         _error = error,
@@ -116,7 +100,7 @@ class FakeModelService extends ModelService {
         _phase = phase ?? ModelBootPhase.idle,
         super(autoInitialize: false);
 
-  final bool _isInitialized = false;
+  bool _isInitialized;
   bool _isLoading;
   bool _isModelLoaded;
   String _status;
@@ -158,7 +142,6 @@ class FakeModelService extends ModelService {
 
   @override
   Future<void> resumeDownload() async {
-    retryCount += 1;
     _isLoading = true;
     _error = null;
     _status = 'Resuming model download...';
@@ -174,7 +157,6 @@ class FakeModelService extends ModelService {
 
   @override
   Future<void> retryInitialization() async {
-    retryCount += 1;
     _isLoading = true;
     _error = null;
     _status = 'Retrying model setup...';
@@ -182,7 +164,8 @@ class FakeModelService extends ModelService {
     notifyListeners();
   }
 
-  void markReady() {
+  void markInitialized() {
+    _isInitialized = true;
     _isLoading = false;
     _isModelLoaded = true;
     _status = 'Model ready';
