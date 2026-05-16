@@ -264,7 +264,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     String? systemInstruction,
     Uint8List? imageBytes,
     List<ToolSpec>? toolSpecs,
-    int maxTokens = 4096,
+    int maxTokens = 3072,
     double temperature = 0.7,
     int topK = 40,
     double topP = 0.9,
@@ -487,7 +487,7 @@ class ModelService extends ChangeNotifier {
   // Model configuration - Gemma 4 2B Instruct (quantized)
   static const String _modelRevision = 'main';
   static const ModelType modelType = ModelType.gemma4;
-  static const int maxTokens = 4096;
+  static const int maxTokens = 3072;
 
   final String modelUrl =
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';

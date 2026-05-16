@@ -58,7 +58,7 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
 
       _controller = CameraController(
         _cameras[0],
-        ResolutionPreset.medium,
+        ResolutionPreset.high,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
