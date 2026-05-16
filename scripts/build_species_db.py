@@ -121,6 +121,7 @@ def build_db(data_dir: str, output_path: str) -> int:
             family          TEXT NOT NULL DEFAULT '',
             genus           TEXT NOT NULL DEFAULT '',
             visual_features TEXT NOT NULL DEFAULT '',
+            visual_group    TEXT NOT NULL DEFAULT '',
             description     TEXT NOT NULL DEFAULT '',
 
             fun_fact                TEXT NOT NULL DEFAULT '[]',
@@ -173,7 +174,7 @@ def build_db(data_dir: str, output_path: str) -> int:
             """
             INSERT INTO species (
                 common_name, latin_name, kingdom, "class", "order",
-                family, genus, visual_features, description,
+                family, genus, visual_features, visual_group, description,
                 fun_fact, ecosystem_role, what_students_can_do,
                 human_connection, threats, habitat, habitat_tags,
                 conservation_status, population_estimate,
@@ -183,7 +184,7 @@ def build_db(data_dir: str, output_path: str) -> int:
                 visual_blob
             ) VALUES (
                 ?, ?, ?, ?, ?,
-                ?, ?, ?, ?,
+                ?, ?, ?, ?, ?,
                 ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?,
@@ -202,6 +203,7 @@ def build_db(data_dir: str, output_path: str) -> int:
                 sp.get("family", ""),
                 sp.get("genus", ""),
                 json.dumps(vf),
+                sp.get("visual_group", ""),
                 sp.get("description", ""),
                 json_val(sp.get("fun_fact", [])),
                 sp.get("ecosystem_role", ""),

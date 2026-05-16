@@ -22,6 +22,7 @@ class Species extends Table {
   TextColumn get family => text()();
   TextColumn get genus => text()();
   TextColumn get visualFeatures => text().named('visual_features')();
+  TextColumn get visualGroup => text().named('visual_group')();
   TextColumn get description => text()();
   TextColumn get funFact => text().named('fun_fact')();
   TextColumn get ecosystemRole => text().named('ecosystem_role')();
@@ -112,6 +113,13 @@ class SpeciesDatabase extends _$SpeciesDatabase {
 
   /// All species — for in-memory caches or counts.
   Future<List<SpeciesData>> getAll() => select(species).get();
+
+  /// Species in a given visual group (e.g. "Primate", "Flying bird").
+  Future<List<SpeciesData>> findByVisualGroup(String group) async {
+    return (select(species)
+          ..where((t) => t.visualGroup.equals(group)))
+        .get();
+  }
 
   /// Count of all species.
   Future<int> countAll() => select(species).get().then((r) => r.length);

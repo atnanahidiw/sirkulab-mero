@@ -22,6 +22,7 @@ class SpeciesDetail {
   final List<String> funFacts;
   final List<String> habitatTags;
   final Map<String, String> taxonomy;
+  final String visualGroup;
   final String populationEstimate;
   final String sourceUri;
 
@@ -39,6 +40,7 @@ class SpeciesDetail {
     required this.funFacts,
     required this.habitatTags,
     required this.taxonomy,
+    this.visualGroup = '',
     this.populationEstimate = '',
     this.sourceUri = '',
   });
@@ -89,6 +91,7 @@ class SpeciesDetail {
         'family': row.family,
         'genus': row.genus,
       },
+      visualGroup: row.visualGroup,
       populationEstimate: row.populationEstimate,
       sourceUri: row.populationEstimateSourceUri,
     );
@@ -199,6 +202,9 @@ class SpeciesService {
 
   /// Search for visually similar species by individual observed traits.
   ///
+  /// When [visualGroup] is provided, species are first narrowed to that visual
+  /// group (e.g. "Primate", "Flying bird") before FTS5 + Dice reranking.
+  ///
   /// Internally runs an FTS5 prefix‑match on the concatenated trait values,
   /// then reranks candidates using per‑field Dice‑overlap with fixed weights:
   ///   distinctive_marks×5  pattern×4  color×4  body_shape×3  texture×1  size_class×1
@@ -210,6 +216,7 @@ class SpeciesService {
     String texture = '',
     String sizeClass = '',
     String pattern = '',
+    String? visualGroup,
     String? taxClass,
     String? taxOrder,
     String? taxFamily,
@@ -245,19 +252,59 @@ class SpeciesService {
 
     if (cleanTerms.isEmpty) return [];
 
-    // Use broad 'OR' for flexible offline retrieval.
-    final ftsQuery = cleanTerms.map((w) => '"$w"*').join(' OR ');
+    // Build the query: filter by visualGroup first if provided
+    final useFts = !(traits.isEmpty);
+    List<Map<String, dynamic>> unfilteredRows;
 
-    final rows = await _db.customSelect(
-      'SELECT s.* FROM species s '
-      'JOIN species_fts f ON s.id = f.rowid '
-      'WHERE species_fts MATCH ?1 '
-      'LIMIT ?2',
-      variables: [Variable(ftsQuery), Variable(42)],
-      readsFrom: {_db.species},
-    ).get();
+    if (useFts) {
+      // Use broad 'OR' for flexible offline retrieval.
+      final ftsQuery = cleanTerms.map((w) => '"$w"*').join(' OR ');
 
-    if (rows.isEmpty) return [];
+      if (visualGroup != null && visualGroup.isNotEmpty) {
+        // Filter by visual_group + FTS5
+        unfilteredRows = (await _db.customSelect(
+          'SELECT s.* FROM species s '
+          'JOIN species_fts f ON s.id = f.rowid '
+          'WHERE species_fts MATCH ?1 AND s.visual_group = ?2 '
+          'LIMIT ?3',
+          variables: [Variable(ftsQuery), Variable(visualGroup), Variable(42)],
+          readsFrom: {_db.species},
+        ).get()).map((r) => r.data).toList();
+
+        // FTS5 fallback: if nothing found in group, get all from group unfiltered
+        if (unfilteredRows.isEmpty) {
+          final vgRows = await _db.customSelect(
+            'SELECT s.* FROM species s WHERE s.visual_group = ?1 LIMIT ?2',
+            variables: [Variable(visualGroup), Variable(42)],
+            readsFrom: {_db.species},
+          ).get();
+          unfilteredRows = vgRows.map((r) => r.data).toList();
+        }
+      } else {
+        unfilteredRows = (await _db.customSelect(
+          'SELECT s.* FROM species s '
+          'JOIN species_fts f ON s.id = f.rowid '
+          'WHERE species_fts MATCH ?1 '
+          'LIMIT ?2',
+          variables: [Variable(ftsQuery), Variable(42)],
+          readsFrom: {_db.species},
+        ).get()).map((r) => r.data).toList();
+      }
+    } else {
+      // No trait query — just visual group lookup
+      if (visualGroup != null && visualGroup.isNotEmpty) {
+        final vgRows = await _db.customSelect(
+          'SELECT s.* FROM species s WHERE s.visual_group = ?1 LIMIT ?2',
+          variables: [Variable(visualGroup), Variable(42)],
+          readsFrom: {_db.species},
+        ).get();
+        unfilteredRows = vgRows.map((r) => r.data).toList();
+      } else {
+        unfilteredRows = [];
+      }
+    }
+
+    if (unfilteredRows.isEmpty) return [];
 
     // Parse extracted features into structured data sets
     final obsTokens = <String, Set<String>>{};
@@ -279,8 +326,7 @@ class SpeciesService {
 
     final scored = <_RowScore>[];
 
-    for (final rawRow in rows) {
-      final data = rawRow.data;
+    for (final data in unfilteredRows) {
       double score = 0;
 
       for (final k in _vfKeys) {

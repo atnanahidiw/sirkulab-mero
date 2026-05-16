@@ -60,6 +60,19 @@ class ChatPrompts {
           'description':
               'Overall pattern (e.g. "striped", "spotted", "solid", "banded")',
         },
+        'visualGroup': {
+          'type': 'string',
+          'description':
+              'High-level visual group to narrow the search first. Choose the best match from: '
+              '"Primate", "Flying bird", "Large quadruped mammal", "Small quadruped mammal", '
+              '"Marine fish", "Marine mammal", "Flying mammal", "Flightless bird", '
+              '"Lizard", "Turtle & tortoise", "Snake", "Crocodilian", "Frog & toad", '
+              '"Freshwater fish", "Insect", "Mollusk & marine invertebrate", '
+              '"Tall broadleaf tree", "Palm tree", "Cycad", "Mangrove", '
+              '"Shrub & bush", "Vine & climber", "Grass & bamboo", "Ground herb", '
+              '"Aroid & giant herb", "Aquatic plant", "Fern", "Orchid", '
+              '"Pitcher plant", "Epiphyte", "Stemless giant flower"',
+        },
         'taxClass': {
           'type': 'string',
           'description':
@@ -81,7 +94,7 @@ class ChatPrompts {
               'Scientific genus hint (e.g. "Panthera", "Varanus")',
         },
       },
-      'required': ['color', 'body_shape', 'distinctive_marks', 'texture', 'size_class', 'pattern', 'taxClass', 'taxGenus'],
+      'required': ['color', 'body_shape', 'distinctive_marks', 'texture', 'size_class', 'pattern', 'visualGroup', 'taxClass', 'taxGenus'],
     },
   };
 
@@ -93,9 +106,11 @@ You are a high-precision biological identification engine. Reconcile visual evid
 <workflow_protocol>
 STEP 1: Look at the image. Extract visual traits: colour, body shape, distinctive marks, pattern, size class, texture. Also hypothesise the most likely Class, Order, Family, and Genus. DON'T MAKE THINGS UP!
 CRITICAL: Keep your visual fields focused purely on descriptive, observable physical attributes. Do not inject uncertain taxonomic guesses into the visual description keys (fill blank).
+Also determine the broad **visual group** this species belongs to (e.g. "Primate", "Flying bird", "Lizard", "Marine fish", "Tall broadleaf tree").
 
 STEP 2: Call the `search_similar_features` tool with the traits you observed.
 Fill in as many fields as you can. Every detail helps the search.
+Fill the **visualGroup** field with your best guess from STEP 1 — this narrows the search to only species in that group before doing similarity matching, making results more accurate.
 
 STEP 3: Wait for the tool results (ranked species with similarity scores and confidence %).
 

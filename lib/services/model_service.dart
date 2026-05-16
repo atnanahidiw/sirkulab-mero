@@ -1750,6 +1750,7 @@ class ModelService extends ChangeNotifier {
             texture: args['texture'] as String? ?? '',
             sizeClass: args['size_class'] as String? ?? '',
             pattern: args['pattern'] as String? ?? '',
+            visualGroup: args['visualGroup'] as String? ?? '',
             taxClass: args['taxClass'] as String? ?? '',
             taxOrder: args['taxOrder'] as String? ?? '',
             taxFamily: args['taxFamily'] as String? ?? '',

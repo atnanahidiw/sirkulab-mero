@@ -63,6 +63,12 @@ class $SpeciesTable extends Species with TableInfo<$SpeciesTable, SpeciesData> {
   late final GeneratedColumn<String> visualFeatures = GeneratedColumn<String>(
       'visual_features', aliasedName, false,
       type: DriftSqlType.string, requiredDuringInsert: true);
+  static const VerificationMeta _visualGroupMeta =
+      const VerificationMeta('visualGroup');
+  @override
+  late final GeneratedColumn<String> visualGroup = GeneratedColumn<String>(
+      'visual_group', aliasedName, false,
+      type: DriftSqlType.string, requiredDuringInsert: true);
   static const VerificationMeta _descriptionMeta =
       const VerificationMeta('description');
   @override
@@ -182,6 +188,7 @@ class $SpeciesTable extends Species with TableInfo<$SpeciesTable, SpeciesData> {
         family,
         genus,
         visualFeatures,
+        visualGroup,
         description,
         funFact,
         ecosystemRole,
@@ -265,6 +272,14 @@ class $SpeciesTable extends Species with TableInfo<$SpeciesTable, SpeciesData> {
               data['visual_features']!, _visualFeaturesMeta));
     } else if (isInserting) {
       context.missing(_visualFeaturesMeta);
+    }
+    if (data.containsKey('visual_group')) {
+      context.handle(
+          _visualGroupMeta,
+          visualGroup.isAcceptableOrUnknown(
+              data['visual_group']!, _visualGroupMeta));
+    } else if (isInserting) {
+      context.missing(_visualGroupMeta);
     }
     if (data.containsKey('description')) {
       context.handle(
@@ -422,6 +437,8 @@ class $SpeciesTable extends Species with TableInfo<$SpeciesTable, SpeciesData> {
           .read(DriftSqlType.string, data['${effectivePrefix}genus'])!,
       visualFeatures: attachedDatabase.typeMapping.read(
           DriftSqlType.string, data['${effectivePrefix}visual_features'])!,
+      visualGroup: attachedDatabase.typeMapping
+          .read(DriftSqlType.string, data['${effectivePrefix}visual_group'])!,
       description: attachedDatabase.typeMapping
           .read(DriftSqlType.string, data['${effectivePrefix}description'])!,
       funFact: attachedDatabase.typeMapping
@@ -478,6 +495,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
   final String family;
   final String genus;
   final String visualFeatures;
+  final String visualGroup;
   final String description;
   final String funFact;
   final String ecosystemRole;
@@ -506,6 +524,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
       required this.family,
       required this.genus,
       required this.visualFeatures,
+      required this.visualGroup,
       required this.description,
       required this.funFact,
       required this.ecosystemRole,
@@ -536,6 +555,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
     map['family'] = Variable<String>(family);
     map['genus'] = Variable<String>(genus);
     map['visual_features'] = Variable<String>(visualFeatures);
+    map['visual_group'] = Variable<String>(visualGroup);
     map['description'] = Variable<String>(description);
     map['fun_fact'] = Variable<String>(funFact);
     map['ecosystem_role'] = Variable<String>(ecosystemRole);
@@ -569,6 +589,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
       family: Value(family),
       genus: Value(genus),
       visualFeatures: Value(visualFeatures),
+      visualGroup: Value(visualGroup),
       description: Value(description),
       funFact: Value(funFact),
       ecosystemRole: Value(ecosystemRole),
@@ -603,6 +624,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
       family: serializer.fromJson<String>(json['family']),
       genus: serializer.fromJson<String>(json['genus']),
       visualFeatures: serializer.fromJson<String>(json['visualFeatures']),
+      visualGroup: serializer.fromJson<String>(json['visualGroup']),
       description: serializer.fromJson<String>(json['description']),
       funFact: serializer.fromJson<String>(json['funFact']),
       ecosystemRole: serializer.fromJson<String>(json['ecosystemRole']),
@@ -639,6 +661,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
       'family': serializer.toJson<String>(family),
       'genus': serializer.toJson<String>(genus),
       'visualFeatures': serializer.toJson<String>(visualFeatures),
+      'visualGroup': serializer.toJson<String>(visualGroup),
       'description': serializer.toJson<String>(description),
       'funFact': serializer.toJson<String>(funFact),
       'ecosystemRole': serializer.toJson<String>(ecosystemRole),
@@ -671,6 +694,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
           String? family,
           String? genus,
           String? visualFeatures,
+          String? visualGroup,
           String? description,
           String? funFact,
           String? ecosystemRole,
@@ -699,6 +723,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
         family: family ?? this.family,
         genus: genus ?? this.genus,
         visualFeatures: visualFeatures ?? this.visualFeatures,
+        visualGroup: visualGroup ?? this.visualGroup,
         description: description ?? this.description,
         funFact: funFact ?? this.funFact,
         ecosystemRole: ecosystemRole ?? this.ecosystemRole,
@@ -733,6 +758,8 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
       visualFeatures: data.visualFeatures.present
           ? data.visualFeatures.value
           : this.visualFeatures,
+      visualGroup:
+          data.visualGroup.present ? data.visualGroup.value : this.visualGroup,
       description:
           data.description.present ? data.description.value : this.description,
       funFact: data.funFact.present ? data.funFact.value : this.funFact,
@@ -783,6 +810,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
           ..write('family: $family, ')
           ..write('genus: $genus, ')
           ..write('visualFeatures: $visualFeatures, ')
+          ..write('visualGroup: $visualGroup, ')
           ..write('description: $description, ')
           ..write('funFact: $funFact, ')
           ..write('ecosystemRole: $ecosystemRole, ')
@@ -816,6 +844,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
         family,
         genus,
         visualFeatures,
+        visualGroup,
         description,
         funFact,
         ecosystemRole,
@@ -848,6 +877,7 @@ class SpeciesData extends DataClass implements Insertable<SpeciesData> {
           other.family == this.family &&
           other.genus == this.genus &&
           other.visualFeatures == this.visualFeatures &&
+          other.visualGroup == this.visualGroup &&
           other.description == this.description &&
           other.funFact == this.funFact &&
           other.ecosystemRole == this.ecosystemRole &&
@@ -879,6 +909,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
   final Value<String> family;
   final Value<String> genus;
   final Value<String> visualFeatures;
+  final Value<String> visualGroup;
   final Value<String> description;
   final Value<String> funFact;
   final Value<String> ecosystemRole;
@@ -907,6 +938,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
     this.family = const Value.absent(),
     this.genus = const Value.absent(),
     this.visualFeatures = const Value.absent(),
+    this.visualGroup = const Value.absent(),
     this.description = const Value.absent(),
     this.funFact = const Value.absent(),
     this.ecosystemRole = const Value.absent(),
@@ -936,6 +968,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
     required String family,
     required String genus,
     required String visualFeatures,
+    required String visualGroup,
     required String description,
     required String funFact,
     required String ecosystemRole,
@@ -962,6 +995,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
         family = Value(family),
         genus = Value(genus),
         visualFeatures = Value(visualFeatures),
+        visualGroup = Value(visualGroup),
         description = Value(description),
         funFact = Value(funFact),
         ecosystemRole = Value(ecosystemRole),
@@ -990,6 +1024,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
     Expression<String>? family,
     Expression<String>? genus,
     Expression<String>? visualFeatures,
+    Expression<String>? visualGroup,
     Expression<String>? description,
     Expression<String>? funFact,
     Expression<String>? ecosystemRole,
@@ -1019,6 +1054,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
       if (family != null) 'family': family,
       if (genus != null) 'genus': genus,
       if (visualFeatures != null) 'visual_features': visualFeatures,
+      if (visualGroup != null) 'visual_group': visualGroup,
       if (description != null) 'description': description,
       if (funFact != null) 'fun_fact': funFact,
       if (ecosystemRole != null) 'ecosystem_role': ecosystemRole,
@@ -1051,6 +1087,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
       Value<String>? family,
       Value<String>? genus,
       Value<String>? visualFeatures,
+      Value<String>? visualGroup,
       Value<String>? description,
       Value<String>? funFact,
       Value<String>? ecosystemRole,
@@ -1079,6 +1116,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
       family: family ?? this.family,
       genus: genus ?? this.genus,
       visualFeatures: visualFeatures ?? this.visualFeatures,
+      visualGroup: visualGroup ?? this.visualGroup,
       description: description ?? this.description,
       funFact: funFact ?? this.funFact,
       ecosystemRole: ecosystemRole ?? this.ecosystemRole,
@@ -1130,6 +1168,9 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
     }
     if (visualFeatures.present) {
       map['visual_features'] = Variable<String>(visualFeatures.value);
+    }
+    if (visualGroup.present) {
+      map['visual_group'] = Variable<String>(visualGroup.value);
     }
     if (description.present) {
       map['description'] = Variable<String>(description.value);
@@ -1201,6 +1242,7 @@ class SpeciesCompanion extends UpdateCompanion<SpeciesData> {
           ..write('family: $family, ')
           ..write('genus: $genus, ')
           ..write('visualFeatures: $visualFeatures, ')
+          ..write('visualGroup: $visualGroup, ')
           ..write('description: $description, ')
           ..write('funFact: $funFact, ')
           ..write('ecosystemRole: $ecosystemRole, ')
@@ -1245,6 +1287,7 @@ typedef $$SpeciesTableCreateCompanionBuilder = SpeciesCompanion Function({
   required String family,
   required String genus,
   required String visualFeatures,
+  required String visualGroup,
   required String description,
   required String funFact,
   required String ecosystemRole,
@@ -1274,6 +1317,7 @@ typedef $$SpeciesTableUpdateCompanionBuilder = SpeciesCompanion Function({
   Value<String> family,
   Value<String> genus,
   Value<String> visualFeatures,
+  Value<String> visualGroup,
   Value<String> description,
   Value<String> funFact,
   Value<String> ecosystemRole,
@@ -1330,6 +1374,9 @@ class $$SpeciesTableFilterComposer
   ColumnFilters<String> get visualFeatures => $composableBuilder(
       column: $table.visualFeatures,
       builder: (column) => ColumnFilters(column));
+
+  ColumnFilters<String> get visualGroup => $composableBuilder(
+      column: $table.visualGroup, builder: (column) => ColumnFilters(column));
 
   ColumnFilters<String> get description => $composableBuilder(
       column: $table.description, builder: (column) => ColumnFilters(column));
@@ -1429,6 +1476,9 @@ class $$SpeciesTableOrderingComposer
       column: $table.visualFeatures,
       builder: (column) => ColumnOrderings(column));
 
+  ColumnOrderings<String> get visualGroup => $composableBuilder(
+      column: $table.visualGroup, builder: (column) => ColumnOrderings(column));
+
   ColumnOrderings<String> get description => $composableBuilder(
       column: $table.description, builder: (column) => ColumnOrderings(column));
 
@@ -1527,6 +1577,9 @@ class $$SpeciesTableAnnotationComposer
   GeneratedColumn<String> get visualFeatures => $composableBuilder(
       column: $table.visualFeatures, builder: (column) => column);
 
+  GeneratedColumn<String> get visualGroup => $composableBuilder(
+      column: $table.visualGroup, builder: (column) => column);
+
   GeneratedColumn<String> get description => $composableBuilder(
       column: $table.description, builder: (column) => column);
 
@@ -1617,6 +1670,7 @@ class $$SpeciesTableTableManager extends RootTableManager<
             Value<String> family = const Value.absent(),
             Value<String> genus = const Value.absent(),
             Value<String> visualFeatures = const Value.absent(),
+            Value<String> visualGroup = const Value.absent(),
             Value<String> description = const Value.absent(),
             Value<String> funFact = const Value.absent(),
             Value<String> ecosystemRole = const Value.absent(),
@@ -1646,6 +1700,7 @@ class $$SpeciesTableTableManager extends RootTableManager<
             family: family,
             genus: genus,
             visualFeatures: visualFeatures,
+            visualGroup: visualGroup,
             description: description,
             funFact: funFact,
             ecosystemRole: ecosystemRole,
@@ -1675,6 +1730,7 @@ class $$SpeciesTableTableManager extends RootTableManager<
             required String family,
             required String genus,
             required String visualFeatures,
+            required String visualGroup,
             required String description,
             required String funFact,
             required String ecosystemRole,
@@ -1704,6 +1760,7 @@ class $$SpeciesTableTableManager extends RootTableManager<
             family: family,
             genus: genus,
             visualFeatures: visualFeatures,
+            visualGroup: visualGroup,
             description: description,
             funFact: funFact,
             ecosystemRole: ecosystemRole,
