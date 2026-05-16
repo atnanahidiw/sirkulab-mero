@@ -37,7 +37,14 @@ class _StartupGateState extends State<StartupGate> {
   Widget build(BuildContext context) {
     return Consumer<ModelService>(
       builder: (context, modelService, _) {
-        if (modelService.isInitialized) {
+        final canProceed = modelService.isInitialized && modelService.isModelLoaded;
+
+        if (!canProceed) {
+          _timer?.cancel();
+          _timer = null;
+          _delayScheduled = false;
+          _showReadyChild = false;
+        } else {
           if (!_delayScheduled && !_showReadyChild) {
             _delayScheduled = true;
             _timer?.cancel();

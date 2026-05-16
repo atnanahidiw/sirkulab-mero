@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import 'package:mero/l10n/app_localizations.dart';
 import 'package:mero/services/model_boot_state.dart';
 import 'package:mero/services/model_service.dart';
+import 'package:mero/widgets/model_boot_splash.dart';
 import 'package:mero/widgets/startup_gate.dart';
 
 void main() {
@@ -79,6 +80,40 @@ void main() {
     expect(find.byKey(const Key('home-ready')), findsNothing);
     await tester.pump(const Duration(seconds: 2));
     expect(find.byKey(const Key('home-ready')), findsOneWidget);
+  });
+
+  testWidgets('startup gate keeps splash when model is not downloaded',
+      (WidgetTester tester) async {
+    final service = FakeModelService(
+      isInitialized: true,
+      isLoading: false,
+      isModelLoaded: false,
+      status: 'Model download required',
+      phase: ModelBootPhase.needsDownload,
+    );
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ModelService>.value(
+        value: service,
+        child: MaterialApp(
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          home: const StartupGate(
+            readyChild: Placeholder(key: Key('home-ready')),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byKey(const Key('home-ready')), findsNothing);
+    expect(find.byType(ModelBootSplash), findsOneWidget);
+    await tester.pump(const Duration(seconds: 3));
+    expect(find.byKey(const Key('home-ready')), findsNothing);
   });
 }
 
