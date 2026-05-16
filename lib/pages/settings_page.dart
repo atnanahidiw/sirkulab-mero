@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -260,6 +261,10 @@ class SettingsPage extends StatelessWidget {
   }
 
   void _showModelInfo(BuildContext context, ModelService modelService, AppLocalizations l10n) {
+    final locale = Localizations.localeOf(context).toString();
+    final dateFormat = DateFormat.yMMMMd(locale).add_Hm();
+    final lastUpdate = dateFormat.format(modelService.updatedAt);
+
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
@@ -274,6 +279,19 @@ class SettingsPage extends StatelessWidget {
               const SizedBox(height: 8),
               Text(l10n.settingsStatus(modelService.status)),
               const SizedBox(height: 8),
+              if (modelService.isModelLoaded) ...[
+                const Text('Last Download:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(lastUpdate),
+                const SizedBox(height: 8),
+                const Text('Storage Path:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                Text(
+                  modelService.downloadFilePath ?? 'Unknown',
+                  style: const TextStyle(fontSize: 12),
+                ),
+                const SizedBox(height: 8),
+              ],
               Text(l10n.settingsCapabilities,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               Text(l10n.settingsCapabilityMultimodal),
@@ -309,6 +327,11 @@ class SettingsPage extends StatelessWidget {
             const SizedBox(height: 16),
             if (modelService.isModelLoaded) ...[
               Text(l10n.settingsModelLoadedDescription),
+              const SizedBox(height: 8),
+              Text(
+                'Last download: ${DateFormat.yMMMMd(Localizations.localeOf(context).toString()).add_Hm().format(modelService.updatedAt)}',
+                style: Theme.of(context).textTheme.bodySmall,
+              ),
               const SizedBox(height: 8),
             ],
             if (!modelService.isModelLoaded && modelService.isInitialized) ...[
@@ -490,7 +513,9 @@ class _ModelInfoCard extends StatelessWidget {
                         ),
                       ),
                       Text(
-                        '2.4 GB · On-device inference',
+                        modelService.isModelLoaded
+                            ? '2.4 GB · Updated ${DateFormat.yMd(Localizations.localeOf(context).toString()).add_Hm().format(modelService.updatedAt)}'
+                            : '2.4 GB · On-device inference',
                         style: textTheme.bodySmall?.copyWith(
                           color: colorScheme.onPrimaryContainer
                               .withValues(alpha: 0.7),

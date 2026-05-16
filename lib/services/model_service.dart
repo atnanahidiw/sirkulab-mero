@@ -531,6 +531,21 @@ class ModelService extends ChangeNotifier {
 
   String? get downloadPhase => _state.downloadPhase;
 
+  DateTime get updatedAt {
+    final path = downloadFilePath;
+    if (path != null) {
+      try {
+        final file = File(path);
+        if (file.existsSync()) {
+          return file.lastModifiedSync();
+        }
+      } catch (e) {
+        debugPrint('Error getting model file modification date: $e');
+      }
+    }
+    return _state.updatedAt;
+  }
+
   InferenceModel? get model => _model;
 
   String? get pendingModelSize => _pendingModelSize;
@@ -923,7 +938,7 @@ class ModelService extends ChangeNotifier {
   }
 
   void _commitState(ModelBootState nextState) {
-    _state = nextState.copyWith(updatedAt: DateTime.now());
+    _state = nextState;
     notifyListeners();
     unawaited(_persistState());
   }
@@ -1328,6 +1343,7 @@ class ModelService extends ChangeNotifier {
         error: null,
         downloadProgress: null,
         phase: ModelBootPhase.ready,
+        updatedAt: DateTime.now(),
       ),
     );
   }
@@ -1646,6 +1662,19 @@ class ModelService extends ChangeNotifier {
     }
 
     await cancelDownload();
+
+    // Delete the actual model file if it exists
+    final filePath = _state.downloadFilePath ?? await _getDownloadDestination();
+    try {
+      final file = File(filePath);
+      if (await file.exists()) {
+        await file.delete();
+        debugPrint('Deleted model file: $filePath');
+      }
+    } catch (e) {
+      debugPrint('Failed to delete model file: $e');
+    }
+
     await _stateStore?.clear();
 
     _commitState(
