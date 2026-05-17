@@ -1,4 +1,5 @@
 # Flutter
+.metadata
 .dart_tool/
 .packages
 .pub-cache/
@@ -42,6 +43,7 @@ linux/flutter/generated_plugins.cmake
 # IDE
 .vscode/
 .idea/
+.windsurf/
 *.swp
 *.swo
 *~
