@@ -1,170 +1,131 @@
-# Mero - Empowering the Guardians of Tomorrow
+<p align="center">
+  <img
+    src="android/app/src/main/res/mipmap-hdpi/ic_launcher.png"
+    width="60"
+    alt="Mero Logo"
+  />
+  <br/>
+  <br/>
+  <strong>Mero — Empowering the Guardians of Tomorrow</strong>
+</p>
 
-> we can’t protect what we don’t recognize
+<p align="center"><em>"We can't protect what we don't recognize."</em></p>
 
-A Flutter application that uses Gemma 4 AI model running locally on device to identify endangered species from images. Works offline after initial model download.
+<p align="center">
+  <img alt="Flutter" src="https://img.shields.io/badge/Flutter-3.0%2B-02569B?logo=flutter" />
+  <img alt="Platform" src="https://img.shields.io/badge/Platform-Android-lightgrey?logo=android" />
+  <img alt="AI" src="https://img.shields.io/badge/AI-Gemma%204%20(On--Device)-4285F4?logo=google" />
+  <img alt="Offline" src="https://img.shields.io/badge/Works-Offline-brightgreen" />
+  <img alt="License" src="https://img.shields.io/badge/License-MIT-yellow" />
+</p>
+
+<br/>
+
+Indonesia holds a significant percentage of the world's endangered species, but **students living on the frontlines** lack the internet access needed to identify them, limiting their ability to protect the environment. \
+Mero addresses this gap leveraging **Gemma 4 AI model running locally on-device** to identify endangered species from images, delivering crucial conservation education entirely without connectivity.
+
+---
 
 ## Features
 
-- **On-device AI**: Uses Gemma 4 E2B model running locally for privacy and offline use
-- **Image Analysis**: Takes photos or selects from gallery for species identification
-- **Conservation Info**: Provides conservation status and information about endangered species
-- **Minimal Internet**: Only requires internet for initial model download (~2.4GB)
-- **Cross-platform**: Works on iOS, Android, Web, macOS, Windows, and Linux
+- **On-Device AI** — Gemma 4 E2B runs entirely on your device; no data leaves your phone
+- **Camera Integration** — Snap a photo and get an instant species identification
+- **Conservation Info** — Learn about each species' conservation status and background
+  - IUCN Conservation Status — Colour-coded badge (Least Concern → Critically Endangered) with full status detail for every identified species
+  - Threats & Ecosystem Role — Understand why a species matters and what's putting it at risk
+  - What You Can Do — Actionable conservation tips tailored to each species
+- **Offline-First** — Internet is only needed once, for the initial model download (~2.4 GB)
+- **Dual Language** — Full support for Bahasa Indonesia and English, switchable in-app
+
+---
 
 ## Prerequisites
 
-1. **Flutter SDK**: Version 3.0.0 or higher
-2. **Platform-specific setup**:
-   - iOS: Minimum iOS 16.0
-   - Android: OpenGL support for GPU acceleration
-   - Desktop: Platform-specific dependencies (see below)
+- **Flutter SDK** 3.0.0 or higher ([install guide](https://docs.flutter.dev/get-started/install))
+- **Android**: A device or emulator with OpenGL ES 3.1+ support (required for GPU acceleration; falls back to CPU on unsupported devices)
+- **Free storage**: At least 3 GB for the model and app
 
-## Installation
+---
 
-1. Clone or download this project
-2. Install dependencies:
-   ```bash
-   flutter pub get
-   ```
-3. Platform-specific setup:
+## Download  
 
-### iOS Setup
-Add to `ios/Podfile`:
-```ruby
-platform :ios, '16.0'  # Required for MediaPipe GenAI
-```
+Get the latest APK from [Releases](../../releases)  
 
-Add to `ios/Runner/Info.plist`:
-```xml
-<key>UIFileSharingEnabled</key>
-<true/>
-<key>NSLocalNetworkUsageDescription</key>
-<string>This app requires local network access for model inference services.</string>
-```
+---
 
-### Android Setup
-Add to `android/app/src/main/AndroidManifest.xml` (above `</application>`):
-```xml
-<uses-native-library
-    android:name="libOpenCL.so"
-    android:required="false"/>
-<uses-native-library
-    android:name="libOpenCL-car.so"
-    android:required="false"/>
-<uses-native-library
-    android:name="libOpenCL-pixel.so"
-    android:required="false"/>
-```
+## Model Details
 
-### Web Setup
-Add to `web/index.html` (in `<head>` section):
-```html
-<script type="module">
-  import { FilesetResolver, LlmInference } from 'https://cdn.jsdelivr.net/npm/@mediapipe/tasks-genai@0.10.27';
-  window.FilesetResolver = FilesetResolver;
-  window.LlmInference = LlmInference;
-</script>
-```
+<details>
+<summary>Show details</summary>
 
-### Desktop Setup
-See [flutter_gemma desktop documentation](https://github.com/DenisovAV/flutter_gemma/blob/main/DESKTOP_SUPPORT.md) for platform-specific setup.
+| Property | Value |
+|---|---|
+| Model | Gemma 4 E2B |
+| Size | ~2.4 GB (int4 quantized) |
+| Format | `.litertlm` (LiteRT-LM) |
+| Modality | Multimodal (text + image) |
+| Context window | 4096 tokens |
+| Source | [litert-community/gemma-4-E2B-it-litert-lm](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm) |
 
-## Usage
+</details>
 
-1. **First Run**: The app will prompt to download the Gemma 4 model (~2.4GB). This requires internet connection.
-2. **After Download**: Works completely offline.
-3. **Take/Select Photo**: Use camera or gallery to select an image.
-4. **Analyze**: Tap "Identify Endangered Species" to analyze the image.
-5. **View Results**: See species identification, conservation status, and information.
-
-## Model Information
-
-- **Model**: Gemma 4 E2B (2.4GB, int4 quantized)
-- **Format**: `.litertlm` (LiteRT-LM format)
-- **Capabilities**: Multimodal (text + image), 1024 token context
-- **Source**: [HuggingFace - litert-community/gemma-4-E2B-it-litert-lm](https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm)
-
-## Project Structure
-
-```
-lib/
-├── main.dart              # App entry point
-├── services/
-│   └── model_service.dart # Gemma model management
-└── pages/
-    ├── home_page.dart     # Main screen with camera/gallery
-    └── result_page.dart   # Analysis results display
-```
+---
 
 ## Dependencies
 
-- `flutter_gemma`: On-device Gemma model inference
-- `camera`: Camera access for taking photos
-- `image_picker`: Image selection from gallery
-- `permission_handler`: Camera and photo library permissions
-- `provider`: State management
+| Package | Purpose |
+|---|---|
+| [`flutter_gemma`](https://pub.dev/packages/flutter_gemma) | On-device Gemma model inference |
+| [`camera`](https://pub.dev/packages/camera) | Camera access |
+| [`permission_handler`](https://pub.dev/packages/permission_handler) | Runtime permissions |
+| [`provider`](https://pub.dev/packages/provider) | State management |
 
-## Building for Release
-
-### iOS
-```bash
-flutter build ios --release
-```
-
-### Android
-```bash
-flutter build apk --release
-# or for app bundle:
-flutter build appbundle --release
-```
-
-### Web
-```bash
-flutter build web --release
-```
-
-### Desktop
-```bash
-flutter build macos --release
-flutter build windows --release
-flutter build linux --release
-```
+---
 
 ## Limitations
 
-- **Model Size**: 2.4GB download required for first use
-- **Accuracy**: Depends on model training data; may not recognize all species
-- **Performance**: Inference speed depends on device hardware
-- **Battery**: AI inference can be battery-intensive
+- **Model size**: A one-time ~2.4 GB download is required
+- **Accuracy**: Identification quality depends on model training data; rare or visually similar species may be misidentified
+- **Performance**: Inference speed varies by device — newer hardware will be significantly faster
+- **Battery**: On-device AI inference is compute-intensive; expect higher battery usage during active identification
+
+---
 
 ## Privacy
 
-- All image processing happens locally on device
-- No images are uploaded to external servers
-- Model runs completely offline after download
-- No personal data collection
+- All image analysis happens **locally on your device**
+- Photos are never uploaded to any server
+- The model runs fully offline after the initial download
+- No personal data is collected or transmitted
+
+---
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make changes and test thoroughly
-4. Submit a pull request
+Contributions are welcome! Here's how to get started:
 
-## License
+1. Fork this repository
+2. Create a feature branch: `git checkout -b feature/your-feature-name`
+3. Make your changes and test on both Android and iOS if possible
+4. Commit with a clear message: `git commit -m "feat: describe your change"`
+5. Push and open a Pull Request
 
-MIT License - see LICENSE file for details.
+Please open an issue first for large changes so we can discuss the approach.
+
+---
+
+## Built With
+
+- [flutter_gemma](https://pub.dev/packages/flutter_gemma) by DenisovAV
+- [Google Gemma](https://ai.google.dev/gemma)
 
 ## Acknowledgments
 
-- [flutter_gemma](https://pub.dev/packages/flutter_gemma) by DenisovAV
-- [Google Gemma](https://ai.google.dev/gemma) team
-- Conservation organizations worldwide
+- [Sirkula Indonesia](https://sirkulaindonesia.com/) ([@sirkulaindonesia](https://www.instagram.com/sirkulaindonesia/)) for their conservation mission and inspiration
+- Conservation organizations around the world working to protect endangered species
 
-## Support
+---
 
-For issues and questions:
-1. Check [flutter_gemma documentation](https://github.com/DenisovAV/flutter_gemma)
-2. Open an issue on GitHub
-3. Check Flutter documentation for platform-specific issues
+## License
+
+This project is licensed under the [MIT License](LICENSE).
