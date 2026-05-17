@@ -357,7 +357,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         onProgress?.call('Preparing session...', 0.15);
 
         final session = await model.createSession(
-          enableVisionModality: true,
+          enableVisionModality: imageBytes != null,
           randomSeed: seed,
           temperature: temperature,
           topK: topK,
@@ -391,7 +391,11 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           onProgress?.call('Complete', 1.0);
           return buffer.toString();
         } finally {
-          await session.close();
+          try {
+            await session.close();
+          } catch (closeError) {
+            debugPrint('Session close error (non-fatal): $closeError');
+          }
         }
       }
 
@@ -1760,13 +1764,22 @@ class ModelService extends ChangeNotifier {
           if (results.isEmpty) {
             return 'No matching endangered species found. Try different traits.';
           }
-          return results
-              .map((r) =>
-                  '${r.detail.scientificName} (${r.detail.commonName}) -- '
-                  'score: ${r.score.toStringAsFixed(1)}, '
-                  'confidence: ${r.confidence.toStringAsFixed(0)}% -- '
-                  '${r.detail.visualFeatures}')
-              .join(' | ');
+          final candidates = results.map((r) {
+            Map<String, dynamic> features;
+            try {
+              features = jsonDecode(r.detail.visualFeatures) as Map<String, dynamic>;
+            } catch (_) {
+              features = {'raw': r.detail.visualFeatures};
+            }
+            return {
+              'scientific_name': r.detail.scientificName,
+              'common_name': r.detail.commonName,
+              'score': double.parse(r.score.toStringAsFixed(1)),
+              'confidence': double.parse(r.confidence.toStringAsFixed(2)),
+              'visual_features': features,
+            };
+          }).toList();
+          return jsonEncode(candidates);
         },
         subsequentPrompt: Message.text(
           text: ChatPrompts.identifySynthesisPrompt,

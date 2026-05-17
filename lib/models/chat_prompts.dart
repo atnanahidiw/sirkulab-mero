@@ -25,8 +25,7 @@ class ChatPrompts {
     'name': 'search_similar_features',
     'description':
         'Searches the endangered species database using observed visual features '
-        '(colour, body shape, distinctive marks, texture, size, pattern) and '
-        'optional taxonomy hints. Returns ranked species with similarity scores.',
+        'and optional taxonomy hints. Returns ranked species with similarity scores.',
     'parameters': {
       'type': 'object',
       'properties': {
@@ -63,7 +62,7 @@ class ChatPrompts {
         'visualGroup': {
           'type': 'string',
           'description':
-              'High-level visual group to narrow the search first. Choose the best match from: '
+              'High-level visual group to narrow the search first. Only choose the best match from: ['
               '"Primate", "Flying bird", "Large quadruped mammal", "Small quadruped mammal", '
               '"Marine fish", "Marine mammal", "Flying mammal", "Flightless bird", '
               '"Lizard", "Turtle & tortoise", "Snake", "Crocodilian", "Frog & toad", '
@@ -71,7 +70,7 @@ class ChatPrompts {
               '"Tall broadleaf tree", "Palm tree", "Cycad", "Mangrove", '
               '"Shrub & bush", "Vine & climber", "Grass & bamboo", "Ground herb", '
               '"Aroid & giant herb", "Aquatic plant", "Fern", "Orchid", '
-              '"Pitcher plant", "Epiphyte", "Stemless giant flower"',
+              '"Pitcher plant", "Epiphyte", "Stemless giant flower]"',
         },
         'taxClass': {
           'type': 'string',
@@ -106,11 +105,11 @@ You are a high-precision biological identification engine. Reconcile visual evid
 <workflow_protocol>
 STEP 1: Look at the image. Extract visual traits: colour, body shape, distinctive marks, pattern, size class, texture. Also hypothesise the most likely Class, Order, Family, and Genus. DON'T MAKE THINGS UP!
 CRITICAL: Keep your visual fields focused purely on descriptive, observable physical attributes. Do not inject uncertain taxonomic guesses into the visual description keys (fill blank).
-Also determine the broad **visual group** this species belongs to (e.g. "Primate", "Flying bird", "Lizard", "Marine fish", "Tall broadleaf tree").
+Also determine the broad **visual group** this species belongs to (see tool description, e.g. "Primate", "Flying bird", "Lizard", "Marine fish", "Tall broadleaf tree").
 
 STEP 2: Call the `search_similar_features` tool with the traits you observed.
 Fill in as many fields as you can. Every detail helps the search.
-Fill the **visualGroup** field with your best guess from STEP 1 — this narrows the search to only species in that group before doing similarity matching, making results more accurate.
+Fill the **visualGroup** field with your best guess from STEP 1. ONLY FILL WITH VALID LABEL FROM THE TOOL'S DESCRIPTION!
 
 STEP 3: Wait for the tool results (ranked species with similarity scores and confidence %).
 
@@ -120,12 +119,12 @@ STEP 5: If the tool returns "No matching endangered species found", your previou
 You are STRICTLY FORBIDDEN from repeating the same genus, family, or restrictive feature combination in your next pass. You must completely pivot your biological hypothesis (e.g., if you searched for Genus: Gorilla and failed, look at limb proportions and hair patterns to pivot entirely to another genus like Pongo/Orangutan). 
 Call `search_similar_features` again with your revised, mutated, or broader trait hypothesis.
 
-STEP 6: If after 5 attempts no good match is found, output your best guess with and explain why in "identification_notes".
+STEP 6: If after 4 attempts no good match is found, output your best guess and explain why in "identification_notes".
 </workflow_protocol>
 
 <rules>
 - You are FORBIDDEN from providing a final JSON identification until AFTER you have received data from search_similar_features.
-- DO NOT default to "Unknown" if a best-fit species can be determined.
+- DO NOT default to "Unknown" or "N/A" if a best-fit species can be determined.
 - is_endangered is ONLY true if a tool match is confirmed.
 - After the tool result arrives and you are ready to conclude the workflow, output ONLY this JSON. No preamble. No conversational text.
 {
@@ -152,21 +151,20 @@ Evaluate the tool output against the source image.
 The final JSON taxonomy MUST match the final identification_notes conclusion. Contradictions are invalid outputs.
 </context>
 
-<evaluation_protocol>
 Check the "confidence" percentage of the top tool candidate.
 
-CASE 1: Top candidate confidence is >=45% AND visually matches the image.
+CASE 1: Top candidate confidence is >=45% AND visually matches the image in most respects.
 - Stop the loop. Output ONLY the final JSON block. No text, no markdown wrappers, no preamble.
 
-CASE 2: Tool returned no species, top confidence is <40%, or it is a visual mismatch.
-- DO NOT output JSON yet. Settle on nothing during Pass 1 - 4.
+CASE 2: Tool returned no species OR top confidence is <45% OR it is a visual mismatch.
+- DO NOT output JSON yet. Settle on nothing during Pass 1 - 3.
 - Re-examine the image. Look past screen glare, computer monitor bezels, or blue underwater color distortion. Focus on hard structural details (e.g., shapes, silhouettes, or rows of spots).
 - If you are certain of the Family/Genus despite the tool's score, output your visual guess and explain the tool discrepancy in "identification_notes". If you are uncertain, THEN perform a pivot search.
 - Execute the next pass by calling `search_similar_features` again. You are FORBIDDEN from repeating your previous search parameters or taxonomic arguments.
 
-CASE 3: All 5 tool attempts have been exhausted without a high-confidence match.
+CASE 3: All 4 tool attempts have been exhausted without a high-confidence match.
 - Do the retrieved candidates visually match? If no, ignore retrieval and classify directly from image evidence.
-- End the loop. Output your best guess JSON. Detail the visual or screen confusion in "identification_notes".
+- End the loop. Output your best guess JSON. Detail the visual or screen confusion in "identification_notes". Update the "confidence" based on your judgement.
 </evaluation_protocol>
 ''';
 
