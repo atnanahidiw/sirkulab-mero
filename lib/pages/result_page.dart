@@ -47,6 +47,8 @@ class _ResultPageState extends State<ResultPage>
   Map<String, dynamic>? _parsedJson;
   bool _hintsInitialized = false;
   bool _recognitionFailed = false;
+  bool _hintsInteracted = false;
+  bool _initialScrollDone = false;
   AppLocalizations? _l10n;
 
   @override
@@ -70,6 +72,9 @@ class _ResultPageState extends State<ResultPage>
     // Recognition failed only if NO DB hit AND NO parsed JSON name.
     _recognitionFailed = _species == null &&
         (_jsonScientificName == null || _jsonScientificName!.isEmpty);
+
+    WidgetsBinding.instance
+        .addPostFrameCallback((_) => _performInitialScroll());
   }
 
   @override
@@ -183,15 +188,18 @@ class _ResultPageState extends State<ResultPage>
 
     setState(() {
       _chatMessages.add({'role': 'user', 'content': text});
+      _chatMessages.add({'role': 'assistant', 'content': ''});
       if (usedHint != null) _remainingHints.remove(usedHint);
       _isAnalyzing = true;
     });
 
-    await _scrollToBottom();
+    _scrollToBottom();
+
+    final int streamingIndex = _chatMessages.length - 1;
 
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
-      
+
       // Build context for the system instruction
       final systemContext = ChatPrompts.buildQuestionContext(
         analysisResult: widget.analysisResult,
@@ -202,19 +210,15 @@ class _ResultPageState extends State<ResultPage>
         description: _species?.description,
         facts: _species?.funFacts,
       );
-      
+
       // Create system instruction with context
       final langName = _l10n!.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
       final systemInstruction = ChatPrompts.answerSystemInstruction(
         langName,
         context: systemContext
       );
-      
-      setState(() {
-        _chatMessages.add({'role': 'assistant', 'content': ''});
-      });
 
-      final int streamingIndex = _chatMessages.length - 1;
+      debugPrint('System Instruction: $systemInstruction');
 
       await modelService.askQuestion(
         text,
@@ -222,38 +226,77 @@ class _ResultPageState extends State<ResultPage>
         onProgress: (_, __) {},
         onToken: (token) {
           if (!mounted) return;
-          setState(() {
-            _chatMessages[streamingIndex]['content'] += token;
-          });
-          _scrollToBottom();
+          try {
+            setState(() {
+              _chatMessages[streamingIndex]['content'] += token;
+            });
+            _scrollToBottom();
+          } catch (e) {
+            debugPrint('onToken error: $e');
+            rethrow;
+          }
         },
       );
 
-      await _scrollToBottom();
+      _scrollToBottom();
       await Future.delayed(const Duration(milliseconds: 400));
       if (!mounted) return;
       setState(() => _isAnalyzing = false);
     } catch (e) {
+      debugPrint('_askQuestion caught: $e');
+      // Update the existing empty assistant bubble with error text
+      // instead of adding a duplicate.
       setState(() {
-        _chatMessages.add({
-          'role': 'assistant',
-          'content':
-              'I apologize, but I encountered an error while processing your question. Please try again.',
-        });
+        if (streamingIndex < _chatMessages.length) {
+          _chatMessages[streamingIndex]['content'] =
+              'I apologize, but I encountered an error while processing your question. Please try again.';
+        } else {
+          _chatMessages.add({
+            'role': 'assistant',
+            'content':
+                'I apologize, but I encountered an error while processing your question. Please try again.',
+          });
+        }
         _isAnalyzing = false;
       });
-      _scrollToBottom();
+      if (mounted) _scrollToBottom();
     }
   }
 
-  Future<void> _scrollToBottom() async {
+  void _scrollToBottom() {
     if (_scrollController.hasClients) {
+      try {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOut,
+        );
+      } catch (e) {
+        debugPrint('ScrollToBottom error: $e');
+      }
+    }
+  }
+
+  void _performInitialScroll() {
+    if (_scrollController.hasClients && !_initialScrollDone) {
       _scrollController.animateTo(
         _scrollController.position.maxScrollExtent,
-        duration: const Duration(milliseconds: 100),
-        curve: Curves.easeOut,
+        duration: const Duration(milliseconds: 5000),
+        curve: Curves.easeOutCubic,
       );
+      _initialScrollDone = true;
     }
+  }
+
+  void _onHintTap(String hint) {
+    if (!_hintsInteracted) {
+      setState(() => _hintsInteracted = true);
+    }
+    setState(() => _activeHint = hint);
+    _questionController.text = hint;
+    _questionController.selection = TextSelection.fromPosition(
+      TextPosition(offset: hint.length),
+    );
   }
 
   Future<void> _launchUrl(String url) async {
@@ -317,14 +360,9 @@ class _ResultPageState extends State<ResultPage>
         hintBatch: _currentHintBatch,
         colorScheme: colorScheme,
         textTheme: textTheme,
+        hintsInteracted: _hintsInteracted,
         onSend: _askQuestion,
-        onHintTap: (hint) {
-          setState(() => _activeHint = hint);
-          _questionController.text = hint;
-          _questionController.selection = TextSelection.fromPosition(
-            TextPosition(offset: hint.length),
-          );
-        },
+        onHintTap: _onHintTap,
       ) : null,
       body: CustomScrollView(
         controller: _scrollController,
@@ -741,6 +779,8 @@ class _ChatInputBar extends StatelessWidget {
   final TextEditingController controller;
   final bool isAnalyzing;
   final List<String> hintBatch;
+  final bool hintsInteracted;
+
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final VoidCallback onSend;
@@ -750,6 +790,7 @@ class _ChatInputBar extends StatelessWidget {
     required this.controller,
     required this.isAnalyzing,
     required this.hintBatch,
+    required this.hintsInteracted,
     required this.colorScheme,
     required this.textTheme,
     required this.onSend,
@@ -760,16 +801,29 @@ class _ChatInputBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
+    // Colors based on whether hints have been interacted with
+    final Color outerBg = hintsInteracted
+        ? colorScheme.surfaceContainer
+        : const Color(0xFF81C784);
+    final Color chipBg = hintsInteracted
+        ? colorScheme.surfaceContainerHighest
+        : const Color(0xFFA5D6A7);
+    final Color chipTextColor = hintsInteracted
+        ? colorScheme.onSurfaceVariant
+        : const Color(0xFF1B5E20);
+
+    final EdgeInsetsGeometry padding = EdgeInsets.only(
+      bottom: MediaQuery.of(context).viewInsets.bottom +
+          MediaQuery.of(context).padding.bottom +
+          8,
+      top: 8,
+      left: 12,
+      right: 12,
+    );
+
     return Container(
-      color: colorScheme.surfaceContainer,
-      padding: EdgeInsets.only(
-        bottom: MediaQuery.of(context).viewInsets.bottom +
-            MediaQuery.of(context).padding.bottom +
-            8,
-        top: 8,
-        left: 12,
-        right: 12,
-      ),
+      color: outerBg,
+      padding: padding,
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -785,9 +839,9 @@ class _ChatInputBar extends StatelessWidget {
                     label: Text(hint),
                     onSelected: (_) => onHintTap(hint),
                     selected: false,
-                    backgroundColor: colorScheme.surfaceContainerHighest,
+                    backgroundColor: chipBg,
                     labelStyle: textTheme.labelMedium?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
+                      color: chipTextColor,
                     ),
                     side: BorderSide.none,
                   ),
@@ -806,7 +860,11 @@ class _ChatInputBar extends StatelessWidget {
                   onSubmitted: (_) => onSend(),
                   decoration: InputDecoration(
                     hintText: l10n.resultAskAboutSpecies,
-                    hintStyle: TextStyle(color: colorScheme.onSurfaceVariant),
+                    hintStyle: TextStyle(
+                      color: hintsInteracted
+                          ? colorScheme.onSurfaceVariant
+                          : const Color(0xFF1B5E20),
+                    ),
                     suffixIcon: isAnalyzing
                         ? Padding(
                             padding: const EdgeInsets.all(12),
