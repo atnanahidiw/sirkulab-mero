@@ -6,12 +6,28 @@
   "order": "Myliobatiformes",
   "family": "Mobulidae",
   "genus": "Mobula",
-  "visual_features": "The reef manta ray is one of the largest rays in the world, typically 3–3.5 m in disc width (max ~5.5 m). It is dorsoventrally flattened with large, triangular pectoral fins on either side of the disc. The dorsal side is dark black to midnight blue with scattered whitish and greyish areas on top of the head forming a distinctive 'Y' pattern. The ventral surface is white, often with dark spots and blotches that can be used to identify individual rays. At the front, a pair of cephalic fins (forward extensions of pectoral fins) can be rolled up for swimming or flared to channel water into the large rectangular mouth when feeding. Unlike devil rays, it has no spiny tail. Its tail is long and whip-like. The eyes and spiracles are on the side of the head behind the cephalic fins.",
+  "visual_features": {
+    "color": "dark blue, black",
+    "body_shape": "Elongated and torpedo-shaped",
+    "distinctive_marks": "white markings on the body",
+    "texture": "smooth (implied)",
+    "size_class": "medium",
+    "pattern": "solid dark coloration with potential for contrasting markings"
+  },
+  "visual_group": "Marine fish",
   "description": "The reef manta ray (Mobula alfredi) is a species of ray in the family Mobulidae, one of the largest rays in the world. It was described in 1868 by Gerard Krefft and named in honor of Alfred, Duke of Edinburgh. For a long time it was considered the same species as the giant oceanic manta ray (M. birostris), but was confirmed as a separate species in 2009. Reef manta rays are filter feeders that consume large quantities of zooplankton. They are found widely in tropical and subtropical Indo-Pacific waters, primarily in coastal regions near coral and rocky reefs. They are known for their intelligence, curiosity towards humans, and spectacular breaching behavior. They are listed as Vulnerable on the IUCN Red List due to overfishing for their highly valued gill plates.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Global population estimates are not comprehensively quantified, but the species is classified as Vulnerable globally. In Indonesia, Raja Ampat's population was estimated at ~700 identified individuals (thriving under protection). Declines have been documented across much of their range due to targeted fishing for gill plates. Low intrinsic growth rates due to delayed maturity (8–17 years for females) and low fecundity make recovery slow.",
   "habitat": "Tropical and subtropical coastal waters of the Indo-Pacific, from the surface down to depths of 432 m. They are primarily found in shallow coastal habitats around coral and rocky reefs, cleaning stations, and feeding areas with high zooplankton concentrations. They show relatively sedentary behavior with specific areas for cleaning and feeding in close proximity to coasts and reefs. They occur in places like Raja Ampat, Komodo, Bali, Maldives, Mozambique, Australia, Hawaii, Fiji, and the Philippines.",
-  "habitat_tags": ["tropical", "marine", "coral_reef", "coastal", "pelagic", "indo-pacific", "oceanic"],
+  "habitat_tags": [
+    "tropical",
+    "marine",
+    "coral_reef",
+    "coastal",
+    "pelagic",
+    "indo-pacific",
+    "oceanic"
+  ],
   "threats": [
     "Targeted fishing for gill plates (highly valued in Asian medicine trade)",
     "Bycatch in industrial and artisanal fisheries including purse seines and gillnets",

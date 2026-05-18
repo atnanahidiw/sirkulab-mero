@@ -6,13 +6,36 @@
   "order": "Orectolobiformes",
   "family": "Rhincodontidae",
   "genus": "Rhincodon",
-  "visual_features": "The largest fish in the world, reaching lengths of up to 18-20 meters. Distinctive features include a broad, flattened head with a terminal mouth positioned at the front of the head. Body is dark blue or grey with characteristic white or light spots and stripes that form a checkerboard pattern. Broad, flattened snout with small eyes positioned at the sides of the head. Two dorsal fins and a large, crescent-shaped caudal fin.",
+  "visual_features": {
+    "color": "black, dark grey",
+    "body_shape": "Fusiform and torpedo-shaped",
+    "distinctive_marks": "small, scattered light spots",
+    "texture": "appears smooth but covered in small, distinct markings",
+    "size_class": "medium",
+    "pattern": "spotted"
+  },
+  "visual_group": "Marine fish",
   "description": "The Whale Shark is the largest fish on Earth and a filter-feeding planktonivore. Despite its size, it poses no threat to humans as it feeds primarily on plankton, krill, and small fish. Whale Sharks are known for their gentle nature and are often observed feeding near the surface. They have a wide global distribution but are particularly important in Indonesian waters, especially in regions like Raja Ampat and Cenderawasih Bay.",
-  "fun_fact": ["Whale Sharks are filter feeders that can process more than 6,000 liters of water per hour while feeding", "They have been observed swimming with their mouths wide open to filter plankton", "Despite being the largest fish, Whale Shark pups are only about 40-60 cm long at birth"],
+  "fun_fact": [
+    "Whale Sharks are filter feeders that can process more than 6,000 liters of water per hour while feeding",
+    "They have been observed swimming with their mouths wide open to filter plankton",
+    "Despite being the largest fish, Whale Shark pups are only about 40-60 cm long at birth"
+  ],
   "ecosystem_role": "As filter feeders, Whale Sharks play a unique role in marine ecosystems by transferring nutrients between different oceanic zones. They help control plankton populations and provide important nutrient transport between surface and deep waters, benefiting the entire marine food web.",
-  "what_students_can_do": ["Support responsible ecotourism practices around Whale Sharks", "Advocate for better boat regulations to prevent collisions", "Participate in citizen science projects that monitor Whale Shark populations", "Educate others about the importance of protecting filter-feeding sharks", "Support marine protected areas that include Whale Shark habitats"],
+  "what_students_can_do": [
+    "Support responsible ecotourism practices around Whale Sharks",
+    "Advocate for better boat regulations to prevent collisions",
+    "Participate in citizen science projects that monitor Whale Shark populations",
+    "Educate others about the importance of protecting filter-feeding sharks",
+    "Support marine protected areas that include Whale Shark habitats"
+  ],
   "human_connection": "Whale Sharks are increasingly important for ecotourism in Indonesia, with dive tourism operations in places like Raja Ampat and Cenderawasih Bay. However, they face threats from boat collisions and targeted fisheries. The species is classified as Endangered on the IUCN Red List, with over 60% of Whale Sharks in Indonesia showing scars from boat encounters.",
-  "threats": ["Target and incidental catch fisheries", "Boat collisions and propeller injuries", "Climate change affecting plankton distribution", "Pollution and habitat degradation"],
+  "threats": [
+    "Target and incidental catch fisheries",
+    "Boat collisions and propeller injuries",
+    "Climate change affecting plankton distribution",
+    "Pollution and habitat degradation"
+  ],
   "habitat": "Found in tropical and warm-temperate waters worldwide. Particularly important in Indonesian waters including Raja Ampat, Cenderawasih Bay, and other regions. Often found near coral reefs, where they feed on plankton blooms. They are known to migrate long distances following plankton concentrations.",
   "habitat_tags": [
     "pelagic",

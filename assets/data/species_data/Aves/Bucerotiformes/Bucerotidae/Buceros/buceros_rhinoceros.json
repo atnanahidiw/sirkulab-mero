@@ -6,12 +6,29 @@
   "order": "Bucerotiformes",
   "family": "Bucerotidae",
   "genus": "Buceros",
-  "visual_features": "The rhinoceros hornbill is a large arboreal hornbill, 80 to 90 cm (31-35 in) long. Males weigh around 2,465 to 2,960 g (87.0-104.4 oz) and females 2,040 to 2,330 g (72-82 oz). The plumage is predominantly black with white legs and vent and a white tail with a black band. The huge bill and casque are orange and red, with the colour coming from preen oil rubbed on from the preen gland above the tail. Males have red eyes with black rims, while females have white eyes with red rims.",
+  "visual_features": {
+    "color": "black, yellow, orange",
+    "body_shape": "compact, bird-like",
+    "distinctive_marks": "bright yellow throat and chest, prominent orange and yellow coloration on the beak",
+    "texture": "appears smooth",
+    "size_class": "medium",
+    "pattern": "solid black body with bright facial coloration"
+  },
+  "visual_group": "Flying bird",
   "description": "The rhinoceros hornbill is a large forest hornbill found in lowland and montane tropical rainforests up to 1,400 metres in Borneo, Sumatra, Java, the Malay Peninsula, Singapore, and southern Thailand. Its diet is dominated by fruit, but it will also take insects, small reptiles, rodents, and smaller birds it can catch. Courtship and bonding are critical as the female must trust the male to provide her with everything during incubation. These hornbills nest inside tree trunks and the female stays inside with eggs and chicks while the male brings food. After eggs are laid, the pair collect mud and pack it along with food and feces to wall up the entrance to the tree cavity, leaving only a small hole for feeding. In captivity they can live for up to 35 years.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Fewer than 10,000 mature individuals estimated globally, with a decreasing population trend. The species was uplisted from Near Threatened to Vulnerable on the IUCN Red List in 2018 due to accelerating habitat loss and hunting pressure across its range.",
   "habitat": "Found in lowland and montane tropical and subtropical rainforests up to 1,400 metres elevation in Borneo, Sumatra, Java, the Malay Peninsula, Singapore, and southern Thailand. Requires large, mature forest trees with suitable cavities for nesting. Occurs in several large protected areas including Taman Negara National Park (Malaysia), Gunung Leuser and Way Kambas National Parks (Sumatra), and Berbak Game Reserve.",
-  "habitat_tags": ["tropical", "rainforest", "lowland_forest", "montane_forest", "southeast_asia", "borneo", "sumatra", "tree_cavity_nesting"],
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "lowland_forest",
+    "montane_forest",
+    "southeast_asia",
+    "borneo",
+    "sumatra",
+    "tree_cavity_nesting"
+  ],
   "threats": [
     "Loss of rainforest habitat from logging and conversion to palm oil plantations",
     "Hunting for meat, skull, and feathers",

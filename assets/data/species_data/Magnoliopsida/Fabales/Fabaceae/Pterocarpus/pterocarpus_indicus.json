@@ -6,12 +6,26 @@
   "order": "Fabales",
   "family": "Fabaceae",
   "genus": "Pterocarpus",
-  "visual_features": "Large deciduous tree growing 30-40 m tall with trunk up to 2 m in diameter and crown 12-34 m wide. Compound pinnate leaves 12-22 cm long with 5-11 leaflets. Flowers in panicles 6-13 cm long, slightly fragrant, yellow or orange-yellow petals. Fruit is a semiorbicular pod 2-3 cm diameter with flat membranaceous wing 4-6 cm diameter, containing 1-2 seeds. Bark greyish-brown. Heartwood purplish, termite-resistant, and rose-scented.",
+  "visual_features": {
+    "color": "yellow, green",
+    "body_shape": "bushy/tree-like with clusters of flowers",
+    "distinctive_marks": "bright yellow, clustered flowers",
+    "texture": "leafy and somewhat rough",
+    "size_class": "medium shrub/small tree",
+    "pattern": "dense foliage with scattered yellow blossoms"
+  },
+  "visual_group": "Tall broadleaf tree",
   "description": "Narra (also known as Angsana, Amboyna wood, Malay padauk, or Philippine mahogany) is a majestic tropical hardwood tree native to Southeast Asia, northern Australasia, and the western Pacific islands. It is the national tree of the Philippines (proclaimed in 1934) and one of two species historically used as a source for lignum nephriticum, a traditional diuretic in 16th-18th century Europe. The premium timber is prized for high-grade furniture, cabinetry, musical instruments, and decorative veneers. Wood from its burl (Amboyna) is among the rarest and most valued in the world. Many populations are seriously threatened; extinct in Vietnam and possibly in Sri Lanka and Peninsular Malaysia.",
   "conservation_status": "Endangered",
   "population_estimate": "Severely declining across its range. Extinct in Vietnam and possibly in Sri Lanka and Peninsular Malaysia. Listed as Endangered on the IUCN Red List.",
   "habitat": "Lowland primary and secondary rainforests, often along tidal creeks and rocky shores at elevations up to 750 m. Unlike most Pterocarpus species preferring seasonal weather, P. indicus prefers rainforest environments. Behaves as a pioneer species thriving in open positions. Grows best with annual daytime temperatures 24-32°C and mean annual rainfall 2,000-3,000 mm.",
-  "habitat_tags": ["tropical", "rainforest", "lowland", "coastal", "southeast_asia"],
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "lowland",
+    "coastal",
+    "southeast_asia"
+  ],
   "threats": [
     "Overexploitation for valuable timber and Amboyna burl",
     "Deforestation and habitat loss across Southeast Asia",

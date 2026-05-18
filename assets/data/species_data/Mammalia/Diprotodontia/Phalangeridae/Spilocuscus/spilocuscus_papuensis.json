@@ -6,12 +6,27 @@
   "order": "Diprotodontia",
   "family": "Phalangeridae",
   "genus": "Spilocuscus",
-  "visual_features": "Medium-sized arboreal marsupial with distinctive spotted coat. Unlike all other Spilocuscus species, both males and females are whitish with black spots. Strong prehensile tail, hairless on underside for gripping branches. Amber or orange eyes with vertical slit pupils like cats or reptiles, enabling superior night vision. Long claws for grip on tree branches and grooming.",
+  "visual_features": {
+    "color": "brown, black, white, reddish-brown",
+    "body_shape": "small, rounded body",
+    "distinctive_marks": "distinctive black and brown markings on the body and face",
+    "texture": "furry",
+    "size_class": "small",
+    "pattern": "mottled black and white"
+  },
+  "visual_group": "Small quadruped mammal",
   "description": "The Waigeou cuscus (or Waigeo spotted cuscus) is a species of marsupial in the family Phalangeridae, endemic to the small island of Waigeo in West Papua, Indonesia (part of the Raja Ampat archipelago). It is one of the least-studied cuscus species. Remains fairly common within its limited range, but its tiny geographic distribution makes it highly vulnerable to habitat loss, mining, and hunting. First described in 1822 by French zoologist Anselme Gaëtan Desmarest. Listed as Vulnerable on IUCN Red List with CITES Appendix II protection.",
   "conservation_status": "Vulnerable",
   "population_estimate": "No precise population data available. Remains fairly common within its very limited range on Waigeo Island (approx. 3,155 km²) but highly vulnerable to habitat disturbance. Listed as Vulnerable on IUCN Red List.",
   "habitat": "Restricted to the small island of Waigeo off the northwest coast of West Papua, Indonesia (Raja Ampat archipelago). Inhabits primary and secondary tropical forests, spending most of its time in the tree canopy. Entire range is limited to this single island, making its existence extremely fragile.",
-  "habitat_tags": ["tropical", "rainforest", "island", "papua", "indonesia", "endemic"],
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "island",
+    "papua",
+    "indonesia",
+    "endemic"
+  ],
   "threats": [
     "Palm oil deforestation - concessions sold on Waigeo Island encroaching on habitat",
     "Mining concessions reducing available range on the small island",

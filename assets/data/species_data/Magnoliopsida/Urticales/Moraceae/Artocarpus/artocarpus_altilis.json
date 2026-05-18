@@ -6,7 +6,15 @@
   "order": "Urticales",
   "family": "Moraceae",
   "genus": "Artocarpus",
-  "visual_features": "Breadfruit is a large, evergreen tree that can reach heights of 25-30 meters with a dense, spreading crown. The leaves are deeply lobed, bright green, and can grow up to 90 cm long. The tree produces distinctive, oval-shaped fruit that can weigh up to 4 kg, with a rough green skin and starchy, yellow flesh. The tree has smooth, gray bark and produces a milky sap when cut. The overall appearance is impressive with its large leaves and substantial fruit, making it a significant presence in tropical landscapes.",
+  "visual_features": {
+    "color": "various shades of green",
+    "body_shape": "tree-like with dense foliage",
+    "distinctive_marks": "dense foliage, somewhat irregular branching",
+    "texture": "leafy and somewhat rough",
+    "size_class": "medium to large tree",
+    "pattern": "dense, overlapping leaves"
+  },
+  "visual_group": "Tall broadleaf tree",
   "description": "Breadfruit is a culturally and ecologically significant tropical tree that has been a staple food source in Pacific Island nations for centuries. Native to the islands of Southeast Asia and the western Pacific, this remarkable tree produces nutritious, starchy fruit that can be prepared in numerous ways - boiled, roasted, fried, or fermented. The tree is not only valued for its food production but also for its lightweight wood, which has been traditionally used for building canoes and surfboards in Polynesian cultures. Breadfruit is also highly efficient at sequestering carbon through its rapid growth rate, making it an important species for climate change mitigation efforts.",
   "conservation_status": "Least Concern",
   "population_estimate": "Widespread cultivation throughout tropical regions; wild populations stable but facing localized threats",

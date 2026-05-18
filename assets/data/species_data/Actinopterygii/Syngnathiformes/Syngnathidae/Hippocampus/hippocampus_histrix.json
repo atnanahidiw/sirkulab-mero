@@ -6,12 +6,27 @@
   "order": "Syngnathiformes",
   "family": "Syngnathidae",
   "genus": "Hippocampus",
-  "visual_features": "A small fish reaching a maximum length of 15-17 cm. Body is slender, elongated and completely covered with sharp thorns with dark tips that are uniformly sized on the prehensile tail. The trunk has long thorns continuing to the coronet (crown), which has 4-5 spines. The head is provided with numerous spines especially on the forehead, base of cheeks, nose and above the eyes. The snout is very long and tapered. Body coloration is highly variable: grey, cream, bright yellow, green, red, or brownish — can be plain or patterned. The snout is generally striped with one or more thin white lines.",
+  "visual_features": {
+    "color": "pinkish-white with reddish hues",
+    "body_shape": "curved and elongated",
+    "distinctive_marks": "spiky projections along the body",
+    "texture": "rough and spiky",
+    "size_class": "small",
+    "pattern": "mottled and variegated coloration"
+  },
+  "visual_group": "Marine fish",
   "description": "The spiny or thorny seahorse is a marine fish in the family Syngnathidae, native to the Indo-Pacific area. It is classified as Vulnerable by the IUCN with populations thought to have declined by more than 30% over the last 10-15 years. Like all seahorses, the male broods fertilized eggs in a ventral brood pouch with villi rich in capillaries that surround each egg, creating a placenta-like structure providing nourishment, osmoregulation, and aeration until the young are born. It feeds on small crustaceans and other zooplankton. The species is monogamous, always found in home-ranging pairs. Listed in CITES Appendix II, meaning trade must be controlled.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Population size unknown but thought to have declined by more than 30% over the last 10-15 years across its range. Long-term declines documented throughout the Indo-Pacific. One of the six most common internationally traded seahorse species reported to CITES.",
   "habitat": "Widespread but relatively rare throughout the Indo-Pacific: from South Africa to French Polynesia, north to Japan, south to Australia. Found in relatively deep waters of 10-95 m, usually below 15 m. Inhabits a variety of substrates including sponges, weedy rocky reefs, soft corals, and primarily seagrass beds. Large adults may be pelagic and associated with drifting debris. Associated with sponges and sea-squirts.",
-  "habitat_tags": ["tropical", "marine", "seagrass_bed", "coral_reef", "rocky_reef", "coastal"],
+  "habitat_tags": [
+    "tropical",
+    "marine",
+    "seagrass_bed",
+    "coral_reef",
+    "rocky_reef",
+    "coastal"
+  ],
   "threats": [
     "Targeted exploitation for international trade — traditional Chinese medicine and aquarium trade",
     "Bycatch in non-selective fisheries, especially fish and shrimp trawls",

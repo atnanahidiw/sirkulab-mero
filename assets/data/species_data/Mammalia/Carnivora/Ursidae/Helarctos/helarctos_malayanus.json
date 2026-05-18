@@ -6,12 +6,27 @@
   "order": "Carnivora",
   "family": "Ursidae",
   "genus": "Helarctos",
-  "visual_features": "The smallest of all bear species, standing nearly 70 cm at the shoulder and weighing 25-65 kg. Stockily built with large paws, strongly curved claws (the longest of any bear), small rounded ears, and a short snout. Fur is generally short, sleek and jet black but can vary from grey to red. The characteristic chest patch is orange to cream-colored, horseshoe-shaped or bib-like, and unique to each individual. Has the longest tongue of any bear species, adapted for extracting honey. Inward-turned front feet and flattened chest are adaptations for climbing.",
+  "visual_features": {
+    "color": "black",
+    "body_shape": "robust and stocky",
+    "distinctive_marks": "yellow/tan markings on the chest/neck area",
+    "texture": "dense and dark fur",
+    "size_class": "medium",
+    "pattern": "solid black with distinct yellow markings"
+  },
+  "visual_group": "Small quadruped mammal",
   "description": "The sun bear is a bear species in the family Ursidae found in the tropical forests of Southeast Asia. It is the only species in the genus Helarctos and the smallest bear species. The generic name Helarctos comes from Greek 'helios' (sun) and 'arctos' (bear). Two subspecies are recognized: the Malayan sun bear (H. m. malayanus) found in mainland Southeast Asia, Bangladesh and Sumatra; and the Bornean sun bear (H. m. euryspilus) found only in Borneo. It is the most arboreal of all bears, an excellent climber that sunbathes and sleeps in trees 2-7 m above ground. It is mainly diurnal but may become nocturnal near human activity. It does not hibernate as food is available year-round. Omnivorous diet includes ants, bees, beetles, honey, termites, fruits, seeds, and occasionally vertebrates. Breeds year-round with litters of 1-2 cubs that stay with mother for about 3 years.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Global population estimated to have declined by approximately 35% since the 1990s (three sun bear generations). Exact population numbers are unknown but the decline trend is well-documented across all range countries. Populations continue to decline due to deforestation and poaching.",
   "habitat": "Found in tropical and subtropical forests throughout mainland Southeast Asia (including northeast India, Bangladesh, Myanmar, Thailand, Laos, Cambodia, Vietnam, Peninsular Malaysia) and insular Southeast Asia (Sumatra and Borneo). Primarily inhabits lowland and montane tropical forests, including evergreen, deciduous and swamp forests. Requires large territories with abundant fruiting trees and insect colonies. Considered extinct in Singapore. May now be extirpated from parts of its former range in Bangladesh and southern China.",
-  "habitat_tags": ["tropical", "forest", "lowland", "montane", "arboreal", "rainforest"],
+  "habitat_tags": [
+    "tropical",
+    "forest",
+    "lowland",
+    "montane",
+    "arboreal",
+    "rainforest"
+  ],
   "threats": [
     "Heavy deforestation and habitat loss across Southeast Asia for palm oil and timber",
     "Poaching for bear bile used in traditional medicine",

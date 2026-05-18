@@ -6,7 +6,15 @@
   "order": "Anseriformes",
   "family": "Anatidae",
   "genus": "Aythya",
-  "visual_features": "Canvasbacks are the largest diving duck species in North America, earning them the nickname 'aristocrat of ducks' for their elegant appearance. Males measure 51-56 cm in length and weigh 863-1,589g, while females are slightly smaller at 48-52 cm and 908-1,543g. They have a distinctive long, sloping profile and wedge-shaped head held erect on their long necks. Males exhibit striking breeding plumage with rich reddish-brown heads and necks, black breasts, and white wings, sides, and belly. The rump and tail are black with dark grey feet and legs. Females have more subdued brownish heads and necks, white or gray wings and belly, and dark brown breast and tail. Both sexes have bright red eyes and black bills. Their robust, cone-shaped heads are specially adapted for probing and excavating submerged aquatic plants.",
+  "visual_features": {
+    "color": "white, dark brown, black",
+    "body_shape": "streamlined and rounded",
+    "distinctive_marks": "dark brown head and neck contrasting with a white body",
+    "texture": "smooth (on plumage)",
+    "size_class": "medium",
+    "pattern": "solid white on the body, dark brown on the head and neck"
+  },
+  "visual_group": "Flying bird",
   "description": "Canvasbacks are highly specialized diving ducks with fascinating life cycles and remarkable adaptations. They breed in the prairie pothole region of central North America and migrate to wintering grounds along coastlines and large water bodies. Their scientific name 'valisineria' comes from their favorite winter food - Vallisneria americana (wild celery). Canvasbacks are seasonally monogamous and form elaborate courtship displays. Females build nests in emergent vegetation above water and lay 5-11 eggs. The young are precocial, able to swim soon after hatching, and fledge at 56-68 days. These ducks are powerful swimmers and divers, capable of diving to over 9 meters deep for 10-20 seconds. They migrate in loose V-shaped flocks and are among the fastest flying ducks, reaching speeds up to 90 km/hour.",
   "conservation_status": "Least Concern",
   "population_estimate": "Stable populations with approximately 87,000 harvested annually in the U.S. in recent years; populations show some recovery due to better protection measures",

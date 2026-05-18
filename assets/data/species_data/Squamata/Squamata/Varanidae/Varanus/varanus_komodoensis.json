@@ -6,7 +6,15 @@
   "order": "Squamata",
   "family": "Varanidae",
   "genus": "Varanus",
-  "visual_features": "The largest extant lizard species. Males grow up to 3 m (10 ft) and weigh up to 150 kg (330 lb), though wild adults average around 70 kg. It has a long, flat head with a rounded snout, scaly skin that resembles chain-mail, bowed legs, and a huge muscular tail as long as its body. It has about 60 frequently replaced serrated teeth up to 2.5 cm (1 in) long. Its forked tongue is used for smelling and tasting, similar to snakes. It has sharp, curved claws for digging burrows. The skin is covered in protective scales. Juveniles are more brightly colored and live in trees to avoid cannibalistic adults.",
+  "visual_features": {
+    "color": "brown and grayish-brown",
+    "body_shape": "Elongated and robust",
+    "distinctive_marks": "Scaly texture with visible grooves and patterns on the head and body",
+    "texture": "Rough and scaly",
+    "size_class": "medium",
+    "pattern": "Irregular, mottled, and textured"
+  },
+  "visual_group": "Lizard",
   "description": "The Komodo dragon (also known as the Komodo monitor) is a large reptile of the monitor lizard family Varanidae, endemic to the Indonesian islands of Komodo, Rinca, Flores, Gili Dasami, and Gili Motang. It is the largest living lizard species and an apex predator with unique group hunting behavior. Its diet consists mainly of Javan rusa deer and feral pigs, though it also eats carrion and can take down water buffalo. It is one of the few venomous lizards, with venom glands in its lower jaw. Adults have no natural predators. Juveniles are arboreal to avoid cannibalism. They take 8-11 years to mature and live up to 30-62 years. Mating occurs May-August, eggs laid in September with hatching in April. First documented by Western scientists in 1910.",
   "conservation_status": "Endangered",
   "population_estimate": "Approximately 3,500 total individuals including adults and juveniles (2021 estimate), with ~1,400 mature individuals. About 400 mature females. Two-thirds occur on Komodo and Rinca Islands (Komodo National Park: ~2,450; Rinca: ~1,100-1,500). Flores has scattered populations (~100 in Wae Waul Reserve, ~2,000 in non-protected areas). Gili Motang and Nusa Kode have fewer than 100 each. Eight subpopulations each with fewer than 500 individuals. Status changed from Vulnerable to Endangered in 2021. CITES Appendix I. Protected under Indonesian law since the 1930s.",

@@ -6,12 +6,27 @@
   "order": "Primates",
   "family": "Cercopithecidae",
   "genus": "Macaca",
-  "visual_features": "Southern pig-tailed macaques are uniquely recognizable by their pig-like tails that curl outward and remain half-erect at all times. They have thick, layered black fur on their backs with olive and brown color variations, and cream or white fur on their undersides. A dark brown to black patch of fur forms a noticeable crown on their head, contrasting with the lighter grayish-olive fur of their cheeks and forehead. They have honey brown eyes and internal cheek pouches that can hold as much food as their stomachs. Males measure 50–58 cm and weigh 5–12 kg; females measure 38–48 cm and weigh 4.5–6 kg. Males have significantly larger canine teeth (about 0.5 inch) used as defensive tools.",
+  "visual_features": {
+    "color": "brownish-gray",
+    "body_shape": "slender and robust",
+    "distinctive_marks": "darker fur on the face and back",
+    "texture": "short, smooth fur",
+    "size_class": "medium",
+    "pattern": "uniform, solid coloration"
+  },
+  "visual_group": "Primate",
   "description": "The southern pig-tailed macaque, also known as the Sunda or Sundaland pig-tailed macaque, is a medium-sized macaque native to southern Thailand, Malaysia, Sumatra, Borneo, and Bangka Island in Indonesia. These diurnal primates are highly social, living in multi-male, multi-female groups of 9–80 individuals led by an adult dominant female. They are skilled climbers, utilizing both terrestrial and arboreal environments, and unlike almost all primates, they are known to enjoy water. As omnivores with trichromatic vision, their diverse diet consists primarily of fruits, seeds, berries, cereals, and fungi, but they also opportunistically consume invertebrates. They play a crucial role as seed dispersers, particularly for rattan species. The species has been trained for over 400 years in Thailand to harvest coconuts.",
   "conservation_status": "Endangered",
   "population_estimate": "Population has declined by more than 50% over the last 33 years due to habitat loss, conversion of rainforest to oil palm plantations, and hunting. Exact population numbers are not well quantified across the range, but the species has disappeared from large parts of its historic range.",
   "habitat": "Lowland primary and secondary forests, coastal forests, swampy areas, and montane forests up to 1,900 m elevation. Highest densities are found in lowland and hill dipterocarp rainforests. They prefer drier, forested areas at the base of hills and slopes, but also occur near agricultural areas, oil palm plantations, and on the edges of urban environments.",
-  "habitat_tags": ["tropical", "rainforest", "lowland", "montane", "coastal", "sundaland"],
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "lowland",
+    "montane",
+    "coastal",
+    "sundaland"
+  ],
   "threats": [
     "Habitat loss due to deforestation and conversion to oil palm plantations",
     "Habitat fragmentation isolating populations",

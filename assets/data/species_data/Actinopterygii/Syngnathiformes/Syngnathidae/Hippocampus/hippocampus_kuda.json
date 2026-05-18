@@ -6,12 +6,28 @@
   "order": "Syngnathiformes",
   "family": "Syngnathidae",
   "genus": "Hippocampus",
-  "visual_features": "Small fish reaching 17-30 cm length. Body elongated, large, with no spines — all bumps are rounded. Head relatively large compared to body. Snout short and thick. Coronet small, rising toward the rear, sometimes with filaments. Body coloration typically dark with grainy texture, but can also be yellow, cream, or reddish with numerous small dark spots. Some adults have a black line running across the dorsal fin. Possesses a prehensile tail used as a grasping appendage, bendable ventrally due to body plates. Can change color for camouflage.",
+  "visual_features": {
+    "color": "dark brown to black",
+    "body_shape": "elongated and somewhat worm-like or elongated",
+    "distinctive_marks": "appears to have some rough or textured skin",
+    "texture": "rough or scaly appearance",
+    "size_class": "Medium",
+    "pattern": "Irregular, mottled"
+  },
+  "visual_group": "Marine fish",
   "description": "Hippocampus kuda, also known as the common seahorse, estuary seahorse, yellow seahorse, or spotted seahorse, is a species native to the Indian and Pacific Oceans. It has a completely monogamous mating system with elaborate courtship rituals — males change color patterns and dance around females while producing clicking sounds with the coronet. Females deposit up to 1,000 eggs into the male's ventral brood pouch via an ovipositor. Gestation lasts 20-28 days, with births typically occurring during a full moon. Newborn seahorses average 7 mm. They are omnivores feeding on larval fishes and zooplankton via suction feeding. Not strong swimmers, they spend most time anchored to seagrasses and corals with their tails.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Populations have declined by approximately 30% in the last few decades. Exact population numbers unknown, but still commonly encountered especially in Indonesia and New Guinea.",
   "habitat": "Found from the Persian Gulf to Southeast Asia, Australia, Japan, and several Pacific islands including Hawaii. Also found along the eastern coast of Africa from Tanzania to South Africa. Inhabits estuaries, lagoons, harbors, littoral zones, and coastal seagrass beds in shallow waters up to 55 meters depth. Majority of population along the Chinese coast down to Australia.",
-  "habitat_tags": ["marine", "coastal", "seagrass", "estuary", "lagoon", "coral reef", "tropical"],
+  "habitat_tags": [
+    "marine",
+    "coastal",
+    "seagrass",
+    "estuary",
+    "lagoon",
+    "coral reef",
+    "tropical"
+  ],
   "threats": [
     "Bycatch in shrimp trawl fisheries",
     "Targeted catch for traditional Chinese medicine (25 million seahorses used annually)",

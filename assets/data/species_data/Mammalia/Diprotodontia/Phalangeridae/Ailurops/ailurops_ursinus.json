@@ -6,7 +6,15 @@
   "order": "Diprotodontia",
   "family": "Phalangeridae",
   "genus": "Ailurops",
-  "visual_features": "A stocky arboreal marsupial with a bear-like appearance, featuring dense, woolly fur that ranges from white, cream, gray to brown. Large, round yellow-rimmed eyes, short fuzzy ears, and rounded facial features. Possesses a prehensile unfurred tail that constitutes half of its total body length, used in conjunction with opposable digits on forefeet and syndactylous hindfeet for navigating forest canopies. Adults weigh 2-4 kg with a body length of about 40-45 cm, excluding the tail. The most primitive and plesiomorphic of all phalangerids, making them evolutionarily significant.",
+  "visual_features": {
+    "color": "dark brown to black",
+    "body_shape": "slender and arboreal",
+    "distinctive_marks": "darker fur on the back and sides, lighter face",
+    "texture": "thick, shaggy fur",
+    "size_class": "medium",
+    "pattern": "mottled brown and gray"
+  },
+  "visual_group": "Small quadruped mammal",
   "description": "An arboreal marsupial in the family Phalangeridae that is endemic to Sulawesi and nearby islands in Indonesia. Lives in tropical moist lowland forests at elevations up to 600 m. Diurnal, folivorous, and often found in pairs. A. ursinus is threatened by hunting, collection for the pet trade, and deforestation. One specimen was observed adopting a raised posture while making short, harsh chattering and clicking sounds, indicating complex vocal communication. Bear cuscuses can feed on young leaves of up to 31 different plant species including trees, lianas, and mistletoes. Feeding only amounts to about 5% of daily activity, compared to about 63% spent on resting, indicating a slow-paced lifestyle adapted to the forest canopy.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Exact population unknown but declining. The species was previously protected by Indonesian law from 1999 to 2018 but was removed from the protected species list in 2018, leaving it without legal protection despite continued decline. Studies modeling habitat suitability in South Sulawesi show ongoing habitat loss from mining operations and land conversion.",

@@ -6,7 +6,15 @@
   "order": "Lamiales",
   "family": "Lamiaceae",
   "genus": "Tectona",
-  "visual_features": "Teak is a large deciduous tree reaching up to 40 m (131 ft) tall with grey to greyish-brown branches. Its leaves are ovate-elliptic to ovate, 15-45 cm long by 8-23 cm wide, held on robust petioles 2-4 cm long, with entire margins. The large, papery leaves are often hairy on the lower surface. Fragrant white flowers are borne on 25-40 cm long panicles from June to August; each flower is small with a 2.5-3 mm corolla tube and 2 mm wide obtuse lobes. Fruits are globose, 1.2-1.8 cm in diameter, ripening from September to December. The tree produces high-quality heartwood that is yellowish to golden-brown with a leather-like smell when freshly cut, darkening with age. The heartwood is naturally oily, making it termite- and pest-resistant.",
+  "visual_features": {
+    "color": "brown, green, tan",
+    "body_shape": "tree-like",
+    "distinctive_marks": "leaves are large and somewhat lobed, small, light-colored flower/seed heads are visible",
+    "texture": "leafy and somewhat rough",
+    "size_class": "medium",
+    "pattern": "foliage with prominent, light-colored inflorescences"
+  },
+  "visual_group": "Tall broadleaf tree",
   "description": "Teak (Tectona grandis, locally known as Jati) is a tropical hardwood tree species in the mint family (Lamiaceae). Native to south and southeast Asia including India, Myanmar, Thailand, Laos, Indonesia, and Bangladesh, it is one of the world's most valuable timber trees. Teak wood is particularly prized for its durability, water resistance, and natural oils. The species has been classified as Endangered on the IUCN Red List because natural teak populations and their habitats have been decreasing consistently due to illegal logging and deforestation. Myanmar's teak forests account for nearly half of the world's naturally occurring teak. Molecular studies show two genetic origins: one in India and another in Myanmar and Laos.",
   "conservation_status": "Endangered",
   "population_estimate": "Natural teak populations and their habitats have been decreasing consistently across its native range. In Myanmar, which holds the largest natural teak forests, populations have declined significantly due to illegal logging. The species is listed as Endangered by IUCN. While widely planted in plantations globally (especially in Indonesia, India, and Latin America), natural old-growth teak forests have been severely depleted. The species is threatened by illegal logging in countries with natural teak forests, including India and Myanmar.",

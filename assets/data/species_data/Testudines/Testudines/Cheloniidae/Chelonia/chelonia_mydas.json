@@ -6,7 +6,15 @@
   "order": "Testudines",
   "family": "Cheloniidae",
   "genus": "Chelonia",
-  "visual_features": "Green turtles have a dorsoventrally flattened body covered by a large, teardrop-shaped carapace. They grow to 1.5 metres (5 ft) long, with average weights of 68-190 kg (150-419 lb) and carapace lengths of 78-112 cm (31-44 in). Exceptional specimens can weigh 315 kg (694 lb) or more. The carapace varies from black in hatchlings to dark brown to olive in juveniles, and brown, spotted, or marbled with variegated rays in adults. The plastron is yellow, and limbs are dark-colored lined with yellow. They have a pair of large, paddle-like flippers adapted for swimming.",
+  "visual_features": {
+    "color": "brown, orange, dark grey",
+    "body_shape": "oval, domed",
+    "distinctive_marks": "prominent dark markings on the head and carapace",
+    "texture": "rough, scaly, and somewhat moist",
+    "size_class": "medium",
+    "pattern": "complex, irregular markings on the carapace"
+  },
+  "visual_group": "Turtle & tortoise",
   "description": "Unlike other members of its family, green turtles are mostly herbivorous when fully grown, feeding primarily on seagrasses and algae. They are the only aquatic turtle species that is herbivorous as adults. Adults usually inhabit shallow lagoons and seagrass beds. Like other sea turtles, they migrate long distances between feeding grounds and nesting beaches. Females crawl out on beaches, dig nests, and lay eggs during the night. Hatchlings emerge about two months later and scramble into the water. Those that reach maturity may live 80-90 years in the wild. The common name refers to the green fat beneath its carapace, due to its seagrass diet, not the shell color.",
   "conservation_status": "Least Concern",
   "population_estimate": "Global population increased by over 28% since the 1970s. In October 2025, the IUCN reclassified the green turtle from Endangered to Least Concern, making it one of the most dramatic recoveries on the Red List. Notable recoveries documented in nesting populations across Mexico, Hawaii, Brazil, and other key regions. Some subpopulations remain threatened, including Mediterranean green turtles facing small nesting populations and heavy coastal tourism pressure.",

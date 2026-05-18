@@ -6,7 +6,15 @@
   "order": "Primates",
   "family": "Cercopithecidae",
   "genus": "Trachypithecus",
-  "visual_features": "The East Javan Langur has a body length of approximately 55 cm with a noticeably long tail measuring up to 98 cm. Adults are most commonly glossy black with a brownish tinge to their legs, sides, and sideburns. Females have a pale yellowish-white patch around the pubic area. The fur is shorter near the head and gives way to a large crest or mohawk on the back. Juveniles are bright orange in color. A rare morph exists (in the nominate subspecies) that retains orange juvenile coloration into adulthood, darkening slightly with yellow tinges on sides, limbs, and around ears, with a black tinge on the back. The Latin name 'auratus' means 'golden', referring to this less common color variant.",
+  "visual_features": {
+    "color": "dark brown to black",
+    "body_shape": "slender, arboreal",
+    "distinctive_marks": "dark fur, visible in the center of the image",
+    "texture": "shaggy, coarse fur",
+    "size_class": "small to medium",
+    "pattern": "solid dark coloration"
+  },
+  "visual_group": "Primate",
   "description": "The East Javan Langur (Trachypithecus auratus), also known as the ebony lutung, Javan langur, or Javan lutung, is an Old World monkey from the Colobinae subfamily. It is found on the Indonesian islands of Java, Bali, and Lombok. Like all colobines, it has evolved a specialized stomach to digest plant material more efficiently, along with enlarged salivary glands to assist in breaking down food. The species is diurnal and arboreal, living in small social groups of around 7 individuals with one or two adult males. Formerly considered to have two subspecies, but the western Javan langur (T. a. mauritius) was elevated to full species status as Trachypithecus mauritius in 2008.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Exact population estimates for the species are not available. Assessed as Vulnerable by IUCN due to population declines from habitat loss and fragmentation across its range on Java, Bali, and Lombok. Java is one of the most densely populated islands in the world, placing enormous pressure on remaining forest habitats. The population trend is decreasing.",

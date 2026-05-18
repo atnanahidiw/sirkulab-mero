@@ -6,12 +6,28 @@
   "order": "Galliformes",
   "family": "Megapodiidae",
   "genus": "Macrocephalon",
-  "visual_features": "The Maleo is a large megapode, 55–60 cm long, with blackish plumage covering most of the body and rosy salmon-colored underparts. It has bare yellow facial skin, a reddish-orange beak, and reddish-brown irises. The most distinctive feature is a prominent, bony, dark casque (helmet) on the crown — the origin of its genus name Macrocephalon (Greek: 'large head'). The greyish-blue feet have four long sharp claws separated by a membranous web. Sexes are similar but females are slightly smaller and duller. Juveniles are browner with paler heads and short blackish-brown crests.",
+  "visual_features": {
+    "color": "black, white, yellowish-green",
+    "body_shape": "compact, bird-like",
+    "distinctive_marks": "bright yellow/green head and neck, white underside",
+    "texture": "smooth (feathers appear sleek)",
+    "size_class": "medium",
+    "pattern": "dark upperparts contrasting with pale underparts"
+  },
+  "visual_group": "Flying bird",
   "description": "The Maleo is a unique megapode bird and the only member of the monotypic genus Macrocephalon. It is endemic to the Indonesian island of Sulawesi and the nearby island of Buton. Unlike any other bird, the Maleo relies entirely on external heat sources — solar-heated beaches and geothermally heated forest soils — to incubate its eggs. The female lays a single large egg (about five times the size of a domestic chicken egg) in a deep hole in warm sand, buries it, and leaves it to incubate naturally. The chick hatches fully developed, digs its way up through the sand, and is immediately independent — able to fly and find food on its own. This extraordinary reproductive strategy makes the Maleo extremely vulnerable to egg poaching and habitat disturbance.",
   "conservation_status": "Critically Endangered",
   "population_estimate": "Estimated 4,000–7,000 breeding pairs remaining in the wild as of 2005. Of the 142 known nesting grounds, only 4 are currently considered non-threatened. The population continues to decline rapidly.",
   "habitat": "Tropical lowland and hill forests of Sulawesi, usually below 1,000 m elevation. Nesting occurs in open sandy areas, volcanic soils, riverbanks, lake shores, and beaches heated by the sun or geothermal energy. They breed year-round but peak breeding varies by location. Ideal nesting sites include coastal beaches and geothermally active forest soils.",
-  "habitat_tags": ["tropical", "rainforest", "lowland", "coastal", "beach", "sulawesi", "endemic"],
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "lowland",
+    "coastal",
+    "beach",
+    "sulawesi",
+    "endemic"
+  ],
   "threats": [
     "Egg poaching — their unusually large and nutritious eggs are considered a delicacy in Sulawesi",
     "Habitat loss from conversion of forests to agriculture",

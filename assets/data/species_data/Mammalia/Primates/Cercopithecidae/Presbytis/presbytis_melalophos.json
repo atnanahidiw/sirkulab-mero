@@ -6,12 +6,27 @@
   "order": "Primates",
   "family": "Cercopithecidae",
   "genus": "Presbytis",
-  "visual_features": "A medium-sized langur with brownish-gray pelage, lighter on the ventral side than the dorsum. The tail is bicolored and the head has a distinct black crest on top, giving the 'mitered' appearance. Arms, legs, tail, and top of head range from light buttery yellow to bronze. The belly and inner thighs have white fur, creating a white collar effect around the neck. Black facial skin contrasted by pale pink eye rings. Weighs an average of 6.0 kg with males only slightly larger than females. Long forelimbs and relatively long hindlimbs adapted for leaping and brachiation. Neonates are white with a pale face and a dark reddish-brown spinal stripe.",
+  "visual_features": {
+    "color": "brown, reddish-brown",
+    "body_shape": "slender, arboreal",
+    "distinctive_marks": "darker facial features",
+    "texture": "shaggy and somewhat coarse fur",
+    "size_class": "medium",
+    "pattern": "uniform, solid coloration"
+  },
+  "visual_group": "Primate",
   "description": "The yellow-handed mitered langur (Presbytis melalophos), also known as the mitred leaf monkey or black-crested Sumatran langur, is a primate in the family Cercopithecidae native to Sumatra, Indonesia. There are four subspecies based on pelage differences, vocalizations, and geographic location. Like all members of the genus Presbytis, this species has evolved to digest cellulose through microbial fermentation in a specialized foregut. They are highly arboreal, spending most of their time in the forest understory, leaping between small branch supports. Groups consist of one male with five to seven females, with home ranges of 14–30 hectares.",
   "conservation_status": "Endangered (IUCN 3.1)",
   "population_estimate": "No precise population estimate available. Population is declining due to extensive habitat loss, with 70% of their home range lost in the past decade according to some estimates. Listed as Endangered on the IUCN Red List.",
   "habitat": "Lowland and submontane dipterocarp and evergreen rainforests of Sumatra, Indonesia. Found in southwestern Sumatra south of the Wampu and Simpang Kiri Rivers, and on Pini Island in the Batu Archipelago. Prefers discontinuous understory at approximately 90 ft (27 m) from the ground, but also found in the continuous main canopy and emergent layers. Can tolerate secondary forests and has been recorded in rubber plantations.",
-  "habitat_tags": ["tropical rainforest", "lowland forest", "submontane forest", "dipterocarp forest", "arboreal", "Sumatra"],
+  "habitat_tags": [
+    "tropical rainforest",
+    "lowland forest",
+    "submontane forest",
+    "dipterocarp forest",
+    "arboreal",
+    "Sumatra"
+  ],
   "threats": [
     "Habitat loss due to oil palm plantation expansion — 70% of habitat lost in past decade",
     "Legal and illegal logging",

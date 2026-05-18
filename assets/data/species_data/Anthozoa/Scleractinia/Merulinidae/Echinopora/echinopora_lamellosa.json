@@ -6,12 +6,29 @@
   "order": "Scleractinia",
   "family": "Merulinidae",
   "genus": "Echinopora",
-  "visual_features": "Echinopora lamellosa forms massive whorls or tiers of thin plates, often with wavy edges. Colonies can be boulder-shaped, branching, or plate-like, typically 20-30 cm across. Corallites are small (3-6 mm in diameter) and form prickly bumps on the colony surface, with characteristic prickly ridges (costae) in the spaces between corallites. Polyp tentacles are only extended at night. Colours include amber, pale to dark brown, greenish, yellow, blue, and purple. In some cases forms a tube-like growth structure.",
+  "visual_features": {
+    "color": "pale blue to grayish-purple",
+    "body_shape": "branching/frond-like",
+    "distinctive_marks": "highly convoluted, ruffled edges",
+    "texture": "bumpy, porous, convoluted",
+    "size_class": "small to medium (as a coral colony)",
+    "pattern": "dense, repeating, and irregular"
+  },
+  "visual_group": "Mollusk & marine invertebrate",
   "description": "Echinopora lamellosa is a colonial stony coral species in the family Merulinidae. It is a zooxanthellate coral that relies on symbiotic algae (zooxanthellae) living within its tissues for most of its nutritional needs, supplemented by capturing plankton with its tentacles at night. It grows in shallow protected reef slopes and lagoons, typically at depths of 3-30 m. The species is found across the Indo-West Pacific Ocean from the Red Sea and Eastern Africa to the Maldives, Southeast Asia, and as far east as Fiji, Samoa, and New Caledonia, and south to Australia.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Listed as Vulnerable on the IUCN Red List with a decreasing population trend. Population data is limited but the species is threatened by widespread coral reef degradation across its Indo-Pacific range, with significant local declines observed in areas affected by bleaching events and coastal development.",
   "habitat": "Found in shallow protected reef slopes, reef flats, backreefs, and lagoons in the Indo-West Pacific Ocean, at depths of 3 to 40 m. Occurs from the Red Sea and Eastern Africa through the Maldives, Malaysia, Singapore, Philippines, Indonesia, Marshall Islands, Fiji, Solomon Islands, Samoa, New Caledonia, and Australia. Prefers clear, well-lit waters suitable for its symbiotic zooxanthellae.",
-  "habitat_tags": ["coral_reef", "tropical", "reef_slope", "lagoon", "indo_pacific", "shallow_reef", "backreef", "reef_flat"],
+  "habitat_tags": [
+    "coral_reef",
+    "tropical",
+    "reef_slope",
+    "lagoon",
+    "indo_pacific",
+    "shallow_reef",
+    "backreef",
+    "reef_flat"
+  ],
   "threats": [
     "Coral bleaching from rising sea temperatures due to climate change",
     "Ocean acidification reducing calcification rates",

@@ -6,7 +6,15 @@
   "order": "Primates",
   "family": "Tarsiidae",
   "genus": "Tarsius",
-  "visual_features": "Gursky's Spectral Tarsier is among the smallest primates, with a head-to-body length of only 5.5 inches (14 cm) and a nonprehensile tail of 9.4 inches (24 cm), weighing just 4.6 ounces (0.13 kg). It has extraordinarily large golden eyes — each as large as or larger than its brain — outlined with black circles, dominating the grayish-orange furred face. The face has a small pinkish muzzle with a few white whiskers. Extremely sharp, bat-like teeth fit inside the mouth. Large, fan-like ears can move independently like satellite dishes. Its fingers and toes are bony, long, and thin; the third finger is about the same length as its upper arm. The second and third toes have a long, curved grooming claw. The body is covered with thick, plush gray undercoat and orange upper hairs, with a long scaly tail tipped with a black tuft of fur.",
+  "visual_features": {
+    "color": "brown and grayish-brown",
+    "body_shape": "small, rodent-like",
+    "distinctive_marks": "large, dark eyes, prominent ears",
+    "texture": "furry",
+    "size_class": "small",
+    "pattern": "mottled/fuzzy"
+  },
+  "visual_group": "Primate",
   "description": "Gursky's Spectral Tarsier (Tarsius spectrumgurskyae), known locally as wusing, is a species of tarsier found only on the Indonesian island of Sulawesi. It was described as a new species in 2017, split from the spectral tarsier (Tarsius spectrum) based on differences in vocalizations and pelage. The species is named after Dr. Sharon Gursky, who conducted extensive studies on its behavioral ecology. These tiny, nocturnal primates are vertical clingers and leapers, capable of jumping up to 19.7 feet (6 meters) between tree trunks. They are the only entirely faunivorous primates — their diet consists 100% of live animal prey.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Exact population estimates are not available. The species is assessed as Vulnerable by IUCN due to its restricted range (northeastern tip of Sulawesi), ongoing habitat loss, and limited area of occupancy. Confined to the northern peninsula of Sulawesi, the species' population is likely fragmented and decreasing.",

@@ -139,7 +139,7 @@ class _ResultPageState extends State<ResultPage>
           : ChatPrompts.notEndangeredHints(_l10n!),
     );
 
-    final name = _species?.commonName ?? _jsonCommonName ?? '';
+    final name = _species?.commonName ?? _jsonCommonName ?? '' ?? '';
     final description = _isListed ? (_species?.description ?? '') : '';
 
     final rawBody = description.isNotEmpty
@@ -203,11 +203,11 @@ class _ResultPageState extends State<ResultPage>
       // Build context for the system instruction
       final systemContext = ChatPrompts.buildQuestionContext(
         analysisResult: widget.analysisResult,
-        speciesName: _species?.commonName ?? _jsonCommonName,
-        speciesLatinName: _species?.scientificName ?? _jsonScientificName,
+        speciesName: _species?.commonName ?? _jsonCommonName ?? '',
+        speciesLatinName: _species?.scientificName ?? _jsonScientificName ?? '',
         isEndangered: _isListed,
-        populationEstimate: _species?.populationEstimate,
-        description: _species?.description,
+        populationEstimate: _species?.populationEstimate ?? '',
+        description: _species?.description ?? '',
         facts: _species?.funFacts,
       );
 

@@ -6,7 +6,15 @@
   "order": "Polypodiales",
   "family": "Aspleniaceae",
   "genus": "Asplenium",
-  "visual_features": "A lithophytic fern (growing on rocks) with erect, scaly rhizomes. Rhizome scales are blackish-brown with pale reddish-brown edges, triangular, 3-5 mm, with fimbriate to subentire margins. Stipe (stalk) 5-30 cm long, 0.5-1 mm in diameter, green or stramineous (straw-colored) when dry, with very scattered scales, mainly green except at extreme base. Lamina (frond blade) is narrowly ovate to narrowly triangular or linear, pinnate, 11-50 cm long, 4-14 cm wide, pale green, subleathery, and grayish-green when dry. Pinnae (leaflets) in 10-35 pairs, ±oblong, 2-5 cm long, 1-1.5 cm wide, with deeply and regularly crenate (rounded-toothed) margins, shortly stalked. Sori (spore clusters) are linear, about 3 mm long, located median on veins. Indusia (protective covers) are whitish to gray-brown, linear, membranous, and entire, opening toward the costa (midrib). Fronds are caespitose (growing in dense tufts). The rachis (midrib) is stramineous when dry with hastate-stellate fibrillar scales and has a median supravascular ridge on the adaxial side; sometimes gemmiferous (bearing buds) near the apex. Plants grow 30-65 cm tall.",
+  "visual_features": {
+    "color": "green",
+    "body_shape": "fern fronds, feathery and delicate",
+    "distinctive_marks": "highly dissected, pinnately compound leaves",
+    "texture": "delicate, feathery",
+    "size_class": "small",
+    "pattern": "compound, pinnate"
+  },
+  "visual_group": "Fern",
   "description": "A fern species in the family Aspleniaceae, first described by German botanist Johann Georg Adam Forster in 1786 based on specimens from the Pacific Islands (type locality). It is a highly variable taxon distributed across a wide range from Sri Lanka and southern India, through mainland Southeast Asia (Thailand, Myanmar, Vietnam), China (Hainan, Taiwan), Japan (Ryukyu Islands), and across the Pacific to Polynesia. Also found in Australia (NE Queensland - Mt Carbine to Atherton Tablelands). A. tenerum is an aggregate of closely related forms — plants with gemmiferous (bud-bearing) rachises from China, Taiwan, Indonesia, Japan, and Malaysia may represent a different taxon. Indian plants are tetraploid, while chromosome numbers of Chinese material remain unknown. The species prefers moist, shaded environments, colonizing rock crevices in high-rainfall forests. Classified as Endangered (EN) on the IUCN Red List, facing habitat loss pressures across its range.",
   "conservation_status": "Endangered",
   "population_estimate": "Exact population numbers not available. The species has been assessed as Endangered (EN) on the IUCN Red List with a decreasing population trend across its Southeast Asian range. Threats include habitat destruction from deforestation, climate change impacts on montane cloud forest habitats, and possible collection for ornamental horticultural trade. Scattered distribution across isolated populations in the Palaeotropics makes comprehensive population assessment challenging.",

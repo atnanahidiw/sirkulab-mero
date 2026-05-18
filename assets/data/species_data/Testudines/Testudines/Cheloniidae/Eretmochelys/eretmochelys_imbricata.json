@@ -6,12 +6,27 @@
   "order": "Testudines",
   "family": "Cheloniidae",
   "genus": "Eretmochelys",
-  "visual_features": "Adult hawksbill turtles typically grow to 1 m in length, weighing around 80 kg on average. The carapace has an amber background patterned with irregular combinations of light and dark streaks, predominantly black and mottled-brown colors radiating to the sides. It is easily distinguished by its sharp, curving beak with prominent tomium, and the saw-like serrated appearance of its shell margins caused by overlapping posterior scutes. Its elongated, tapered head ends in a beak-like mouth, and forelimbs have two visible claws on each flipper. The species is biofluorescent, the first reptile recorded with this characteristic.",
+  "visual_features": {
+    "color": "brown, tan, black",
+    "body_shape": "large, domed shell with a streamlined body",
+    "distinctive_marks": "darker markings and patterns on the shell",
+    "texture": "scaly and somewhat rough on the shell",
+    "size_class": "medium",
+    "pattern": "mottled and variegated"
+  },
+  "visual_group": "Turtle & tortoise",
   "description": "The hawksbill sea turtle is a critically endangered sea turtle and the only extant species in the genus Eretmochelys. It has a global distribution largely limited to tropical and subtropical marine and estuary ecosystems. Its diet is specialized, primarily consuming sea sponges which make up 70-95% of its diet. Unlike other sea turtles, it closely associates with coral reef habitats. It biofluoresces, possibly due to its diet including biofluorescent organisms like the hard coral Physogyra lichtensteini. Males have more intense pigmentation than females, suggesting a behavioral role. The species was first described by Linnaeus in 1766 as Testudo imbricata.",
   "conservation_status": "Critically Endangered",
   "population_estimate": "Global population has declined by 80% or more over three generations (approximately 105 years). Populations depleted or declining in 56 of 65 geopolitical units surveyed. The species faces sustained historic exploitation for tortoiseshell.",
   "habitat": "Found predominantly in tropical and subtropical waters of the Indian, Pacific, and Atlantic Oceans. Adults primarily inhabit shallow lagoons and coral reefs, often resting in caves and ledges. They also occur in mangrove estuaries and open ocean. Major nesting sites include the Arnavon Islands (Solomon Islands), Seychelles, Indonesia, Australia, and the Caribbean. In the eastern Pacific they forage and nest principally in mangrove estuaries rather than coral reefs.",
-  "habitat_tags": ["tropical", "marine", "coral_reef", "mangrove", "lagoon", "estuary"],
+  "habitat_tags": [
+    "tropical",
+    "marine",
+    "coral_reef",
+    "mangrove",
+    "lagoon",
+    "estuary"
+  ],
   "threats": [
     "Historical and ongoing exploitation for tortoiseshell decorative material",
     "Bycatch in fishing gear and shrimp trawls",

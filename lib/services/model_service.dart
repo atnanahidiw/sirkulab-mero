@@ -13,10 +13,85 @@ import 'species_service.dart';
 import '../models/chat_prompts.dart';
 import '../models/model_spec.dart';
 
-/// Strip markdown code fences (```json ... ```) around model JSON output.
-String _stripJsonFences(String raw) {
-  final match = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```').firstMatch(raw);
-  return match?.group(1)?.trim() ?? raw.trim();
+/// Strips ```json / ``` fences from a model response.
+String _stripJsonFences(String s) {
+  var t = s.trim();
+
+  // Remove opening fence
+  t = t.replaceFirst(
+    RegExp(r'^```(?:json|JSON)?\s*'),
+    '',
+  );
+
+  // Remove closing fence
+  t = t.replaceFirst(
+    RegExp(r'\s*```$'),
+    '',
+  );
+
+  return t.trim();
+}
+
+/// Attempts to repair malformed JSON from LLM output.
+String _sanitizeBrokenJson(String raw) {
+  var s = _stripJsonFences(raw);
+
+  // Normalize line breaks
+  s = s.replaceAll('\r\n', '\n');
+
+  final lines = s.split('\n');
+
+  final buffer = StringBuffer();
+  buffer.writeln('{');
+
+  final keyValue = RegExp(
+    r'"([^"]+)"\s*:\s*(.+?)(,)?\s*$',
+  );
+
+  bool first = true;
+
+  for (final line in lines) {
+    final trimmed = line.trim();
+
+    // Skip empty lines, braces, and broken commas
+    if (trimmed.isEmpty) continue;
+    if (trimmed == '{' || trimmed == '}') continue;
+    if (trimmed == ',' || trimmed == ',,') continue;
+
+    final match = keyValue.firstMatch(trimmed);
+
+    if (match == null) {
+      // ❌ junk like "," or standalone quotes → drop
+      continue;
+    }
+
+    final key = match.group(1)!;
+    var value = match.group(2)!.trim();
+
+    // Remove trailing commas safely
+    if (value.endsWith(',')) {
+      value = value.substring(0, value.length - 1).trim();
+    }
+
+    // Ensure valid JSON string values
+    if (!value.startsWith('"') &&
+        !value.startsWith('{') &&
+        !value.startsWith('[') &&
+        value != 'true' &&
+        value != 'false' &&
+        double.tryParse(value) == null) {
+      value = '"$value"';
+    }
+
+    if (!first) buffer.writeln(',');
+    buffer.write('  "$key": $value');
+    first = false;
+  }
+
+  buffer.writeln();
+  buffer.write('}');
+
+  return buffer.toString();
 }
 
 /// Returns true when [text] contains a word or short phrase repeated
@@ -282,7 +357,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         onProgress?.call('Preparing session...', 0.15);
 
         final session = await model.createSession(
-          enableVisionModality: true,
+          enableVisionModality: imageBytes != null,
           randomSeed: seed,
           temperature: temperature,
           topK: topK,
@@ -316,7 +391,11 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           onProgress?.call('Complete', 1.0);
           return buffer.toString();
         } finally {
-          await session.close();
+          try {
+            await session.close();
+          } catch (closeError) {
+            debugPrint('Session close error (non-fatal): $closeError');
+          }
         }
       }
 
@@ -1300,11 +1379,11 @@ class ModelService extends ChangeNotifier {
     }
 
     try {
-      await _speciesService.loadGenusDb();
+      await _speciesService.preloadAll();
       _speciesLoaded = true;
       debugPrint('Loaded species genus database');
     } catch (e) {
-      debugPrint('Failed to load species data: $e');
+      debugPrint('Failed to load species DB: $e');
     }
   }
 
@@ -1667,12 +1746,41 @@ class ModelService extends ChangeNotifier {
         description: ChatPrompts.speciesSearchToolDef['description'] as String,
         parameters: ChatPrompts.speciesSearchToolDef['parameters']
             as Map<String, dynamic>,
-        execute: (args) => _speciesService.searchSpeciesByTaxonomy(
-          args['class'] as String? ?? '',
-          args['order'] as String? ?? '',
-          args['family'] as String? ?? '',
-          args['genus'] as String? ?? '',
-        ),
+        execute: (args) async {
+          final results = await _speciesService.searchSimilarByFeatures(
+            color: args['color'] as String? ?? '',
+            bodyShape: args['body_shape'] as String? ?? '',
+            distinctiveMarks: args['distinctive_marks'] as String? ?? '',
+            texture: args['texture'] as String? ?? '',
+            sizeClass: args['size_class'] as String? ?? '',
+            pattern: args['pattern'] as String? ?? '',
+            visualGroup: args['visualGroup'] as String? ?? '',
+            taxClass: args['taxClass'] as String? ?? '',
+            taxOrder: args['taxOrder'] as String? ?? '',
+            taxFamily: args['taxFamily'] as String? ?? '',
+            taxGenus: args['taxGenus'] as String? ?? '',
+            topK: 5,
+          );
+          if (results.isEmpty) {
+            return 'No matching endangered species found. Try different traits.';
+          }
+          final candidates = results.map((r) {
+            Map<String, dynamic> features;
+            try {
+              features = jsonDecode(r.detail.visualFeatures) as Map<String, dynamic>;
+            } catch (_) {
+              features = {'raw': r.detail.visualFeatures};
+            }
+            return {
+              'scientific_name': r.detail.scientificName,
+              'common_name': r.detail.commonName,
+              'score': double.parse(r.score.toStringAsFixed(1)),
+              'confidence': double.parse(r.confidence.toStringAsFixed(2)),
+              'visual_features': features,
+            };
+          }).toList();
+          return jsonEncode(candidates);
+        },
         subsequentPrompt: Message.text(
           text: ChatPrompts.identifySynthesisPrompt,
           isUser: true,
@@ -1693,19 +1801,20 @@ class ModelService extends ChangeNotifier {
         systemInstruction: ChatPrompts.identifySystemInstruction,
         imageBytes: imageBytes,
         toolSpecs: [searchSpec],
-        temperature: 0.3,
-        topK: 64,
-        topP: 0.85,
+        temperature: 0.6,
+        topK: 100,
+        topP: 0.9,
         onProgress: (phase, progress) {
           debugPrint('Progress: $phase ($progress)');
         },
       );
 
-      // Strip markdown code fences (```json ... ```) before parsing
-      final cleaned = _stripJsonFences(result);
+      // Strip fences then rsanitize common truncation patterns before parsing
+      final repaired = _sanitizeBrokenJson(_stripJsonFences(result));
 
+      Map<String, dynamic> repairedMap;
       try {
-        jsonDecode(cleaned);
+        repairedMap = jsonDecode(repaired) as Map<String, dynamic>;
       } catch (_) {
         debugPrint('[identifySpecies] Garbage result detected — rejecting response.');
         throw Exception('Model returned an unparseable response. Please try again.');
@@ -1718,10 +1827,17 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      return result;
+      // Safely read confidence
+      final confidence = repairedMap['confidence']?.toString().toLowerCase();
+
+      // Reject low confidence
+      if (confidence == 'low') {
+        return '{}';
+      }
+
+      return repaired;
     } catch (e) {
-      final errorMessage = 'Identification failed: $e';
-      await _markError(errorMessage, phase: ModelBootPhase.failed);
+      debugPrint('[identifySpecies] Identification failed (model is fine): $e');
       rethrow;
     }
   }

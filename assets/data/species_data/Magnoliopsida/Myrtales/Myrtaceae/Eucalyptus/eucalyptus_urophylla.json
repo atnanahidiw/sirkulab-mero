@@ -6,12 +6,26 @@
   "order": "Myrtales",
   "family": "Myrtaceae",
   "genus": "Eucalyptus",
-  "visual_features": "A tall evergreen tree reaching 25-45 m in height, occasionally up to 55 m, with a straight bole free of branches for up to 30 m and trunk diameter up to 2 m. Bark is variable: typically persistent and subfibrous, smooth to shallow with close longitudinal fissures, red-brown to brown, sometimes rougher at the base. Adult leaves are broadly lanceolate, 10-15 cm long and 5-8 cm wide, dark green, shiny with a caudate (tail-like) tip. Produces simple axillary inflorescences with umbels of 5-8 flowers. Fruit is a cup-shaped capsule with 3-4 valves containing small black semicircular seeds.",
+  "visual_features": {
+    "color": "green, brown, tan",
+    "body_shape": "mountainous/rocky terrain with dense shrubbery",
+    "distinctive_marks": "steep cliff face, patches of lighter green vegetation",
+    "texture": "Rough, leafy",
+    "size_class": "Small to medium shrubs/trees",
+    "pattern": "Dense, irregular canopy"
+  },
+  "visual_group": "Tall broadleaf tree",
   "description": "Eucalyptus urophylla, commonly known as Timor white gum, Timor mountain gum, popo or ampupu, is a species of eucalypt native to the Lesser Sunda Islands of Indonesia (Timor, Alor, Wetar, Flores, Adonara, Lembata, Pantar). It is the floral emblem of East Timor. First described in 1977 by botanist Stanley Thatcher Blake. It has the largest altitudinal range of any eucalypt, from sea level up to approximately 3,000 m. Widely planted as a plantation timber tree in Brazil, China, Vietnam, Congo, and elsewhere. The specific epithet 'urophylla' means 'with leaves having an elongated tail-like tip'.",
   "conservation_status": "Endangered",
   "population_estimate": "Natural populations are severely fragmented and declining throughout its native range on seven islands in the Lesser Sunda archipelago. Exact population numbers are not documented but wild populations are considered critically low due to habitat loss. Over 200,000 hectares of plantations exist in Vietnam alone.",
   "habitat": "Native to monsoonal areas of the Lesser Sunda Islands with 2-8 dry months per year. Dominates in open, often secondary montane forests on mountain slopes and valleys. Found on volcanic soils derived from basalt, schist and slate, rarely on limestone. Elevation range from sea level to 3,000 m. Prefers damp, well-aerated nutrient-poor soils.",
-  "habitat_tags": ["tropical", "montane_forest", "secondary_forest", "monsoonal", "volcanic_soil"],
+  "habitat_tags": [
+    "tropical",
+    "montane_forest",
+    "secondary_forest",
+    "monsoonal",
+    "volcanic_soil"
+  ],
   "threats": [
     "Habitat loss due to deforestation and land conversion across native range",
     "Small, fragmented populations limiting genetic diversity",

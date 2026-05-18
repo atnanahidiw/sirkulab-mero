@@ -6,12 +6,28 @@
   "order": "Bucerotiformes",
   "family": "Bucerotidae",
   "genus": "Rhyticeros",
-  "visual_features": "Large hornbill 70-80 cm, males 2,360-2,500 g. Males have rufous/buff face and neck, orange-red eyes, prominent high red casque atop yellow bill, pale blue skin around eye, bare dark blue throat. Females have entirely black face and neck, yellow casque, brownish eyes. Both sexes have white tail feathers, blackish feet, large yellow bill. Juveniles resemble males with entirely yellow casqueless bill.",
+  "visual_features": {
+    "color": "Black, reddish-orange, yellow, blue",
+    "body_shape": "Large, robust bird with a long, curved beak",
+    "distinctive_marks": "brightly colored beak with yellow and orange tones",
+    "texture": "smooth (on the body feathers), possibly slightly rough on the beak",
+    "size_class": "medium",
+    "pattern": "solid coloration on the body, contrasting bright colors on the head and beak"
+  },
+  "visual_group": "Flying bird",
   "description": "The knobbed hornbill (also known as Sulawesi wrinkled hornbill) is a colourful bird endemic to Indonesia, found only on Sulawesi and its offshore islands (Buton, Lembeh, Togian, Muna). It is the faunal symbol of South Sulawesi province. These iconic hornbills form long-term monogamous bonds and are highly vocal, using deep guttural calls to communicate across the forest. Primarily frugivorous, they play a vital role as seed dispersers in Sulawesi's rainforest ecosystems, particularly dependent on fig trees (Ficus spp.) as a keystone food source. Sometimes placed in genus Aceros.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Declining rapidly across Sulawesi. Between 1985-1997, 89% of lowland forests in Sulawesi were lost. Listed as Vulnerable on the IUCN Red List with CITES Appendix II protection.",
   "habitat": "Evergreen lowland and montane rainforest at elevations up to 1,800 m. Also utilizes secondary forest, woodland, and plantations for foraging. Depends on large, mature old-growth trees (13-53 m high) for nesting cavities. Thrives in tall primary forests with abundant fig trees. Found on Sulawesi, Buton, Lembeh, Togian, and Muna Island.",
-  "habitat_tags": ["tropical", "rainforest", "lowland", "montane", "sulawesi", "indonesia", "endemic"],
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "lowland",
+    "montane",
+    "sulawesi",
+    "indonesia",
+    "endemic"
+  ],
   "threats": [
     "Rapid deforestation for palm oil plantations and rice fields",
     "Commercial and illegal logging removing large nesting trees",

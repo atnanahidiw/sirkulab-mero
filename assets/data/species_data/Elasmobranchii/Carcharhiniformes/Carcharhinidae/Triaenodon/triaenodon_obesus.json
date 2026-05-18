@@ -6,7 +6,15 @@
   "order": "Carcharhiniformes",
   "family": "Carcharhinidae",
   "genus": "Triaenodon",
-  "visual_features": "A small, slender shark that usually does not exceed 1.6 m (5.2 ft) in length. It has a short, broad head with a flattened blunt snout and distinctive tubular skin flaps beside the nostrils. The eyes are oval with vertical pupils. It is easily recognized by the conspicuous white tips on the first dorsal fin and upper caudal fin. The body is slim and grayish. It has 42-50 tooth rows in the upper jaw and 42-48 in the lower jaw, each tooth with a single narrow cusp flanked by smaller cusplets. Maximum reported weight is 18.3 kg (40 lb).",
+  "visual_features": {
+    "color": "dark blue/gray",
+    "body_shape": "fusiform (torpedo-shaped)",
+    "distinctive_marks": "smooth body with subtle contours",
+    "texture": "smooth",
+    "size_class": "medium",
+    "pattern": "solid"
+  },
+  "visual_group": "Marine fish",
   "description": "The whitetip reef shark is a species of requiem shark and the only extant species of genus Triaenodon. It is one of the most common sharks found on Indo-Pacific coral reefs, with a range extending from South Africa and the Red Sea to Central America and the Galápagos Islands. It is typically found on or near the bottom in clear water at depths of 8-40 m (26-131 ft). Unlike most requiem sharks, it can pump water over its gills and rest motionless on the bottom. It is nocturnal, hunting bony fishes, crustaceans, and octopus. Its slender body allows it to wriggle into tight crevices in the reef to extract hidden prey. The species is viviparous, with developing embryos sustained by a placental connection. It is listed as Vulnerable by the IUCN.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Vulnerable with decreasing population across the Indo-Pacific. Numbers are dwindling due to unregulated fishing activity. The species' slow reproductive rate and limited habitat preferences make it vulnerable to overfishing.",

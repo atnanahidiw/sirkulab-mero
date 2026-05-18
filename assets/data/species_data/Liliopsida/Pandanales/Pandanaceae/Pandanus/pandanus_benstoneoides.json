@@ -6,12 +6,27 @@
   "order": "Pandanales",
   "family": "Pandanaceae",
   "genus": "Pandanus",
-  "visual_features": "Pandanus benstoneoides is a species of pandan (screw-pine) belonging to the family Pandanaceae. As a member of the genus Pandanus, it typically features long, narrow, spiny-edged leaves arranged spirally around the stem, and aerial prop roots that provide support. The species was described as new to science by Callmander, Buerki & Phillipson, along with P. halmaherensis, based on material from Halmahera. Specific morphological details are limited as the species was only scientifically described in publications around 2014-2015.",
+  "visual_features": {
+    "color": "various shades of green",
+    "body_shape": "clumping, upright, strap-like leaves",
+    "distinctive_marks": "thick, fleshy leaves, tightly packed developing buds/flowers",
+    "texture": "smooth to slightly ribbed on leaves",
+    "size_class": "medium",
+    "pattern": "dense foliage with prominent vertical leaf structure"
+  },
+  "visual_group": "Palm tree",
   "description": "Pandanus benstoneoides is a species of pandan (screw-pine) endemic to the island of Halmahera in the Moluccas (Maluku Islands), Indonesia. It was described as a new species along with Pandanus halmaherensis in a taxonomic revision of the genus Pandanus on Halmahera by Callmander, Buerki & Phillipson. The scientific publication identified ten Pandanus species on Halmahera, three of which were new to science and not known elsewhere. The Moluccas, together with Sulawesi and the surrounding islands, form the Wallacea biodiversity hotspot - a biogeographic region of exceptional conservation importance lying between Borneo and New Guinea. No formal IUCN Red List assessment has been published for this species. It is categorized as Endangered in this dataset based on its restricted range and ongoing habitat threats in Wallacea.",
   "conservation_status": "Endangered",
   "population_estimate": "No formal population estimate exists. The species is known only from Halmahera Island in the Moluccas, Indonesia. As a newly described species (2014-2015) with a highly restricted range, its population is likely very small and fragmented. Deforestation on Halmahera for mining, logging and agricultural expansion poses significant threats to the species. No IUCN Red List assessment has been formally published for this species.",
   "habitat": "Endemic to Halmahera Island in the Moluccas (Maluku Islands), Indonesia. The species is part of the Wallacea biodiversity hotspot. Specific habitat details for this species are limited in published literature, but Pandanus species in the region typically grow in lowland to montane forests, often in wet or swampy areas, along rivers, and in coastal vegetation. Halmahera features tropical rainforest with significant areas of ultramafic (nickel-rich) soils that support unique plant communities.",
-  "habitat_tags": ["Halmahera endemic", "Wallacea", "Moluccas", "lowland forest", "Indonesia endemic", "pandan"],
+  "habitat_tags": [
+    "Halmahera endemic",
+    "Wallacea",
+    "Moluccas",
+    "lowland forest",
+    "Indonesia endemic",
+    "pandan"
+  ],
   "threats": [
     "Deforestation on Halmahera for mining operations (especially nickel mining on ultramafic soils)",
     "Logging and agricultural expansion",

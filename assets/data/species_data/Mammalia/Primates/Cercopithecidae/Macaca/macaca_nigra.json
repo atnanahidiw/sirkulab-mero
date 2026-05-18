@@ -6,12 +6,27 @@
   "order": "Primates",
   "family": "Cercopithecidae",
   "genus": "Macaca",
-  "visual_features": "The Celebes Crested Macaque is entirely jet black with a hairless black face, except for some white hair on the shoulders. It has a long, horse-like muzzle, high cheeks, and a prominent long hair tuft (crest) at the top of the head resembling a fauxhawk. Its most striking feature is reddish-brown eyes, unusual for primates. The body hair is dense, coarse, and woolly. The tail is a vestigial nub of only about 2 cm, often leading to misidentification as an ape. Males have heart-shaped bright pink ischial callosities on the rump. Males measure 52–57 cm and weigh 9.5–12.7 kg; females measure 44–55 cm and weigh about 5.5 kg.",
+  "visual_features": {
+    "color": "black",
+    "body_shape": "robust and muscular",
+    "distinctive_marks": "prominent facial features, dark fur",
+    "texture": "coarse and shaggy fur",
+    "size_class": "medium",
+    "pattern": "solid dark coloration"
+  },
+  "visual_group": "Primate",
   "description": "The Celebes Crested Macaque, also known as the crested black macaque or black ape, and locally as 'yaki', is an Old World monkey endemic to the northeastern tip of Sulawesi, Indonesia, and the adjacent islands of Manadotua and Talise. It is the most endangered of the seven macaque species on Sulawesi. These diurnal primates are primarily terrestrial, spending over 60% of their day on the ground foraging and socializing. They are highly frugivorous, with 70% of their diet consisting of fruits (especially figs). They live in multi-male, multi-female groups of 5–75 individuals, with females outnumbering males by about 4:1. The species gained international fame in 2011 from the 'monkey selfie' controversy.",
   "conservation_status": "Critically Endangered",
   "population_estimate": "The total population on Sulawesi is estimated at only 4,000–6,000 individuals. An introduced population of up to 100,000 exists on the island of Bacan (Maluku Islands), but its genetic viability is uncertain. Population density has declined from over 300 individuals per km² in 1980 to fewer than 20–60 individuals per km² today.",
   "habitat": "Humid, tropical lowland and upland rainforests at moderate elevations of 700–1,100 m above sea level. They prefer closed-canopy forests and are most abundant in protected areas like Tangkoko Batuangus Nature Reserve. They are also found in disturbed and logged forests, grasslands, and agricultural areas (coconut, corn, sugar palm) where forests have been cleared, though these are suboptimal habitats.",
-  "habitat_tags": ["tropical", "rainforest", "lowland", "montane", "sulawesi", "terrestrial"],
+  "habitat_tags": [
+    "tropical",
+    "rainforest",
+    "lowland",
+    "montane",
+    "sulawesi",
+    "terrestrial"
+  ],
   "threats": [
     "Habitat loss from deforestation and agricultural expansion within an already restricted range",
     "Hunting for bushmeat",

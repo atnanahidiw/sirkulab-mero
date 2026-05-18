@@ -6,7 +6,15 @@
   "order": "Primates",
   "family": "Hylobatidae",
   "genus": "Symphalangus",
-  "visual_features": "The siamang is the largest of all gibbons, reaching 1 m (3.3 ft) in height and weighing up to 14 kg (31 lb). It has long, dense, shaggy black fur covering its slender body, with pale hair around the mouth and chin. The face is mostly hairless apart from a thin mustache. The ape's long, gangling arms are longer than its legs, adapted for brachiation (swinging from tree to tree). A distinctive large gular sac (throat pouch) found in both sexes can inflate to the size of the siamang's head, allowing resonant calls. Two digits on each foot — the second and third toes — are partially joined by a membrane (syndactyly). Like all apes, they lack a tail. They have opposable thumbs and opposable big toes.",
+  "visual_features": {
+    "color": "black",
+    "body_shape": "robust and shaggy",
+    "distinctive_marks": "prominent dark facial features, dark fur",
+    "texture": "shaggy and thick fur",
+    "size_class": "medium",
+    "pattern": "solid black"
+  },
+  "visual_group": "Primate",
   "description": "The siamang (Symphalangus syndactylus) is an endangered, arboreal, black-furred gibbon native to the forests of Indonesia (Sumatra), Malaysia (Malay Peninsula), and southern Thailand. It is the only species in the genus Symphalangus and can be twice the size of other gibbons. Two features distinguish it from other gibbons: partially webbed second and third toes on each foot, and a large inflatable gular sac used for vocalizations. The siamang's melodious singing breaks the forest's silence in the early morning. They live in small family groups of up to 6 individuals with an average home range of 23 hectares. Fossils of siamangs date back to the Middle Pleistocene.",
   "conservation_status": "Endangered",
   "population_estimate": "Historically estimated at 360,000 individuals in the 1980s. Current numbers are significantly lower, with a decline of approximately 50% over the last 40 years. In Bukit Barisan Selatan National Park (Sumatra), approximately 22,390 siamangs were recorded in 2002 censuses across roughly 2,570 km² of remaining forest cover. The Indonesian population has declined substantially due to habitat loss, the illegal pet trade, and agricultural expansion.",

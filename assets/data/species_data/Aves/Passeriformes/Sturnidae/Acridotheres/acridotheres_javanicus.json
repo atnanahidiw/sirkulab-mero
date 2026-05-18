@@ -6,7 +6,15 @@
   "order": "Passeriformes",
   "family": "Sturnidae",
   "genus": "Acridotheres",
-  "visual_features": "A stocky, medium-sized bird measuring 21-23 cm in length and weighing approximately 100 g. Plumage is mainly black with a slight glossy sheen. Wings are brownish-black with white bases on primary feathers forming a striking white wing bar visible during flight. White tail bar displayed in flight, and white undertail coverts give the alternative name 'white-vented myna'. A short, erect crest adorns the forehead. The beak, legs, and feet are bright yellow. The iris is lemon-yellow, distinguishing it from the common myna (A. tristis) which has a brown iris. Immature birds are browner and duller with less prominent crests.",
+  "visual_features": {
+    "color": "dark gray, black, yellow",
+    "body_shape": "compact, plump",
+    "distinctive_marks": "Bright yellow/orange bill, black plumage",
+    "texture": "feathery",
+    "size_class": "small to medium",
+    "pattern": "solid black plumage"
+  },
+  "visual_group": "Flying bird",
   "description": "The Javan myna is a species of myna in the starling family Sturnidae, native to Java and Bali in Indonesia, where its population has declined significantly due to excessive trapping for the cage-bird trade. Paradoxically, while considered Vulnerable in its native range, it has become a highly successful invasive species elsewhere, most notably in Singapore where it is now the most abundant bird species. Introduced to southeastern Thailand, southern Malaysia, Sumatra, the Lesser Sundas, Taiwan, Japan, Nepal, and Puerto Rico. The species was formally described by German ornithologist Jean Cabanis in 1851. It is sometimes considered conspecific with the great myna (A. grandis) or jungle myna (A. fuscus). These birds are highly adaptable and thrive in urban environments, feeding on insects, fruit, seeds, nectar, and human food waste. They are notably bold around humans and have loud, varied vocalizations.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Global population size has not been quantified, but the species is experiencing rapid decline in its native range (Java and Bali) due to intensive trapping for the cage-bird trade. In native range, it is now uncommon to rare in areas where it was formerly abundant. Conversely, introduced populations in Singapore are superabundant, with the species comprising a substantial proportion of total urban bird populations.",

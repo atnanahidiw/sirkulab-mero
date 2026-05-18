@@ -6,12 +6,27 @@
   "order": "Cetartiodactyla",
   "family": "Cervidae",
   "genus": "Rusa",
-  "visual_features": "Large deer with coarse, dark blackish-brown coat and gray forehead. Back almost black, underparts and inner thighs yellowish-brown, abdomen lighter brown. Tail tuft dark blackish-brown. Hair coarse, longer on chest. Ears wide and shorter than head. Males have medium-long, lyre-shaped, three-tined antlers (~2.5 kg). Males larger (142-185 cm head-to-body, 152-160 kg) than females (~74 kg). Fawns born without spots.",
+  "visual_features": {
+    "color": "brownish-tan",
+    "body_shape": "slender, ungulate",
+    "distinctive_marks": "prominent antlers",
+    "texture": "short, somewhat coarse fur",
+    "size_class": "medium",
+    "pattern": "solid silhouette"
+  },
+  "visual_group": "Large quadruped mammal",
   "description": "The Javan rusa (also known as Sunda sambar or Timor deer) is a large deer species native to Indonesia and Timor-Leste, with seven recognised subspecies. It has been widely introduced across the Southern Hemisphere including Australia, New Zealand, Mauritius, Fiji, and many Pacific islands. Despite being common in introduced ranges, its native population has declined markedly by approximately 10,000 individuals in the past two decades due to poaching and habitat loss. Declared a protected species under Indonesian law in 2018. The word 'rusa' is Malay for 'deer'.",
   "conservation_status": "Vulnerable",
   "population_estimate": "Approximately 10,000 individuals lost from native range in past two decades (Java, Bali, Timor). Still common in introduced ranges (Australia, New Zealand, Mauritius, Fiji, many Pacific islands). Listed as Vulnerable on IUCN Red List.",
   "habitat": "Primarily found in deciduous forests, plantations, and grasslands in Southeast Asian islands. Prefers forest edges. Inhabits tropical dry forests, open scrub, savannas, shrublands, and marshes from sea level to 900 m. Nocturnal, rarely seen in open areas. Prefers environments with access to grass, leaves, and fallen fruit for food.",
-  "habitat_tags": ["tropical", "forest", "grassland", "savanna", "southeast_asia", "island"],
+  "habitat_tags": [
+    "tropical",
+    "forest",
+    "grassland",
+    "savanna",
+    "southeast_asia",
+    "island"
+  ],
   "threats": [
     "Poaching and hunting for bushmeat and antlers",
     "Habitat loss from deforestation and agricultural expansion",

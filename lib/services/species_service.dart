@@ -1,10 +1,13 @@
 import 'dart:convert';
-import 'dart:typed_data';
-import 'package:archive/archive.dart';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
-import 'package:flutter/services.dart';
+import 'package:drift/drift.dart';
+import '../database/species_database.dart';
 
-/// Detailed species entry from the per-species JSON files.
+// ═══════════════════════════════════════════════════════════════════════════════
+// Domain model
+// ═══════════════════════════════════════════════════════════════════════════════
+
 class SpeciesDetail {
   final String scientificName;
   final String commonName;
@@ -19,6 +22,7 @@ class SpeciesDetail {
   final List<String> funFacts;
   final List<String> habitatTags;
   final Map<String, String> taxonomy;
+  final String visualGroup;
   final String populationEstimate;
   final String sourceUri;
 
@@ -36,174 +40,352 @@ class SpeciesDetail {
     required this.funFacts,
     required this.habitatTags,
     required this.taxonomy,
+    this.visualGroup = '',
     this.populationEstimate = '',
     this.sourceUri = '',
   });
 
-  factory SpeciesDetail.fromJson(Map<String, dynamic> json) {
+  factory SpeciesDetail.fallback({
+    required String scientificName,
+    required String commonName,
+  }) {
     return SpeciesDetail(
-      scientificName: json['scientific_name'] ?? json['latin_name'] ?? '',
-      commonName: json['common_name'] ?? '',
-      visualFeatures: json['visual_features'] ?? '',
-      description: json['description'] ?? '',
-      conservationStatus: json['conservation_status'] ?? '',
-      habitat: json['habitat'] ?? '',
-      threats: List<String>.from(json['threats'] ?? []),
-      ecosystemRole: json['ecosystem_role'] ?? '',
-      humanConnection: json['human_connection'] ?? '',
-      whatStudentsCanDo: List<String>.from(json['what_students_can_do'] ?? []),
-      funFacts: List<String>.from(json['fun_fact'] ?? []),
-      habitatTags: List<String>.from(json['habitat_tags'] ?? []),
-      taxonomy: {
-        'kingdom': json['kingdom'] ?? '',
-        'class': json['class'] ?? '',
-        'order': json['order'] ?? '',
-        'family': json['family'] ?? '',
-        'genus': json['genus'] ?? '',
-      },
-      populationEstimate: json['population_estimate'] ?? '',
-      sourceUri: json['population_estimate_source_uri'] ?? '',
+      scientificName: scientificName,
+      commonName: commonName,
+      visualFeatures: '',
+      description: '',
+      conservationStatus: '',
+      habitat: '',
+      threats: [],
+      ecosystemRole: '',
+      humanConnection: '',
+      whatStudentsCanDo: [],
+      funFacts: [],
+      habitatTags: [],
+      taxonomy: {},
     );
+  }
+
+  factory SpeciesDetail.fromDrift(SpeciesData row) {
+    final funFacts = _parseJsonList(row.funFact);
+    final studentActions = _parseJsonList(row.whatStudentsCanDo);
+    final threats = _parseJsonList(row.threats);
+    final habitatTags = _parseJsonList(row.habitatTags);
+    return SpeciesDetail(
+      scientificName: row.latinName,
+      commonName: row.commonName,
+      visualFeatures: row.visualFeatures,
+      description: row.description,
+      conservationStatus: row.conservationStatus,
+      habitat: row.habitat,
+      threats: threats.map((e) => e.toString()).toList(),
+      ecosystemRole: row.ecosystemRole,
+      humanConnection: row.humanConnection,
+      whatStudentsCanDo: studentActions.map((e) => e.toString()).toList(),
+      funFacts: funFacts.map((e) => e.toString()).toList(),
+      habitatTags: habitatTags.map((e) => e.toString()).toList(),
+      taxonomy: {
+        'kingdom': row.kingdom,
+        'class': row.className,
+        'order': row.orderName,
+        'family': row.family,
+        'genus': row.genus,
+      },
+      visualGroup: row.visualGroup,
+      populationEstimate: row.populationEstimate,
+      sourceUri: row.populationEstimateSourceUri,
+    );
+  }
+
+  static List<dynamic> _parseJsonList(String text) {
+    if (text.trim().isEmpty) return [];
+    try { return jsonDecode(text) as List<dynamic>; } catch (_) { return []; }
   }
 
   String get genus => taxonomy['genus'] ?? '';
 }
 
+// ═══════════════════════════════════════════════════════════════════════════════
+// FTS5 search result
+// ═══════════════════════════════════════════════════════════════════════════════
+
+class RankedSpecies {
+  final double score;
+  final double confidence;
+  final SpeciesDetail detail;
+
+  const RankedSpecies({
+    required this.score,
+    required this.confidence,
+    required this.detail,
+  });
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Token helpers (synonym normalisation + Dice)
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const _synonyms = {
+  'stripes': 'striped', 'striping': 'striped', 'stripy': 'striped',
+  'golden': 'yellow', 'bluish': 'blue', 'reddish': 'red',
+  'greenish': 'green', 'brownish': 'brown', 'whitish': 'white',
+  'blackish': 'black', 'greyish': 'grey', 'grayish': 'grey',
+  'yellowish': 'yellow', 'orangish': 'orange', 'purplish': 'purple',
+  'pinkish': 'pink', 'spotted': 'spot', 'spotty': 'spot',
+};
+
+// Remove stop-words to ensure common grammatical filler doesn't skew similarity scores
+const _stopWords = {'and', 'with', 'the', 'appears', 'somewhat', 'but', 'on', 'of', 'in'};
+
+Set<String> _tokens(String text) {
+  return text
+      .toLowerCase()
+      .split(RegExp(r'\W+'))
+      .map((t) => _synonyms[t] ?? t)
+      // Rely on exact matches or external porter libraries instead of destructive suffix slicing
+      .where((t) => t.length > 1 && !_stopWords.contains(t))
+      .toSet();
+}
+
+double _dice(Set<String> a, Set<String> b) {
+  if (a.isEmpty || b.isEmpty) return 0.0;
+  final i = a.intersection(b).length;
+  return i == 0 ? 0.0 : (2.0 * i) / (a.length + b.length);
+}
+
+// ═══════════════════════════════════════════════════════════════════════════════
+// Service
+// ═══════════════════════════════════════════════════════════════════════════════
+
+const _vfKeys = ['color', 'body_shape', 'distinctive_marks', 'texture', 'size_class', 'pattern'];
+const _vfWeights = {'distinctive_marks': 5.0, 'pattern': 4.0, 'color': 4.0, 'body_shape': 3.0, 'texture': 1.0, 'size_class': 1.0};
+const _taxBoost = 2.0;
 class SpeciesService {
-  static const String _zipPath = 'assets/data/species_data.zip';
+  final SpeciesDatabase _db;
 
-  // Genus-indexed in-memory cache (built on first access)
-  Map<String, List<SpeciesDetail>>? _genusDb;
+  SpeciesService._(this._db);
 
-  /// Load the genus index from the bundled [species_data.zip] file.
-  /// Extracts all JSON files, parses them, and indexes by genus.
-  /// Cached in memory after first load.
-  Future<Map<String, List<SpeciesDetail>>> loadGenusDb() async {
-    if (_genusDb != null) return _genusDb!;
+  factory SpeciesService() => SpeciesService._(SpeciesDatabase.instance);
 
-    _genusDb = {};
+  // ── Initialisation ──────────────────────────────────────────────────
 
-    try {
-      final ByteData raw = await rootBundle.load(_zipPath);
-      final Uint8List bytes = raw.buffer.asUint8List(
-        raw.offsetInBytes,
-        raw.lengthInBytes,
-      );
-      final Archive archive = ZipDecoder().decodeBytes(bytes);
-
-      for (final archiveFile in archive) {
-        if (archiveFile.isFile && archiveFile.name.endsWith('.json')) {
-          final content = utf8.decode(archiveFile.content);
-          final data = json.decode(content) as Map<String, dynamic>;
-          final detail = SpeciesDetail.fromJson(data);
-          final genus = detail.genus.toLowerCase();
-
-          if (genus.isNotEmpty) {
-            _genusDb!.putIfAbsent(genus, () => []).add(detail);
-          }
-        }
-      }
-
-      final totalSpecies =
-          _genusDb!.values.fold(0, (sum, list) => sum + list.length);
-      debugPrint(
-          'Loaded genus database from zip: ${_genusDb!.length} genera, '
-          '$totalSpecies species');
-    } catch (e) {
-      debugPrint('Error loading genus database from zip: $e');
-      _genusDb = {};
-    }
-
-    return _genusDb!;
+  Future<void> preloadAll() async {
+    await _db.countAll();
+    debugPrint('SpeciesService: DB ready');
   }
 
-  /// Tool implementation: look up all species in a genus and return a
-  /// compact list of scientific names paired with their visual features.
+  // ── Taxonomy / species lookups ──────────────────────────────────────
+
   Future<String> searchSpeciesByTaxonomy(
-    String taxonClass,
-    String taxonOrder,
-    String taxonFamily,
-    String taxonGenus,
+    String taxonClass, String taxonOrder, String taxonFamily, String taxonGenus,
   ) async {
-    final db = await loadGenusDb();
-    final key = taxonGenus.trim().toLowerCase();
-    final species = db[key];
-
-    debugPrint(
-      'Finding species in: class=$taxonClass, order=$taxonOrder, family=$taxonFamily, genus=$taxonGenus'
-    );
-
-    if (species == null || species.isEmpty) {
-      return 'No endangered species found in the genus "$taxonGenus".';
-    }
-
-    final buffer = StringBuffer();
-    for (int i = 0; i < species.length; i++) {
-      final s = species[i];
-      if (i > 0) buffer.write(' | ');
-      buffer.write('${s.scientificName}: ${s.visualFeatures}');
-    }
-
-    return buffer.toString();
+    debugPrint('Finding species in: class=$taxonClass, order=$taxonOrder, '
+        'family=$taxonFamily, genus=$taxonGenus');
+    final species = await _db.findByGenus(taxonGenus);
+    if (species.isEmpty) return 'No endangered species found in the genus "$taxonGenus".';
+    return species.map((s) => '${s.latinName}: ${s.visualFeatures}').join(' | ');
   }
 
-  /// Check if a given scientific name is in the endangered species database.
-  Future<bool> isEndangered(String scientificName) async {
-    final db = await loadGenusDb();
-    final query = scientificName.trim().toLowerCase();
+  Future<bool> isEndangered(String scientificName) => _db.existsByName(scientificName);
 
-    for (final speciesList in db.values) {
-      for (final s in speciesList) {
-        if (s.scientificName.toLowerCase().contains(query) ||
-            query.contains(s.scientificName.toLowerCase())) {
-          return true;
-        }
-      }
-    }
-    return false;
-  }
-
-  /// Find species by Latin name — returns SpeciesDetail if found, null otherwise.
   Future<SpeciesDetail?> findSpeciesByLatinName(String latinName) async {
-    try {
-      final db = await loadGenusDb();
-      final query = latinName.trim().toLowerCase();
-
-      for (final speciesList in db.values) {
-        for (final s in speciesList) {
-          if (s.scientificName.toLowerCase().contains(query) ||
-              query.contains(s.scientificName.toLowerCase())) {
-            return s;
-          }
-        }
-      }
-
-      return null;
-    } catch (e) {
-      debugPrint('Error finding species: $e');
-      return null;
-    }
+    final row = await _db.findByNameLatin(latinName);
+    return row != null ? SpeciesDetail.fromDrift(row) : null;
   }
 
-  /// Find species by common name — returns SpeciesDetail if found, null otherwise.
   Future<SpeciesDetail?> findSpeciesByName(String name) async {
-    try {
-      final db = await loadGenusDb();
-      final query = name.trim().toLowerCase();
+    final row = await _db.findByNameCommon(name);
+    return row != null ? SpeciesDetail.fromDrift(row) : null;
+  }
 
-      for (final speciesList in db.values) {
-        for (final s in speciesList) {
-          if (s.commonName.toLowerCase().contains(query) ||
-              query.contains(s.commonName.toLowerCase())) {
-            return s;
-          }
+  // ── FTS5 + weighted reranker ────────────────────────────────────────
+
+  /// Search for visually similar species by individual observed traits.
+  ///
+  /// When [visualGroup] is provided, species are first narrowed to that visual
+  /// group (e.g. "Primate", "Flying bird") before FTS5 + Dice reranking.
+  ///
+  /// Internally runs an FTS5 prefix‑match on the concatenated trait values,
+  /// then reranks candidates using per‑field Dice‑overlap with fixed weights:
+  ///   distinctive_marks×5  pattern×4  color×4  body_shape×3  texture×1  size_class×1
+  /// plus a taxonomy boost when [taxFamily] or [taxGenus] matches.
+  Future<List<RankedSpecies>> searchSimilarByFeatures({
+    String color = '',
+    String bodyShape = '',
+    String distinctiveMarks = '',
+    String texture = '',
+    String sizeClass = '',
+    String pattern = '',
+    String? visualGroup,
+    String? taxClass,
+    String? taxOrder,
+    String? taxFamily,
+    String? taxGenus,
+    int topK = 5,
+  }) async {
+    final traits = <String, String>{};
+    final queryParts = <String>[];
+
+    void addField(String key, String val) {
+      if (val.trim().isEmpty) return;
+      traits[key] = val.trim();
+      queryParts.add(val.trim());
+    }
+
+    addField('color', color);
+    addField('body_shape', bodyShape);
+    addField('distinctive_marks', distinctiveMarks);
+    addField('texture', texture);
+    addField('size_class', sizeClass);
+    addField('pattern', pattern);
+
+    if (queryParts.isEmpty) return [];
+
+    // Clean terms, apply synonyms (match build-time normalisation), deduplicate.
+    final cleanTerms = queryParts
+        .join(' ')
+        .replaceAll(RegExp(r'[^\w\s]'), ' ')
+        .split(RegExp(r'\s+'))
+        .map((w) => (_synonyms[w] ?? w).toLowerCase().trim())
+        .where((w) => w.length > 1 && !_stopWords.contains(w))
+        .toSet();
+
+    if (cleanTerms.isEmpty) return [];
+
+    // Build the query: filter by visualGroup first if provided
+    final useFts = !(traits.isEmpty);
+    List<Map<String, dynamic>> unfilteredRows;
+
+    if (useFts) {
+      // Use broad 'OR' for flexible offline retrieval.
+      final ftsQuery = cleanTerms.map((w) => '"$w"*').join(' OR ');
+
+      if (visualGroup != null && visualGroup.isNotEmpty) {
+        // Filter by visual_group + FTS5
+        unfilteredRows = (await _db.customSelect(
+          'SELECT s.* FROM species s '
+          'JOIN species_fts f ON s.id = f.rowid '
+          'WHERE species_fts MATCH ?1 AND s.visual_group = ?2 '
+          'LIMIT ?3',
+          variables: [Variable(ftsQuery), Variable(visualGroup), Variable(42)],
+          readsFrom: {_db.species},
+        ).get()).map((r) => r.data).toList();
+
+        // FTS5 fallback: if nothing found in group, get all from group unfiltered
+        if (unfilteredRows.isEmpty) {
+          final vgRows = await _db.customSelect(
+            'SELECT s.* FROM species s WHERE s.visual_group = ?1 LIMIT ?2',
+            variables: [Variable(visualGroup), Variable(42)],
+            readsFrom: {_db.species},
+          ).get();
+          unfilteredRows = vgRows.map((r) => r.data).toList();
         }
+      } else {
+        unfilteredRows = (await _db.customSelect(
+          'SELECT s.* FROM species s '
+          'JOIN species_fts f ON s.id = f.rowid '
+          'WHERE species_fts MATCH ?1 '
+          'LIMIT ?2',
+          variables: [Variable(ftsQuery), Variable(42)],
+          readsFrom: {_db.species},
+        ).get()).map((r) => r.data).toList();
+      }
+    } else {
+      // No trait query — just visual group lookup
+      if (visualGroup != null && visualGroup.isNotEmpty) {
+        final vgRows = await _db.customSelect(
+          'SELECT s.* FROM species s WHERE s.visual_group = ?1 LIMIT ?2',
+          variables: [Variable(visualGroup), Variable(42)],
+          readsFrom: {_db.species},
+        ).get();
+        unfilteredRows = vgRows.map((r) => r.data).toList();
+      } else {
+        unfilteredRows = [];
+      }
+    }
+
+    if (unfilteredRows.isEmpty) return [];
+
+    // Parse extracted features into structured data sets
+    final obsTokens = <String, Set<String>>{};
+    double maximumObservableScore = 0.0;
+
+    for (final k in _vfKeys) {
+      final v = traits[k];
+      if (v != null && v.isNotEmpty) {
+        obsTokens[k] = _tokens(v);
+        maximumObservableScore += _vfWeights[k] ?? 1.0; 
+      }
+    }
+
+    // Add taxonomy fields into dynamic max potential calculation limits
+    if (taxFamily?.isNotEmpty ?? false) maximumObservableScore += _taxBoost;
+    if (taxGenus?.isNotEmpty ?? false) maximumObservableScore += (_taxBoost * 0.5);
+    if (taxClass?.isNotEmpty ?? false) maximumObservableScore += (_taxBoost * 0.3);
+    if (taxOrder?.isNotEmpty ?? false) maximumObservableScore += (_taxBoost * 0.2);
+
+    final scored = <_RowScore>[];
+
+    for (final data in unfilteredRows) {
+      double score = 0;
+
+      for (final k in _vfKeys) {
+        final obs = obsTokens[k];
+        if (obs == null) continue;
+        
+        final stored = (data[k] as String? ?? '').trim();
+        final storedT = stored.isNotEmpty
+            ? _tokens(stored)
+            : _tokens(data['visual_blob'] as String? ?? '');
+            
+        score += _dice(obs, storedT) * (_vfWeights[k] ?? 1);
       }
 
-      return null;
-    } catch (e) {
-      debugPrint('Error finding species: $e');
-      return null;
+      // Taxonomy matches evaluation
+      if (taxFamily != null && taxFamily.isNotEmpty &&
+          (data['family'] as String? ?? '').toLowerCase() == taxFamily.toLowerCase()) {
+        score += _taxBoost;
+      }
+      if (taxGenus != null && taxGenus.isNotEmpty &&
+          (data['genus'] as String? ?? '').toLowerCase() == taxGenus.toLowerCase()) {
+        score += _taxBoost * 0.5;
+      }
+      if (taxClass != null && taxClass.isNotEmpty &&
+          (data['class'] as String? ?? '').toLowerCase() == taxClass.toLowerCase()) {
+        score += _taxBoost * 0.3;
+      }
+      if (taxOrder != null && taxOrder.isNotEmpty &&
+          (data['order'] as String? ?? '').toLowerCase() == taxOrder.toLowerCase()) {
+        score += _taxBoost * 0.2;
+      }
+
+      // Confidence bounds are calculated against what was actually queried
+      final conf = maximumObservableScore > 0 
+          ? (score / maximumObservableScore * 100.0).clamp(0.0, 100.0) 
+          : 0.0;
+
+      scored.add(_RowScore(data, score, conf));
     }
+
+    // Sort descending by score
+    scored.sort((a, b) => b.score.compareTo(a.score));
+
+    return scored.take(topK).map((s) {
+      final row = s.row;
+      // Map back safely via drift schema definitions generator directly
+      final speciesData = _db.species.map(row); 
+      return RankedSpecies(
+        score: s.score,
+        confidence: s.confidence,
+        detail: SpeciesDetail.fromDrift(speciesData),
+      );
+    }).toList();
   }
+}
+
+class _RowScore {
+  final Map<String, dynamic> row;
+  final double score;
+  final double confidence;
+  const _RowScore(this.row, this.score, this.confidence);
 }

@@ -6,12 +6,29 @@
   "order": "Galliformes",
   "family": "Phasianidae",
   "genus": "Lophura",
-  "visual_features": "Male about 38 cm (15 in) long, females slightly smaller. Face has bare red skin. Bill is greenish in males, black in females. No crest (hence 'crestless'). Legs bluish-grey, with long spurs in males, short spurs in females. Tail short and rounded or with outer feathers longer than central ones. Male has purplish-black plumage with white vermiculation on mantle, back, wings, and side of breast. Rump bright chestnut. Upper tail coverts purple with maroon margins. Tail feathers cinnamon with black bases. Female is almost completely black with blue or green gloss. Head brownish paling to white on throat. Juveniles resemble females with pale-edged feathers.",
+  "visual_features": {
+    "color": "dark blue/black with reddish-purple accents and orange tail",
+    "body_shape": "compact and robust",
+    "distinctive_marks": "bright red head and neck, orange/rufous tail feathers",
+    "texture": "smooth plumage",
+    "size_class": "medium-sized bird",
+    "pattern": "Solid dark plumage with contrasting tail coloration"
+  },
+  "visual_group": "Flying bird",
   "description": "A shy, retiring species of pheasant in the family Phasianidae, seldom seen in the wild. The Malayan crestless fireback (L. erythrophthalma) occurs in mainland Malaysia and Sumatra, while the Bornean crestless fireback (L. pyronota — now often split as a separate species) occurs in Borneo. Little studied. Lives on the ground among undergrowth. Feeds during the day by scratching up leaf litter and eating small animals exposed, as well as feeding on vegetable matter and fallen fruit. Nest recorded in the wild was between buttress roots of a large tree, containing 4-5 pink or pale buff eggs. Breeding season April to June. Gestation period 24 days. The female is very similar to the male Salvadori's pheasant (Lophura inornata), endemic to Sumatra, but that species inhabits higher altitude forests.",
   "conservation_status": "Critically Endangered",
   "population_estimate": "IUCN estimates 10,000-20,000 mature individuals total across both species. Recorded at densities of 6 birds per square kilometer in partially logged secondary forest in Malaysia and Sumatra. Population trend is decreasing. Has a moderate-sized range with patchy distribution.",
   "habitat": "Found in Brunei, Indonesia, Malaysia, and Singapore. Inhabits undergrowth in lowland rainforests, including peat forest and karst forest. Also found in secondary growth forest in Malaysia, up to altitudes of about 300 m (1,000 ft). Has been observed in partially logged secondary forest in both Malaysia and Sumatra.",
-  "habitat_tags": ["forest", "lowland", "rainforest", "tropical", "peat forest", "karst forest", "undergrowth", "Southeast Asia"],
+  "habitat_tags": [
+    "forest",
+    "lowland",
+    "rainforest",
+    "tropical",
+    "peat forest",
+    "karst forest",
+    "undergrowth",
+    "Southeast Asia"
+  ],
   "threats": [
     "Habitat destruction — lowland evergreen virgin forest is increasingly cleared",
     "Deforestation for palm oil plantations and logging",
