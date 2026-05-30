@@ -5,18 +5,23 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:provider/provider.dart';
 
 import 'package:mero/services/model_boot_state.dart';
+import 'package:mero/services/model_download_service.dart';
 import 'package:mero/services/model_service.dart';
 import 'package:mero/widgets/startup_gate.dart';
 
 void main() {
   testWidgets('startup gate shows splash and transitions to ready child',
       (WidgetTester tester) async {
-    final service = FakeModelService(
+    final downloadService = FakeModelDownloadService(
       isLoading: true,
       isModelLoaded: false,
       status: 'Downloading: 42%',
       downloadProgress: 0.42,
       phase: ModelBootPhase.downloading,
+    );
+    final service = ModelService(
+      downloadService: downloadService,
+      autoInitialize: false,
     );
 
     await tester.pumpWidget(
@@ -33,8 +38,7 @@ void main() {
     expect(find.text('Downloading… 42%'), findsOneWidget);
     expect(find.byKey(const Key('home-ready')), findsNothing);
 
-    service.markReady();
-    service.notifyListeners();
+    downloadService.markReady();
     await tester.pump();
 
     expect(find.byKey(const Key('home-ready')), findsOneWidget);
@@ -42,12 +46,16 @@ void main() {
 
   testWidgets('retry button calls retryInitialization',
       (WidgetTester tester) async {
-    final service = FakeModelService(
+    final downloadService = FakeModelDownloadService(
       isLoading: false,
       isModelLoaded: false,
       status: 'Error: network failed',
       error: 'network failed',
       phase: ModelBootPhase.downloading,
+    );
+    final service = ModelService(
+      downloadService: downloadService,
+      autoInitialize: false,
     );
 
     await tester.pumpWidget(
@@ -65,18 +73,22 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pump();
 
-    expect(service.retryCount, 1);
-    expect(service.isLoading, true);
+    expect(downloadService.retryCount, 1);
+    expect(downloadService.isLoading, true);
   });
 
   testWidgets('canceled download shows retry action',
       (WidgetTester tester) async {
-    final service = FakeModelService(
+    final downloadService = FakeModelDownloadService(
       isLoading: false,
       isModelLoaded: false,
       status: 'Download canceled',
       error: 'Download canceled',
       phase: ModelBootPhase.canceled,
+    );
+    final service = ModelService(
+      downloadService: downloadService,
+      autoInitialize: false,
     );
 
     await tester.pumpWidget(
@@ -95,13 +107,13 @@ void main() {
     await tester.tap(find.text('Retry'));
     await tester.pump();
 
-    expect(service.retryCount, 1);
-    expect(service.isLoading, true);
+    expect(downloadService.retryCount, 1);
+    expect(downloadService.isLoading, true);
   });
 }
 
-class FakeModelService extends ModelService {
-  FakeModelService({
+class FakeModelDownloadService extends ModelDownloadService {
+  FakeModelDownloadService({
     required bool isLoading,
     required bool isModelLoaded,
     required String status,
@@ -114,7 +126,14 @@ class FakeModelService extends ModelService {
         _error = error,
         _downloadProgress = downloadProgress,
         _phase = phase ?? ModelBootPhase.idle,
-        super(autoInitialize: false);
+        super(
+          modelUrl: 'https://example.com/model.litertlm',
+          installModel: (_) async {},
+          tryActivateExistingModel: () async => false,
+          downloader: null,
+          stateStore: null,
+          speciesService: null,
+        );
 
   final bool _isInitialized = false;
   bool _isLoading;
@@ -188,5 +207,6 @@ class FakeModelService extends ModelService {
     _status = 'Model ready';
     _downloadProgress = null;
     _phase = ModelBootPhase.ready;
+    notifyListeners();
   }
 }

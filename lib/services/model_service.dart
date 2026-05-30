@@ -418,6 +418,7 @@ class ModelService extends ChangeNotifier {
 
   late final ModelRuntime _runtime;
   late final ModelDownloadService _downloadService;
+  final bool _ownsDownloadService;
   final SpeciesService _speciesService = SpeciesService();
   InferenceModel? _model;
 
@@ -428,19 +429,26 @@ class ModelService extends ChangeNotifier {
     ModelDownloadBackend? downloader,
     ModelRuntime? runtime,
     ModelBootStateStore? stateStore,
+    ModelDownloadService? downloadService,
     bool autoInitialize = true,
   }) {
     _runtime = runtime ??
         FlutterGemmaModelRuntime(
           modelType: modelType,
         );
-    _downloadService = ModelDownloadService(
-      downloader: downloader,
-      stateStore: stateStore,
-      modelUrl: modelUrl,
-      installModel: _installDownloadedModel,
-      tryActivateExistingModel: _tryActivateExistingModel,
-    );
+    if (downloadService != null) {
+      _downloadService = downloadService;
+      _ownsDownloadService = false;
+    } else {
+      _downloadService = ModelDownloadService(
+        downloader: downloader,
+        stateStore: stateStore,
+        modelUrl: modelUrl,
+        installModel: _installDownloadedModel,
+        tryActivateExistingModel: _tryActivateExistingModel,
+      );
+      _ownsDownloadService = true;
+    }
 
     if (autoInitialize) {
       unawaited(_downloadService.bootstrap());
@@ -733,7 +741,9 @@ class ModelService extends ChangeNotifier {
   }
 
   void dispose() {
-    _downloadService.dispose();
+    if (_ownsDownloadService) {
+      _downloadService.dispose();
+    }
     _runtime.dispose();
     super.dispose();
   }

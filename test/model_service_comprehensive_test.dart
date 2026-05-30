@@ -5,6 +5,7 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 import 'package:mocktail/mocktail.dart';
 import 'package:mero/services/model_boot_state.dart';
+import 'package:mero/services/model_download_service.dart';
 import 'package:mero/services/model_service.dart';
 
 // Mocks
@@ -240,6 +241,52 @@ void main() {
         // Should restore to paused state, not needsDownload
         expect(phases.contains(ModelBootPhase.needsDownload), false);
         expect(phases.last, ModelBootPhase.paused);
+      });
+    });
+
+    group('delegation', () {
+      test('forwards listeners and state from the download service', () async {
+        final downloadBackend = MockModelDownloadBackend();
+        when(() => downloadBackend.updates).thenAnswer(
+          (_) => Stream<TaskUpdate>.empty(),
+        );
+        when(() => downloadBackend.configure()).thenAnswer((_) async {});
+        when(() => downloadBackend.start()).thenAnswer((_) async {});
+
+        final downloadService = ModelDownloadService(
+          downloader: downloadBackend,
+          modelUrl:
+              'https://example.com/model.litertlm',
+          installModel: (_) async {},
+          tryActivateExistingModel: () async => false,
+        );
+
+        modelService = ModelService(
+          downloadService: downloadService,
+          runtime: mockRuntime,
+          autoInitialize: false,
+        );
+
+        var listenerCount = 0;
+        modelService.addListener(() {
+          listenerCount++;
+        });
+
+        downloadService.updateState(
+          downloadService.state.copyWith(
+            isInitialized: true,
+            isLoading: false,
+            isModelLoaded: true,
+            status: 'Model ready',
+            phase: ModelBootPhase.ready,
+          ),
+        );
+
+        await Future.delayed(const Duration(milliseconds: 10));
+
+        expect(listenerCount, 1);
+        expect(modelService.status, 'Model ready');
+        expect(modelService.isModelLoaded, true);
       });
     });
   });
