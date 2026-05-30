@@ -102,7 +102,6 @@
   "settingsLanguage": "Bahasa",
 
   "settingsModelInfo": "Informasi Model",
-  "settingsModelName": "FastVLM 0.5B (0.5GB)",
   "settingsStatus": "Status: {status}",
   "@settingsStatus": {
     "placeholders": {
@@ -140,7 +139,7 @@
       }
     }
   },
-  "settingsAppDescription": "Aplikasi ini menggunakan model AI FastVLM untuk mengidentifikasi spesies terancam punah dari gambar.",
+  "settingsAppDescription": "Aplikasi ini menggunakan model AI pada perangkat untuk mengidentifikasi spesies terancam punah dari gambar.",
   "settingsPrivacyDescription": "Semua pemrosesan terjadi di perangkat Anda untuk privasi. Tidak ada gambar yang diunggah ke server.",
 
   "analyzeTitle": "Menganalisis...",

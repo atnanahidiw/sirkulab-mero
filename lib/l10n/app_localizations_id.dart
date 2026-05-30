@@ -226,9 +226,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsModelInfo => 'Informasi Model';
 
   @override
-  String get settingsModelName => 'FastVLM 0.5B (0.5GB)';
-
-  @override
   String settingsStatus(String status) {
     return 'Status: $status';
   }
@@ -287,7 +284,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsAppDescription =>
-      'Aplikasi ini menggunakan model AI FastVLM untuk mengidentifikasi spesies terancam punah dari gambar.';
+      'Aplikasi ini menggunakan model AI pada perangkat untuk mengidentifikasi spesies terancam punah dari gambar.';
 
   @override
   String get settingsPrivacyDescription =>

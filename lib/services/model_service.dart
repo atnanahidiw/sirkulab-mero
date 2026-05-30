@@ -149,6 +149,12 @@ class ModelService extends ChangeNotifier {
   String? get downloadPhase => _downloadService.downloadPhase;
   InferenceModel? get model => _model;
   String? get pendingModelSize => _downloadService.pendingModelSize;
+  String get modelDisplayName {
+    final uri = Uri.parse(modelUrl);
+    final lastSegment = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
+    final baseName = lastSegment.replaceFirst(RegExp(r'\.litertlm$'), '');
+    return baseName.replaceAll('-', ' ');
+  }
 
   @override
   void addListener(VoidCallback listener) {

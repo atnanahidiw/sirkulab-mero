@@ -506,12 +506,6 @@ abstract class AppLocalizations {
   /// **'Model Information'**
   String get settingsModelInfo;
 
-  /// No description provided for @settingsModelName.
-  ///
-  /// In en, this message translates to:
-  /// **'FastVLM 0.5B (0.5GB)'**
-  String get settingsModelName;
-
   /// No description provided for @settingsStatus.
   ///
   /// In en, this message translates to:

@@ -83,7 +83,7 @@ class BackgroundModelDownloadBackend implements ModelDownloadBackend {
       ),
       complete: const TaskNotification(
         'Model ready',
-        'The Gemma model is ready to use.',
+        'The model is ready to use.',
       ),
       error: const TaskNotification(
         'Download failed',
@@ -91,7 +91,7 @@ class BackgroundModelDownloadBackend implements ModelDownloadBackend {
       ),
       canceled: const TaskNotification(
         'Download canceled',
-        'The Gemma model download was canceled.',
+        'The model download was canceled.',
       ),
       progressBar: true,
       tapOpensFile: false,
@@ -153,7 +153,7 @@ class BackgroundModelDownloadBackend implements ModelDownloadBackend {
 
 class ModelDownloadService extends ChangeNotifier {
   static const String downloadGroup = 'mero_model_downloads';
-  static const String downloadTaskId = 'mero_gemma_model';
+  static const String downloadTaskId = 'mero_model';
 
   final ModelDownloadBackend _downloader;
   final ModelBootStateStore? _stateStoreOverride;
@@ -197,6 +197,22 @@ class ModelDownloadService extends ChangeNotifier {
   String? get downloadFilePath => _state.downloadFilePath;
   String? get downloadPhase => _state.downloadPhase;
   String? get pendingModelSize => _pendingModelSize;
+
+  String get _modelFileName {
+    final uri = Uri.parse(modelUrl);
+    final lastSegment = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
+    return lastSegment.isNotEmpty ? lastSegment : 'model.litertlm';
+  }
+
+  String get _modelSearchKey {
+    final fileName = _modelFileName.toLowerCase();
+    final withoutExtension = fileName.replaceFirst(RegExp(r'\.litertlm$'), '');
+    return withoutExtension.startsWith('.')
+        ? withoutExtension.substring(1)
+        : withoutExtension;
+  }
+
+  String get _downloadFileName => 'donotdelete_${_modelFileName}';
 
   Future<ModelBootStateStore> _resolveStateStore() async {
     return _stateStoreOverride ?? await ModelBootStateStore.create();
@@ -280,7 +296,7 @@ class ModelDownloadService extends ChangeNotifier {
       await dir.create(recursive: true);
     }
 
-    return '$dirPath/.gemma-4-E2B-it.litertlm';
+    return '$dirPath/$_downloadFileName';
   }
 
   Future<DownloadTask> buildDownloadTask({
@@ -398,7 +414,7 @@ class ModelDownloadService extends ChangeNotifier {
             for (final file in files) {
               if (file is File) {
                 final fileName = file.path.toLowerCase();
-                if (fileName.endsWith('.litertlm') && fileName.contains('gemma')) {
+                if (fileName.endsWith('.litertlm') && fileName.contains(_modelSearchKey)) {
                   return file.path;
                 }
               }

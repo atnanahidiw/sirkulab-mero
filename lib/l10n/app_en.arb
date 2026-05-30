@@ -102,7 +102,6 @@
   "settingsLanguage": "Language",
 
   "settingsModelInfo": "Model Information",
-  "settingsModelName": "FastVLM 0.5B (0.5GB)",
   "settingsStatus": "Status: {status}",
   "@settingsStatus": {
     "placeholders": {
@@ -140,7 +139,7 @@
       }
     }
   },
-  "settingsAppDescription": "This app uses the FastVLM AI model to identify endangered species from images.",
+  "settingsAppDescription": "This app uses an on-device AI model to identify endangered species from images.",
   "settingsPrivacyDescription": "All processing happens on your device for privacy. No images are uploaded to servers.",
 
   "analyzeTitle": "Analyzing...",

@@ -8,7 +8,7 @@ class ModelDownloadNotificationService {
   static const String _channelId = 'model_download_progress';
   static const String _channelName = 'Model download';
   static const String _channelDescription =
-      'Shows FastVLM model download progress';
+      'Shows model download progress';
 
   final FlutterLocalNotificationsPlugin _plugin =
       FlutterLocalNotificationsPlugin();
@@ -135,7 +135,7 @@ class ModelDownloadNotificationService {
 
   Future<void> showCompleted({
     String title = 'Model ready',
-    String body = 'The FastVLM model is ready to use.',
+    String body = 'The model is ready to use.',
   }) async {
     if (defaultTargetPlatform != TargetPlatform.android) {
       return;
