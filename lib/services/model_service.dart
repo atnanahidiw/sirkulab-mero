@@ -1,11 +1,13 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 
 import 'model_boot_state.dart';
 import 'model_download_service.dart';
+import 'model_runtime.dart';
 import 'species_service.dart';
 import '../models/chat_prompts.dart';
 import '../models/model_spec.dart';
@@ -91,329 +93,9 @@ String _sanitizeBrokenJson(String raw) {
   return buffer.toString();
 }
 
-/// Returns true when [text] contains a word or short phrase repeated
-/// consecutively more than [threshold] times — the hallmark of a
-/// degeneration loop (e.g. "Quadri Quadri Quadri...").
-bool _isRepetitionLoop(String text, {int threshold = 6}) {
-  if (text.isEmpty) return false;
-  // Split on whitespace and look for a run of identical tokens.
-  final tokens = text.trim().split(RegExp(r'\s+'));
-  if (tokens.length < threshold) return false;
-  int run = 1;
-  for (int i = 1; i < tokens.length; i++) {
-    if (tokens[i] == tokens[i - 1]) {
-      run++;
-      if (run >= threshold) return true;
-    } else {
-      run = 1;
-    }
-  }
-  return false;
-}
-
-abstract class ModelRuntime {
-  Future<InferenceModel> getActiveModel({
-    required int maxTokens,
-  });
-
-  Future<void> installFromFile(String filePath);
-
-  Future<String> generateResponse(
-    InferenceModel model,
-    String prompt, {
-    String? systemInstruction,
-    Uint8List? imageBytes,
-    List<ToolSpec>? toolSpecs,
-    int maxTokens,
-    double temperature,
-    int topK,
-    double topP,
-    int seed,
-    void Function(String phase, double progress)? onProgress,
-    void Function(String token)? onToken,
-  });
-
-  // Cleanup resources
-  void dispose();
-}
-
-/// Optimized model runtime with GPU acceleration and session management
-class FlutterGemmaModelRuntime implements ModelRuntime {
-  final ModelType modelType;
-  InferenceModel? _cachedModel;
-  bool _isInitialized = false;
-
-  // Performance tuning constants
-  static const bool _useGpu = true; // Enable GPU delegate if available
-
-  FlutterGemmaModelRuntime({
-    required this.modelType,
-  });
-
-  @override
-  Future<InferenceModel> getActiveModel({required int maxTokens}) async {
-    try {
-      // Use cached model if available and compatible
-      if (_cachedModel != null && _isInitialized) {
-        return _cachedModel!;
-      }
-
-      // Create optimized model with GPU acceleration
-      _cachedModel = await FlutterGemma.getActiveModel(
-        maxTokens: maxTokens,
-        preferredBackend: _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu,
-        enableSpeculativeDecoding: true,
-        supportImage: true,
-        maxNumImages: 1,
-      );
-
-      _isInitialized = true;
-      return _cachedModel!;
-    } catch (e) {
-      debugPrint('Failed to get active model: $e');
-      rethrow;
-    }
-  }
-
-  @override
-  Future<void> installFromFile(String filePath) async {
-    try {
-      // Add timeout to prevent hanging
-      await Future.any([
-        FlutterGemma.installModel(
-                modelType: modelType,
-                fileType: ModelFileType.litertlm
-            )
-            .fromFile(filePath)
-            .install(),
-        Future.delayed(const Duration(minutes: 5), () {
-          throw TimeoutException(
-              'Model installation timed out after 5 minutes');
-        }),
-      ]);
-
-      // Clear cached model after installation to ensure fresh loading
-      _cachedModel = null;
-      _isInitialized = false;
-    } catch (e) {
-      debugPrint('Model installation failed: $e');
-      rethrow;
-    }
-  }
-
-  /// Generate response with tuned parameters. When [toolSpecs] is provided,
-  /// uses InferenceChat with tool calling. Each spec's [subsequentPrompt]
-  /// is injected into the chat right after its result is returned.
-  @override
-  Future<String> generateResponse(
-    InferenceModel model,
-    String prompt, {
-    String? systemInstruction,
-    Uint8List? imageBytes,
-    List<ToolSpec>? toolSpecs,
-    int maxTokens = 4096,
-    double temperature = 0.7,
-    int topK = 40,
-    double topP = 0.9,
-    int seed = 31415926,
-    void Function(String phase, double progress)? onProgress,
-    void Function(String token)? onToken,
-  }) async {
-    final resolvedTools =
-        toolSpecs != null ? ToolSpec.toTools(toolSpecs) : const <Tool>[];
-    final bool useToolCalling = resolvedTools.isNotEmpty;
-
-    try {
-      if (!useToolCalling) {
-        // ── Standard (no-tool) flow via Session ──
-        // Must use createSession, not createChat, for Gemma 4 E2B compatibility.
-        // createChat with ToolChoice.none suppresses text generation on this model.
-        onProgress?.call('Preparing session...', 0.15);
-
-        final session = await model.createSession(
-          enableVisionModality: imageBytes != null,
-          randomSeed: seed,
-          temperature: temperature,
-          topK: topK,
-          topP: topP,
-          systemInstruction: systemInstruction,
-        );
-
-        try {
-          onProgress?.call('Sending question...', 0.35);
-
-          if (imageBytes != null) {
-            await session.addQueryChunk(Message.withImage(
-              text: '',
-              imageBytes: imageBytes,
-              isUser: true,
-            ));
-          }
-          await session.addQueryChunk(Message.text(
-            text: prompt,
-            isUser: true,
-          ));
-
-          onProgress?.call('Generating answer...', 0.55);
-
-          final buffer = StringBuffer();
-          await for (final token in session.getResponseAsync()) {
-            buffer.write(token);
-            onToken?.call(token);
-          }
-
-          onProgress?.call('Complete', 1.0);
-          return buffer.toString();
-        } finally {
-          try {
-            await session.close();
-          } catch (closeError) {
-            debugPrint('Session close error (non-fatal): $closeError');
-          }
-        }
-      }
-
-      // ── Tool-calling flow via InferenceChat ──
-      onProgress?.call('Preparing chat...', 0.15);
-
-      final chat = await model.createChat(
-        supportImage: imageBytes != null,
-        tools: resolvedTools,
-        supportsFunctionCalls: useToolCalling,
-        toolChoice: useToolCalling ? ToolChoice.required : ToolChoice.none,
-        randomSeed: seed,
-        temperature: temperature,
-        topK: topK,
-        topP: topP,
-        modelType: modelType,
-        systemInstruction: systemInstruction,
-      );
-
-      try {
-        // ── 2. Build message chunks: image first (if any), then prompt text ──
-        // Gemma 4 best practice: image content must come BEFORE text in the
-        // prompt for optimal multimodal attention.
-        // https://huggingface.co/google/gemma-4-31B-it
-        if (imageBytes != null) {
-          onProgress?.call('Sending image...', 0.30);
-          await chat.addQueryChunk(Message.withImage(
-            text: '',               // image-only chunk comes first
-            imageBytes: imageBytes,
-            isUser: true,
-          ));
-        }
-
-        onProgress?.call('Sending prompt...', 0.35);
-        await chat.addQueryChunk(Message.text(
-          text: prompt,            // instruction text always follows last
-          isUser: true,
-        ));
-
-        // ── 3. Agentic loop: generate → dispatch tools → repeat until no more tool calls ──
-        onProgress?.call(
-          useToolCalling ? 'Identifying species...' : 'Generating answer...',
-          0.45
-        );
-        
-        const int maxPasses = 5;  // Maximum agentic passes to prevent runaway loops.
-        int pass = 0;
-        while (true) {
-          pass++;
-          debugPrint('── Generation pass $pass ──');
-
-          if (pass > maxPasses) {
-            debugPrint('[Pass $pass] Max passes ($maxPasses) exceeded — aborting.');
-            onProgress?.call('Complete', 1.0);
-            return '';
-          }
-
-          final responseBuffer = StringBuffer();
-          bool toolWasCalled = false;
-
-          await for (final response in chat.generateChatResponseAsync()) {
-            if (response is TextResponse) {
-              responseBuffer.write(response.token);
-              if (!useToolCalling) onToken?.call(response.token);
-            } else if (response is ThinkingResponse) {
-              debugPrint('[Pass $pass] Thinking: ${response.content}');
-            } else if (response is FunctionCallResponse) {
-              toolWasCalled = true;
-              debugPrint('[Pass $pass] Tool call: ${response.name}(${response.args})');
-              onProgress?.call('Running tool: ${response.name}...', 0.55);
-              final matchedSpec = toolSpecs!.firstWhere(
-                (s) => s.name == response.name,
-                orElse: () => throw Exception('No ToolSpec found for: ${response.name}'),
-              );
-              final result = await matchedSpec.execute(response.args);
-              debugPrint('[Pass $pass] Tool result (${response.name}): $result');
-              await chat.addQueryChunk(Message.toolResponse(
-                toolName: response.name,
-                response: {'result': result},
-              ));
-              if (matchedSpec.subsequentPrompt != null) {
-                await chat.addQueryChunk(matchedSpec.subsequentPrompt!);
-              }
-            } else if (response is ParallelFunctionCallResponse) {
-              toolWasCalled = true;
-              debugPrint('[Pass $pass] Parallel tool calls: ${response.calls.map((c) => '${c.name}(${c.args})').join(', ')}');
-              for (final call in response.calls) {
-                final matchedSpec = toolSpecs!.firstWhere(
-                  (s) => s.name == call.name,
-                  orElse: () => throw Exception('No ToolSpec found for: ${call.name}'),
-                );
-                final result = await matchedSpec.execute(call.args);
-                await chat.addQueryChunk(Message.toolResponse(
-                  toolName: call.name,
-                  response: {'result': result},
-                ));
-                if (matchedSpec.subsequentPrompt != null) {
-                  await chat.addQueryChunk(matchedSpec.subsequentPrompt!);
-                }
-              }
-            }
-          }
-
-          debugPrint('[Pass $pass] Output: ${responseBuffer.toString().trim()}');
-
-          // Guard: detect degenerate repetition output (e.g. "Quadri Quadri Quadri...").
-          // The native model returns all tokens as one chunk, so we can't abort
-          // mid-stream — but we can catch it here before it corrupts the pipeline.
-          final rawOutput = responseBuffer.toString();
-          if (_isRepetitionLoop(rawOutput)) {
-            debugPrint('[Pass $pass] Repetition loop detected — aborting generation.');
-            throw Exception('Model entered a repetition loop. Please try again.');
-          }
-
-          // No tool calls this pass — the model is done, return its text response
-          if (!toolWasCalled) {
-            debugPrint('[Pass $pass] No tool calls — final answer returned after $pass pass(es)');
-            onProgress?.call('Complete', 1.0);
-            return rawOutput.trim();
-          }
-
-          debugPrint('[Pass $pass] Tool(s) dispatched — starting pass ${pass + 1}');
-          onProgress?.call('Generating result...', 0.75);
-        }
-      } finally {
-        await chat.close();
-      }
-    } catch (e) {
-      debugPrint('Generation failed: $e');
-      rethrow;
-    }
-  }
-
-  /// Cleanup resources
-  @override
-  void dispose() {
-    _cachedModel?.close();
-    _cachedModel = null;
-    _isInitialized = false;
-  }
-}
-
 class ModelService extends ChangeNotifier {
-  static const ModelType modelType = ModelType.gemma4;
+  static const String _modelRevision = 'main';
+  static const ModelType modelType = ModelType.general;
   static const int maxTokens = 4096;
 
   late final ModelRuntime _runtime;
@@ -423,7 +105,7 @@ class ModelService extends ChangeNotifier {
   InferenceModel? _model;
 
   final String modelUrl =
-      'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/main/gemma-4-E2B-it.litertlm';
+      'https://huggingface.co/litert-community/FastVLM-0.5B/resolve/$_modelRevision/FastVLM-0.5B.litertlm';
 
   ModelService({
     ModelDownloadBackend? downloader,
@@ -607,6 +289,7 @@ class ModelService extends ChangeNotifier {
         systemInstruction: ChatPrompts.identifySystemInstruction,
         imageBytes: imageBytes,
         toolSpecs: [searchSpec],
+        useNativeToolCalling: false,
         temperature: 0.6,
         topK: 100,
         topP: 0.9,
@@ -642,6 +325,15 @@ class ModelService extends ChangeNotifier {
       }
 
       return repaired;
+    } on ModelRepetitionLoopException catch (e) {
+      debugPrint('[identifySpecies] Repetition loop detected: $e');
+      _downloadService.updateState(
+        _downloadService.state.copyWith(
+          status: 'Analysis complete',
+          phase: ModelBootPhase.ready,
+        ),
+      );
+      return '{}';
     } catch (e) {
       debugPrint('[identifySpecies] Identification failed (model is fine): $e');
       _downloadService.updateState(

@@ -83,7 +83,7 @@
   "homeModelStatusLoading": "Loading…",
   "homeModelStatusTapToDownload": "Tap to Download",
   "homeAiModel": "AI Model",
-  "homeDownloadModelWithButton": "Download Model (2.4GB)",
+  "homeDownloadModelWithButton": "Download Model (0.5GB)",
 
   "settingsTitle": "Settings",
   "settingsManageModel": "Manage Model",
@@ -102,7 +102,7 @@
   "settingsLanguage": "Language",
 
   "settingsModelInfo": "Model Information",
-  "settingsModelName": "Gemma 4 E2B (2.4GB)",
+  "settingsModelName": "FastVLM 0.5B (0.5GB)",
   "settingsStatus": "Status: {status}",
   "@settingsStatus": {
     "placeholders": {
@@ -113,7 +113,7 @@
   },
   "settingsCapabilities": "Capabilities:",
   "settingsCapabilityMultimodal": "• Multimodal (text + image)",
-  "settingsCapabilityContext": "• 1024 token context window",
+  "settingsCapabilityContext": "• 2048 token context window",
   "settingsCapabilityInference": "• On-device inference",
   "settingsNote": "Note:",
   "settingsOfflineNote": "Model works offline after initial download.",
@@ -140,7 +140,7 @@
       }
     }
   },
-  "settingsAppDescription": "This app uses Gemma 4 AI model to identify endangered species from images.",
+  "settingsAppDescription": "This app uses the FastVLM AI model to identify endangered species from images.",
   "settingsPrivacyDescription": "All processing happens on your device for privacy. No images are uploaded to servers.",
 
   "analyzeTitle": "Analyzing...",

@@ -4,12 +4,10 @@ import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../core/navigation/app_page_route.dart';
 import '../l10n/app_localizations.dart';
 import '../services/model_service.dart';
 import '../services/species_service.dart';
 import '../utils/image_utils.dart';
-import 'result_page.dart';
 
 class AnalyzingPage extends StatefulWidget {
   final Uint8List rawImageBytes;

@@ -407,7 +407,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeDownloadModelWithButton.
   ///
   /// In en, this message translates to:
-  /// **'Download Model (2.4GB)'**
+  /// **'Download Model (0.5GB)'**
   String get homeDownloadModelWithButton;
 
   /// No description provided for @settingsTitle.
@@ -509,7 +509,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsModelName.
   ///
   /// In en, this message translates to:
-  /// **'Gemma 4 E2B (2.4GB)'**
+  /// **'FastVLM 0.5B (0.5GB)'**
   String get settingsModelName;
 
   /// No description provided for @settingsStatus.
@@ -533,7 +533,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsCapabilityContext.
   ///
   /// In en, this message translates to:
-  /// **'• 1024 token context window'**
+  /// **'• 2048 token context window'**
   String get settingsCapabilityContext;
 
   /// No description provided for @settingsCapabilityInference.
@@ -611,7 +611,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAppDescription.
   ///
   /// In en, this message translates to:
-  /// **'This app uses Gemma 4 AI model to identify endangered species from images.'**
+  /// **'This app uses the FastVLM AI model to identify endangered species from images.'**
   String get settingsAppDescription;
 
   /// No description provided for @settingsPrivacyDescription.
