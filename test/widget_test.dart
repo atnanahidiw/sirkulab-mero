@@ -2,8 +2,10 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:provider/provider.dart';
 
+import 'package:mero/l10n/app_localizations.dart';
 import 'package:mero/services/model_boot_state.dart';
 import 'package:mero/services/model_download_service.dart';
 import 'package:mero/services/model_service.dart';
@@ -28,6 +30,14 @@ void main() {
       ChangeNotifierProvider<ModelService>.value(
         value: service,
         child: const MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: Locale('en'),
           home: StartupGate(
             readyChild: Placeholder(key: Key('home-ready')),
           ),
@@ -62,6 +72,14 @@ void main() {
       ChangeNotifierProvider<ModelService>.value(
         value: service,
         child: const MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: Locale('en'),
           home: StartupGate(
             readyChild: Placeholder(key: Key('home-ready')),
           ),
@@ -95,6 +113,14 @@ void main() {
       ChangeNotifierProvider<ModelService>.value(
         value: service,
         child: const MaterialApp(
+          localizationsDelegates: [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          locale: Locale('en'),
           home: StartupGate(
             readyChild: Placeholder(key: Key('home-ready')),
           ),

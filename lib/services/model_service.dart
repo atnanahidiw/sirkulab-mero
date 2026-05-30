@@ -418,7 +418,7 @@ class ModelService extends ChangeNotifier {
 
   late final ModelRuntime _runtime;
   late final ModelDownloadService _downloadService;
-  final bool _ownsDownloadService;
+  late final bool _ownsDownloadService;
   final SpeciesService _speciesService = SpeciesService();
   InferenceModel? _model;
 

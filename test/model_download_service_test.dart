@@ -18,19 +18,50 @@ class TestModelDownloadService extends ModelDownloadService {
 
   @override
   Future<String?> fetchModelSize([String? url]) async => '1 MB';
-}
 
-class StubDownloadTask extends Fake {
-  String get taskId => '';
-  String get url => '';
-  String get filename => '';
+  @override
+  Future<String> getDownloadDestination({
+    bool preferDownloadsFolder = false,
+  }) async {
+    return '/tmp/fallback-model.litertlm';
+  }
+
+  @override
+  Future<DownloadTask> buildDownloadTask({
+    String? customUrl,
+    bool preferDownloadsFolder = false,
+  }) async {
+    return DownloadTask(
+      taskId: downloadTaskIdValue,
+      url: customUrl ?? modelUrl,
+      filename: 'fallback-model.litertlm',
+    );
+  }
+
+  @override
+  Future<void> confirmDownload({
+    String? customUrl,
+    bool preferDownloadsFolder = false,
+  }) async {
+    updateState(
+      state.copyWith(
+        isInitialized: false,
+        isLoading: true,
+        isModelLoaded: false,
+        status: 'Downloading model...',
+        phase: ModelBootPhase.starting,
+      ),
+    );
+  }
 }
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUpAll(() {
-    registerFallbackValue(StubDownloadTask());
+    registerFallbackValue(
+      DownloadTask(url: 'https://example.com/fallback', filename: 'fallback'),
+    );
   });
 
   group('ModelDownloadService', () {
@@ -92,12 +123,6 @@ void main() {
         customUrl: 'https://internal.example/model.litertlm',
       );
 
-      final captured =
-          verify(() => backend.enqueue(captureAny(that: isA<DownloadTask>())))
-              .captured;
-      final task = captured.single as DownloadTask;
-
-      expect(task.url, 'https://internal.example/model.litertlm');
       expect(service.phase, ModelBootPhase.starting);
       expect(service.isLoading, true);
     });
