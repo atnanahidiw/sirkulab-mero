@@ -1898,7 +1898,11 @@ class ModelService extends ChangeNotifier {
   }
 
   /// Translate [text] to [targetLang] using the on-device Gemma model.
-  Future<String> translate(String text, String targetLang) async {
+  Future<String> translate(
+    String text,
+    String targetLang, {
+    void Function(String token)? onToken,
+  }) async {
     if (_model == null) {
       throw Exception('Model not loaded. Please wait for model to download.');
     }
@@ -1915,6 +1919,7 @@ class ModelService extends ChangeNotifier {
         topK: 16,
         topP: 0.5,
         maxTokens: 1024,
+        onToken: onToken,
       );
 
       return response.trim();

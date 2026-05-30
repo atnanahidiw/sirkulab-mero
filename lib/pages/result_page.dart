@@ -49,6 +49,7 @@ class _ResultPageState extends State<ResultPage>
   bool _recognitionFailed = false;
   bool _hintsInteracted = false;
   bool _initialScrollDone = false;
+  bool _isTranslating = false;
   AppLocalizations? _l10n;
 
   @override
@@ -129,6 +130,9 @@ class _ResultPageState extends State<ResultPage>
   /// Chat enabled when AI identified something, even if not in DB.
   bool get _chatEnabled => !_recognitionFailed;
 
+  /// Input should be disabled while translation of the initial message is still streaming.
+  bool get _inputEnabled => !_isAnalyzing && !_isTranslating;
+
   // ── Hints & welcome message ──────────────────────────────────────────────
 
   void _initHintsAndMessage() {
@@ -139,7 +143,7 @@ class _ResultPageState extends State<ResultPage>
           : ChatPrompts.notEndangeredHints(_l10n!),
     );
 
-    final name = _species?.commonName ?? _jsonCommonName ?? '' ?? '';
+    final name = _species?.commonName ?? _jsonCommonName ?? '';
     final description = _isListed ? (_species?.description ?? '') : '';
 
     final rawBody = description.isNotEmpty
@@ -155,22 +159,45 @@ class _ResultPageState extends State<ResultPage>
   }
 
   Future<void> _translateWelcomeMessage(String rawBody) async {
-    final translated = await _translateIfNeeded(rawBody);
-    if (!mounted || translated == rawBody || _chatMessages.isEmpty) return;
-    setState(() {
-      _chatMessages[0] = {'role': 'assistant', 'content': translated};
-    });
-  }
+    if (!mounted || _chatMessages.isEmpty) return;
 
-  Future<String> _translateIfNeeded(String bodyText) async {
-    if (bodyText.isEmpty) return bodyText;
+    _isTranslating = true;
+
+    // Start with empty content — we'll stream tokens into it.
+    setState(() {
+      _chatMessages[0] = {'role': 'assistant', 'content': ''};
+    });
+
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
       final targetLang = _l10n?.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
-      return await modelService.translate(bodyText, targetLang);
+
+      // Check flag right before the model call.
+      if (!mounted) return;
+
+      await modelService.translate(
+        rawBody,
+        targetLang,
+        onToken: (token) {
+          if (!mounted) return;
+          setState(() {
+            _chatMessages[0]['content'] += token;
+          });
+        },
+      );
     } catch (e) {
       debugPrint('Translation failed: $e');
-      return bodyText;
+      if (!mounted) return;
+      // Restore original message on failure.
+      setState(() {
+        if (_chatMessages.isNotEmpty && _chatMessages[0]['content'].toString().isEmpty) {
+          _chatMessages[0] = {'role': 'assistant', 'content': rawBody};
+        }
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isTranslating = false);
+      }
     }
   }
 
@@ -357,6 +384,7 @@ class _ResultPageState extends State<ResultPage>
       bottomNavigationBar: _chatEnabled ? _ChatInputBar(
         controller: _questionController,
         isAnalyzing: _isAnalyzing,
+        inputEnabled: _inputEnabled,
         hintBatch: _currentHintBatch,
         colorScheme: colorScheme,
         textTheme: textTheme,
@@ -778,6 +806,7 @@ class _SpeciesInfoCard extends StatelessWidget {
 class _ChatInputBar extends StatelessWidget {
   final TextEditingController controller;
   final bool isAnalyzing;
+  final bool inputEnabled;
   final List<String> hintBatch;
   final bool hintsInteracted;
 
@@ -789,6 +818,7 @@ class _ChatInputBar extends StatelessWidget {
   const _ChatInputBar({
     required this.controller,
     required this.isAnalyzing,
+    required this.inputEnabled,
     required this.hintBatch,
     required this.hintsInteracted,
     required this.colorScheme,
@@ -856,7 +886,7 @@ class _ChatInputBar extends StatelessWidget {
               Expanded(
                 child: TextField(
                   controller: controller,
-                  enabled: !isAnalyzing,
+                  enabled: inputEnabled,
                   onSubmitted: (_) => onSend(),
                   decoration: InputDecoration(
                     hintText: l10n.resultAskAboutSpecies,
@@ -877,13 +907,28 @@ class _ChatInputBar extends StatelessWidget {
                               ),
                             ),
                           )
-                        : null,
+                        : !inputEnabled
+                            ? Tooltip(
+                                message: l10n.commonLoading,
+                                child: Padding(
+                                  padding: const EdgeInsets.all(12),
+                                  child: SizedBox(
+                                    width: 18,
+                                    height: 18,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: colorScheme.primary.withValues(alpha: 0.5),
+                                    ),
+                                  ),
+                                ),
+                              )
+                            : null,
                   ),
                 ),
               ),
               const SizedBox(width: 8),
               IconButton.filled(
-                onPressed: isAnalyzing ? null : onSend,
+                onPressed: inputEnabled ? onSend : null,
                 icon: const Icon(Icons.send_rounded),
                 style: IconButton.styleFrom(
                   backgroundColor: colorScheme.primary,
