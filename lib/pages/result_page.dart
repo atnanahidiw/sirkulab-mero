@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -50,6 +51,8 @@ class _ResultPageState extends State<ResultPage>
   bool _hintsInteracted = false;
   bool _initialScrollDone = false;
   bool _isTranslating = false;
+  bool _isTranslatingPopulationEstimate = false;
+  String _translatedPopulationEstimate = '';
   AppLocalizations? _l10n;
 
   @override
@@ -121,11 +124,9 @@ class _ResultPageState extends State<ResultPage>
     return _species!.conservationStatus.isNotEmpty;
   }
 
-  String? get _jsonCommonName =>
-      _parsedJson?['common_name'] as String?;
-  
-  String? get _jsonScientificName =>
-      _parsedJson?['scientific_name'] as String?;
+  String? get _jsonCommonName => _parsedJson?['common_name'] as String?;
+
+  String? get _jsonScientificName => _parsedJson?['scientific_name'] as String?;
 
   /// Chat enabled when AI identified something, even if not in DB.
   bool get _chatEnabled => !_recognitionFailed;
@@ -155,6 +156,9 @@ class _ResultPageState extends State<ResultPage>
 
       // Translate async and swap message[0] when ready — non-blocking.
       _translateWelcomeMessage(rawBody);
+    } else if (_isListed &&
+        (_species?.populationEstimate.isNotEmpty ?? false)) {
+      unawaited(_translatePopulationEstimate());
     }
   }
 
@@ -190,13 +194,72 @@ class _ResultPageState extends State<ResultPage>
       if (!mounted) return;
       // Restore original message on failure.
       setState(() {
-        if (_chatMessages.isNotEmpty && _chatMessages[0]['content'].toString().isEmpty) {
+        if (_chatMessages.isNotEmpty &&
+            _chatMessages[0]['content'].toString().isEmpty) {
           _chatMessages[0] = {'role': 'assistant', 'content': rawBody};
         }
       });
     } finally {
       if (mounted) {
         setState(() => _isTranslating = false);
+      }
+      if (mounted &&
+          _isListed &&
+          (_species?.populationEstimate.isNotEmpty ?? false)) {
+        unawaited(_translatePopulationEstimate());
+      }
+    }
+  }
+
+  Future<void> _translatePopulationEstimate() async {
+    if (!mounted || _species == null) return;
+
+    final rawEstimate = _species!.populationEstimate.trim();
+    if (rawEstimate.isEmpty) return;
+
+    final targetLang =
+        _l10n?.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
+    if (targetLang == 'English') {
+      if (mounted) {
+        setState(() {
+          _translatedPopulationEstimate = rawEstimate;
+        });
+      }
+      return;
+    }
+
+    if (_isTranslatingPopulationEstimate) return;
+
+    _isTranslatingPopulationEstimate = true;
+
+    if (mounted) {
+      setState(() {
+        _translatedPopulationEstimate = '';
+      });
+    }
+
+    try {
+      final modelService = Provider.of<ModelService>(context, listen: false);
+
+      await modelService.translate(
+        rawEstimate,
+        targetLang,
+        onToken: (token) {
+          if (!mounted) return;
+          setState(() {
+            _translatedPopulationEstimate += token;
+          });
+        },
+      );
+    } catch (e) {
+      debugPrint('Population estimate translation failed: $e');
+      if (!mounted) return;
+      setState(() {
+        _translatedPopulationEstimate = rawEstimate;
+      });
+    } finally {
+      if (mounted) {
+        setState(() => _isTranslatingPopulationEstimate = false);
       }
     }
   }
@@ -239,11 +302,10 @@ class _ResultPageState extends State<ResultPage>
       );
 
       // Create system instruction with context
-      final langName = _l10n!.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
-      final systemInstruction = ChatPrompts.answerSystemInstruction(
-        langName,
-        context: systemContext
-      );
+      final langName =
+          _l10n!.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
+      final systemInstruction =
+          ChatPrompts.answerSystemInstruction(langName, context: systemContext);
 
       debugPrint('System Instruction: $systemInstruction');
 
@@ -374,6 +436,16 @@ class _ResultPageState extends State<ResultPage>
     return l10n.resultAnalysisResult;
   }
 
+  String _populationEstimateDisplayText() {
+    if (_translatedPopulationEstimate.isNotEmpty) {
+      return _translatedPopulationEstimate;
+    }
+    if (_species != null && _species!.populationEstimate.isNotEmpty) {
+      return _species!.populationEstimate;
+    }
+    return '';
+  }
+
   @override
   Widget build(BuildContext context) {
     _l10n = AppLocalizations.of(context)!;
@@ -381,17 +453,19 @@ class _ResultPageState extends State<ResultPage>
     final textTheme = Theme.of(context).textTheme;
 
     return Scaffold(
-      bottomNavigationBar: _chatEnabled ? _ChatInputBar(
-        controller: _questionController,
-        isAnalyzing: _isAnalyzing,
-        inputEnabled: _inputEnabled,
-        hintBatch: _currentHintBatch,
-        colorScheme: colorScheme,
-        textTheme: textTheme,
-        hintsInteracted: _hintsInteracted,
-        onSend: _askQuestion,
-        onHintTap: _onHintTap,
-      ) : null,
+      bottomNavigationBar: _chatEnabled
+          ? _ChatInputBar(
+              controller: _questionController,
+              isAnalyzing: _isAnalyzing,
+              inputEnabled: _inputEnabled,
+              hintBatch: _currentHintBatch,
+              colorScheme: colorScheme,
+              textTheme: textTheme,
+              hintsInteracted: _hintsInteracted,
+              onSend: _askQuestion,
+              onHintTap: _onHintTap,
+            )
+          : null,
       body: CustomScrollView(
         controller: _scrollController,
         slivers: [
@@ -496,6 +570,7 @@ class _ResultPageState extends State<ResultPage>
                 recognitionFailed: _recognitionFailed,
                 notListedName: _jsonCommonName,
                 notListedLatinName: _jsonScientificName,
+                populationEstimateText: _populationEstimateDisplayText(),
                 colorScheme: colorScheme,
                 textTheme: textTheme,
                 onSourceTap: _launchUrl,
@@ -581,7 +656,8 @@ class _ResultPageState extends State<ResultPage>
                   [LatexBlockSyntax()],
                   [LatexInlineSyntax()],
                 ),
-                styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+                styleSheet:
+                    MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
                   p: textTheme.bodyMedium?.copyWith(color: textColor),
                   strong: textTheme.bodyMedium?.copyWith(
                     color: textColor,
@@ -617,7 +693,8 @@ class _ResultPageState extends State<ResultPage>
     );
   }
 
-  Future<void> _copyToClipboard(BuildContext context, AppLocalizations l10n) async {
+  Future<void> _copyToClipboard(
+      BuildContext context, AppLocalizations l10n) async {
     String text;
     if (_isListed) {
       text =
@@ -652,6 +729,7 @@ class _SpeciesInfoCard extends StatelessWidget {
   final bool recognitionFailed;
   final String? notListedName;
   final String? notListedLatinName;
+  final String populationEstimateText;
   final ColorScheme colorScheme;
   final TextTheme textTheme;
   final void Function(String url) onSourceTap;
@@ -663,6 +741,7 @@ class _SpeciesInfoCard extends StatelessWidget {
     required this.recognitionFailed,
     required this.notListedName,
     required this.notListedLatinName,
+    required this.populationEstimateText,
     required this.colorScheme,
     required this.textTheme,
     required this.onSourceTap,
@@ -698,7 +777,8 @@ class _SpeciesInfoCard extends StatelessWidget {
               Text(
                 l10n.resultTryDifferentAngle,
                 style: textTheme.bodySmall?.copyWith(
-                  color: colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
+                  color:
+                      colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
                 ),
               ),
               const SizedBox(height: 16),
@@ -707,8 +787,7 @@ class _SpeciesInfoCard extends StatelessWidget {
                 icon: const Icon(Icons.camera_alt_outlined, size: 18),
                 label: Text(l10n.resultRetakePhoto),
               ),
-            ]
-            else if (!isListed) ...[
+            ] else if (!isListed) ...[
               Text(
                 notListedName ?? 'Unknown',
                 style: textTheme.headlineSmall?.copyWith(
@@ -770,10 +849,10 @@ class _SpeciesInfoCard extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 Text(
-                  species!.populationEstimate,
+                  l10n.resultRemaining(populationEstimateText),
                   style: textTheme.labelMedium?.copyWith(
-                    color: colorScheme.onSecondaryContainer
-                        .withValues(alpha: 0.8),
+                    color:
+                        colorScheme.onSecondaryContainer.withValues(alpha: 0.8),
                   ),
                 ),
                 if (species!.sourceUri.isNotEmpty) ...[
@@ -917,7 +996,8 @@ class _ChatInputBar extends StatelessWidget {
                                     height: 18,
                                     child: CircularProgressIndicator(
                                       strokeWidth: 2,
-                                      color: colorScheme.primary.withValues(alpha: 0.5),
+                                      color: colorScheme.primary
+                                          .withValues(alpha: 0.5),
                                     ),
                                   ),
                                 ),

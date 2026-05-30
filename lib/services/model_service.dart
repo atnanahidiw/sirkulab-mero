@@ -260,6 +260,21 @@ abstract class ModelRuntime {
 
   Future<void> installFromFile(String filePath);
 
+  Future<String> generateResponse(
+    InferenceModel model,
+    String prompt, {
+    String? systemInstruction,
+    Uint8List? imageBytes,
+    List<ToolSpec>? toolSpecs,
+    int maxTokens,
+    double temperature,
+    int topK,
+    double topP,
+    int seed,
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
+  });
+
   // Cleanup resources
   void dispose();
 }
@@ -331,7 +346,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
   /// Generate response with tuned parameters. When [toolSpecs] is provided,
   /// uses InferenceChat with tool calling. Each spec's [subsequentPrompt]
   /// is injected into the chat right after its result is returned.
-  Future<String> generateOptimizedResponse(
+  @override
+  Future<String> generateResponse(
     InferenceModel model,
     String prompt, {
     String? systemInstruction,
@@ -1705,12 +1721,7 @@ class ModelService extends ChangeNotifier {
 
   Future<void> clearModel() async {
     if (_model != null) {
-      // Use optimized cleanup for FlutterGemmaModelRuntime
-      if (_model is FlutterGemmaModelRuntime) {
-        (_model as FlutterGemmaModelRuntime).dispose();
-      } else {
-        await _model!.close();
-      }
+      _runtime.dispose();
       _model = null;
     }
 
@@ -1794,8 +1805,7 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      final result = await (_runtime as FlutterGemmaModelRuntime)
-          .generateOptimizedResponse(
+      final result = await _runtime.generateResponse(
         _model!,
         ChatPrompts.identifyInputPrompt,
         systemInstruction: ChatPrompts.identifySystemInstruction,
@@ -1864,8 +1874,7 @@ class ModelService extends ChangeNotifier {
       onProgress?.call('Starting...', 0.0);
 
       // Use optimized generation method for text-based question
-      final response = await (_runtime as FlutterGemmaModelRuntime)
-          .generateOptimizedResponse(
+      final response = await _runtime.generateResponse(
         _model!,
         question,
         systemInstruction: systemInstruction ?? ChatPrompts.answerSystemInstruction('English'),
@@ -1910,8 +1919,7 @@ class ModelService extends ChangeNotifier {
     final prompt = ChatPrompts.translatePrompt(targetLang, text);
 
     try {
-      final response = await (_runtime as FlutterGemmaModelRuntime)
-          .generateOptimizedResponse(
+      final response = await _runtime.generateResponse(
         _model!,
         prompt,
         systemInstruction: ChatPrompts.translateSystemInstruction,
@@ -1931,12 +1939,7 @@ class ModelService extends ChangeNotifier {
 
   @override
   void dispose() {
-    // Use optimized cleanup for FlutterGemmaModelRuntime
-    if (_model is FlutterGemmaModelRuntime) {
-      (_model as FlutterGemmaModelRuntime).dispose();
-    } else {
-      unawaited(_model?.close());
-    }
+    _runtime.dispose();
     unawaited(_downloadUpdatesSubscription?.cancel());
     super.dispose();
   }
