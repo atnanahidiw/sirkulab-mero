@@ -605,7 +605,7 @@ abstract class AppLocalizations {
   /// No description provided for @settingsAppDescription.
   ///
   /// In en, this message translates to:
-  /// **'This app uses the FastVLM AI model to identify endangered species from images.'**
+  /// **'This app uses an on-device AI model to identify endangered species from images.'**
   String get settingsAppDescription;
 
   /// No description provided for @settingsPrivacyDescription.

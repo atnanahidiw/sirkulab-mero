@@ -82,7 +82,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       _cachedModel = await FlutterGemma.getActiveModel(
         maxTokens: maxTokens,
         preferredBackend: _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu,
-        enableSpeculativeDecoding: true,
+        enableSpeculativeDecoding:
+            modelType == ModelType.gemma4 ? true : null,
         supportImage: true,
         maxNumImages: 1,
       );
