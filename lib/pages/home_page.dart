@@ -64,6 +64,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       );
       await _controller!.initialize();
       await _controller!.lockCaptureOrientation(DeviceOrientation.portraitUp);
+      if (!mounted) {
+        return;
+      }
       setState(() {
         _isCameraReady = true;
       });
@@ -71,13 +74,15 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       debugPrint('Camera initialization error: $e');
       if (currentContext.mounted) {
         final l10n = AppLocalizations.of(currentContext)!;
-        ScaffoldMessenger.of(currentContext).showSnackBar(
-          SnackBar(content: Text(l10n.homeCameraInitError(e.toString()))),
-        );
+          ScaffoldMessenger.of(currentContext).showSnackBar(
+            SnackBar(content: Text(l10n.homeCameraInitError(e.toString()))),
+          );
+        }
+      if (mounted) {
+        setState(() {
+          _isCameraReady = false;
+        });
       }
-      setState(() {
-        _isCameraReady = false;
-      });
     }
   }
 
@@ -231,6 +236,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
           }
           // Ensure the widget tree has updated before disposal
           await Future.delayed(const Duration(milliseconds: 100));
+          if (!mounted) {
+            return;
+          }
           await _controller?.dispose();
           _controller = null;
           debugPrint('Camera disposed after navigation');
@@ -338,7 +346,9 @@ class _HomePageState extends State<HomePage> with WidgetsBindingObserver {
       case AppLifecycleState.inactive:
       case AppLifecycleState.detached:
         cameraController.dispose();
-        setState(() => _isCameraReady = false);
+        if (mounted) {
+          setState(() => _isCameraReady = false);
+        }
         break;
       case AppLifecycleState.resumed:
         if (_shouldCameraBeRunning) {
