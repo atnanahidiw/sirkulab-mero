@@ -66,11 +66,12 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
   InferenceModel? _cachedModel;
   bool _isInitialized = false;
 
-  static const bool _useGpu = true;
-
   FlutterGemmaModelRuntime({
     required this.modelType,
   });
+
+  PreferredBackend get _preferredBackend =>
+      modelType == ModelType.gemma4 ? PreferredBackend.gpu : PreferredBackend.cpu;
 
   @override
   Future<InferenceModel> getActiveModel({required int maxTokens}) async {
@@ -81,7 +82,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 
       _cachedModel = await FlutterGemma.getActiveModel(
         maxTokens: maxTokens,
-        preferredBackend: _useGpu ? PreferredBackend.gpu : PreferredBackend.cpu,
+        preferredBackend: _preferredBackend,
         enableSpeculativeDecoding:
             modelType == ModelType.gemma4 ? true : null,
         supportImage: true,

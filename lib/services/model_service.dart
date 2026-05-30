@@ -96,7 +96,11 @@ String _sanitizeBrokenJson(String raw) {
 class ModelService extends ChangeNotifier {
   static const String _modelRevision = 'main';
   static const ModelType modelType = ModelType.general;
-  static const int maxTokens = 4096;
+
+  static const int _fastVlmMaxTokens = 2048;
+  static const int _gemmaMaxTokens = 4096;
+  static int get maxTokens =>
+      modelType == ModelType.gemma4 ? _gemmaMaxTokens : _fastVlmMaxTokens;
 
   late final ModelRuntime _runtime;
   late final ModelDownloadService _downloadService;
