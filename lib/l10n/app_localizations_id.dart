@@ -175,7 +175,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get homeAiModel => 'Model AI';
 
   @override
-  String get homeDownloadModelWithButton => 'Unduh Model (2.4GB)';
+  String get homeDownloadModelWithButton => 'Unduh Model (0.5GB)';
 
   @override
   String get settingsTitle => 'Pengaturan';
@@ -226,9 +226,6 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsModelInfo => 'Informasi Model';
 
   @override
-  String get settingsModelName => 'Gemma 4 E2B (2.4GB)';
-
-  @override
   String settingsStatus(String status) {
     return 'Status: $status';
   }
@@ -240,7 +237,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsCapabilityMultimodal => '• Multimodal (teks + gambar)';
 
   @override
-  String get settingsCapabilityContext => '• Jendela konteks 1024 token';
+  String get settingsCapabilityContext => '• Jendela konteks 2048 token';
 
   @override
   String get settingsCapabilityInference => '• Inferensi pada perangkat';
@@ -287,7 +284,7 @@ class AppLocalizationsId extends AppLocalizations {
 
   @override
   String get settingsAppDescription =>
-      'Aplikasi ini menggunakan model AI Gemma 4 untuk mengidentifikasi spesies terancam punah dari gambar.';
+      'Aplikasi ini menggunakan model AI pada perangkat untuk mengidentifikasi spesies terancam punah dari gambar.';
 
   @override
   String get settingsPrivacyDescription =>

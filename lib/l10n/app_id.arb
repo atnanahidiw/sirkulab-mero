@@ -83,7 +83,7 @@
   "homeModelStatusLoading": "Memuat…",
   "homeModelStatusTapToDownload": "Ketuk untuk Mengunduh",
   "homeAiModel": "Model AI",
-  "homeDownloadModelWithButton": "Unduh Model (2.4GB)",
+  "homeDownloadModelWithButton": "Unduh Model (0.5GB)",
 
   "settingsTitle": "Pengaturan",
   "settingsManageModel": "Kelola Model",
@@ -102,7 +102,6 @@
   "settingsLanguage": "Bahasa",
 
   "settingsModelInfo": "Informasi Model",
-  "settingsModelName": "Gemma 4 E2B (2.4GB)",
   "settingsStatus": "Status: {status}",
   "@settingsStatus": {
     "placeholders": {
@@ -113,7 +112,7 @@
   },
   "settingsCapabilities": "Kemampuan:",
   "settingsCapabilityMultimodal": "• Multimodal (teks + gambar)",
-  "settingsCapabilityContext": "• Jendela konteks 1024 token",
+  "settingsCapabilityContext": "• Jendela konteks 2048 token",
   "settingsCapabilityInference": "• Inferensi pada perangkat",
   "settingsNote": "Catatan:",
   "settingsOfflineNote": "Model bekerja secara offline setelah unduhan awal.",
@@ -140,7 +139,7 @@
       }
     }
   },
-  "settingsAppDescription": "Aplikasi ini menggunakan model AI Gemma 4 untuk mengidentifikasi spesies terancam punah dari gambar.",
+  "settingsAppDescription": "Aplikasi ini menggunakan model AI pada perangkat untuk mengidentifikasi spesies terancam punah dari gambar.",
   "settingsPrivacyDescription": "Semua pemrosesan terjadi di perangkat Anda untuk privasi. Tidak ada gambar yang diunggah ke server.",
 
   "analyzeTitle": "Menganalisis...",

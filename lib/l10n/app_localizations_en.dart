@@ -173,7 +173,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeAiModel => 'AI Model';
 
   @override
-  String get homeDownloadModelWithButton => 'Download Model (2.4GB)';
+  String get homeDownloadModelWithButton => 'Download Model (0.5GB)';
 
   @override
   String get settingsTitle => 'Settings';
@@ -224,9 +224,6 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsModelInfo => 'Model Information';
 
   @override
-  String get settingsModelName => 'Gemma 4 E2B (2.4GB)';
-
-  @override
   String settingsStatus(String status) {
     return 'Status: $status';
   }
@@ -238,7 +235,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsCapabilityMultimodal => '• Multimodal (text + image)';
 
   @override
-  String get settingsCapabilityContext => '• 1024 token context window';
+  String get settingsCapabilityContext => '• 2048 token context window';
 
   @override
   String get settingsCapabilityInference => '• On-device inference';
@@ -285,7 +282,7 @@ class AppLocalizationsEn extends AppLocalizations {
 
   @override
   String get settingsAppDescription =>
-      'This app uses Gemma 4 AI model to identify endangered species from images.';
+      'This app uses an on-device AI model to identify endangered species from images.';
 
   @override
   String get settingsPrivacyDescription =>

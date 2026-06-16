@@ -269,8 +269,10 @@ class SettingsPage extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(l10n.settingsModelName,
-                  style: const TextStyle(fontWeight: FontWeight.bold)),
+              Text(
+                modelService.modelDisplayName,
+                style: const TextStyle(fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               Text(l10n.settingsStatus(modelService.status)),
               const SizedBox(height: 8),
@@ -484,13 +486,15 @@ class _ModelInfoCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        l10n.settingsModelName,
+                        modelService.modelDisplayName,
                         style: textTheme.titleMedium?.copyWith(
                           color: colorScheme.onPrimaryContainer,
                         ),
                       ),
                       Text(
-                        '2.4 GB · On-device inference',
+                        modelService.pendingModelSize != null
+                            ? '${modelService.pendingModelSize} · On-device inference'
+                            : 'On-device inference',
                         style: textTheme.bodySmall?.copyWith(
                           color: colorScheme.onPrimaryContainer
                               .withValues(alpha: 0.7),
