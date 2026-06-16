@@ -303,47 +303,66 @@ class AppLocalizationsId extends AppLocalizations {
   String get analyzeGoBack => 'Kembali';
 
   @override
-  String get analyzeMsg1 =>
-      'Berkonsultasi dengan ensiklopedia satwa liar... 📚';
+  String get analyzeNarrativeTitle => 'Cara Mero berpikir';
 
   @override
-  String get analyzeMsg2 => 'Meminta AI untuk memakai kacamatanya... 🤓';
+  String get analyzeNarrativeSubtitle =>
+      'AI membaca foto, memeriksa basis data spesies, dan menjelaskan kecocokan dalam langkah sederhana.';
 
   @override
-  String get analyzeMsg3 => 'Referansi silang dengan 10.000 spesies... 🔍';
+  String get analyzeReadPhotoTitle => 'Melihat foto';
 
   @override
-  String get analyzeMsg4 => 'AI sedang menyipitkan mata dengan keras... 👀';
+  String get analyzeReadPhotoBody =>
+      'Melihat bentuk, warna, ukuran, dan tanda-tandanya.';
 
   @override
-  String get analyzeMsg5 => 'Meningkatkan... meningkatkan... 🔬';
+  String get analyzeSearchLibraryTitle => 'Memeriksa petunjuk';
 
   @override
-  String get analyzeMsg6 => 'Menelusuri basis data hutan... 🌿';
+  String get analyzeSearchLibraryBody =>
+      'Membandingkan petunjuk dengan basis data spesies lokal.';
 
   @override
-  String get analyzeMsg7 => 'Mengajari AI seperti apa rupa bulu... 🐾';
+  String get analyzeChooseMatchTitle => 'Memilih kecocokan terbaik';
 
   @override
-  String get analyzeMsg8 => 'Membandingkan piksel dengan cakar... 🐾';
+  String get analyzeChooseMatchBody =>
+      'Memeriksa kandidat terkuat dan tingkat keyakinan.';
 
   @override
-  String get analyzeMsg9 => 'Membalik-balik majalah alam... 📰';
+  String get analyzeBestMatchTitle => 'Kecocokan terbaik';
 
   @override
-  String get analyzeMsg10 => 'Mempertajam neuron AI... 🧠';
+  String get analyzeShowDetails => 'Tampilkan jejak lengkap';
 
   @override
-  String get analyzeMsg11 => 'Mengunduh lebih banyak RAM... cuma bercanda! 😄';
+  String get analyzeHideDetails => 'Sembunyikan jejak lengkap';
 
   @override
-  String get analyzeMsg12 => 'Mengkalibrasi pengukur spesies... 📡';
+  String get analyzeWaitingTrace => 'Menunggu jejak model...';
 
   @override
-  String get analyzeMsg13 => 'Memastikan itu bukan hanya kucing mewah... 🐱';
+  String get analyzePreparingNextPage => 'Mempersiapkan halaman berikutnya...';
 
   @override
-  String get analyzeMsg14 => 'Memeriksa ulang dengan teman botani... 🌺';
+  String get analyzeStrongMatch => 'Kecocokan kuat';
+
+  @override
+  String get analyzePossibleMatch => 'Kecocokan mungkin';
+
+  @override
+  String get analyzeLowConfidence => 'Keyakinan rendah';
+
+  @override
+  String get analyzeCheckingEvidence => 'Memeriksa bukti';
+
+  @override
+  String get analyzeDoneLikelyMatch =>
+      'Selesai. Saya mendapat kecocokan yang paling mungkin.';
+
+  @override
+  String get analyzeProtectedSpecies => 'Spesies dilindungi';
 
   @override
   String get resultSpecies => 'Spesies';

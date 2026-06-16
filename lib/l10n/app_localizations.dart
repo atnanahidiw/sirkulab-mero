@@ -638,89 +638,119 @@ abstract class AppLocalizations {
   /// **'Go Back'**
   String get analyzeGoBack;
 
-  /// No description provided for @analyzeMsg1.
+  /// No description provided for @analyzeNarrativeTitle.
   ///
   /// In en, this message translates to:
-  /// **'Consulting the wildlife encyclopedia... 📚'**
-  String get analyzeMsg1;
+  /// **'How Mero thinks'**
+  String get analyzeNarrativeTitle;
 
-  /// No description provided for @analyzeMsg2.
+  /// No description provided for @analyzeNarrativeSubtitle.
   ///
   /// In en, this message translates to:
-  /// **'Asking the AI to put on its glasses... 🤓'**
-  String get analyzeMsg2;
+  /// **'The AI reads the photo, checks the species library, and explains the match in simple steps.'**
+  String get analyzeNarrativeSubtitle;
 
-  /// No description provided for @analyzeMsg3.
+  /// No description provided for @analyzeReadPhotoTitle.
   ///
   /// In en, this message translates to:
-  /// **'Cross-referencing with 10,000 species... 🔍'**
-  String get analyzeMsg3;
+  /// **'Looking at the photo'**
+  String get analyzeReadPhotoTitle;
 
-  /// No description provided for @analyzeMsg4.
+  /// No description provided for @analyzeReadPhotoBody.
   ///
   /// In en, this message translates to:
-  /// **'The AI is squinting really hard... 👀'**
-  String get analyzeMsg4;
+  /// **'Looking at shape, color, size, and markings.'**
+  String get analyzeReadPhotoBody;
 
-  /// No description provided for @analyzeMsg5.
+  /// No description provided for @analyzeSearchLibraryTitle.
   ///
   /// In en, this message translates to:
-  /// **'Enhancing... enhancing... 🔬'**
-  String get analyzeMsg5;
+  /// **'Checking clues'**
+  String get analyzeSearchLibraryTitle;
 
-  /// No description provided for @analyzeMsg6.
+  /// No description provided for @analyzeSearchLibraryBody.
   ///
   /// In en, this message translates to:
-  /// **'Running through the jungle database... 🌿'**
-  String get analyzeMsg6;
+  /// **'Comparing the clues with the local species database.'**
+  String get analyzeSearchLibraryBody;
 
-  /// No description provided for @analyzeMsg7.
+  /// No description provided for @analyzeChooseMatchTitle.
   ///
   /// In en, this message translates to:
-  /// **'Teaching the AI what fur looks like... 🐾'**
-  String get analyzeMsg7;
+  /// **'Choosing the best match'**
+  String get analyzeChooseMatchTitle;
 
-  /// No description provided for @analyzeMsg8.
+  /// No description provided for @analyzeChooseMatchBody.
   ///
   /// In en, this message translates to:
-  /// **'Comparing pixels to paws... 🐾'**
-  String get analyzeMsg8;
+  /// **'Checking the strongest candidate and confidence.'**
+  String get analyzeChooseMatchBody;
 
-  /// No description provided for @analyzeMsg9.
+  /// No description provided for @analyzeBestMatchTitle.
   ///
   /// In en, this message translates to:
-  /// **'Flipping through nature magazines... 📰'**
-  String get analyzeMsg9;
+  /// **'Best match'**
+  String get analyzeBestMatchTitle;
 
-  /// No description provided for @analyzeMsg10.
+  /// No description provided for @analyzeShowDetails.
   ///
   /// In en, this message translates to:
-  /// **'Sharpening AI neurons... 🧠'**
-  String get analyzeMsg10;
+  /// **'Show detailed trace'**
+  String get analyzeShowDetails;
 
-  /// No description provided for @analyzeMsg11.
+  /// No description provided for @analyzeHideDetails.
   ///
   /// In en, this message translates to:
-  /// **'Downloading more RAM... just kidding! 😄'**
-  String get analyzeMsg11;
+  /// **'Hide detailed trace'**
+  String get analyzeHideDetails;
 
-  /// No description provided for @analyzeMsg12.
+  /// No description provided for @analyzeWaitingTrace.
   ///
   /// In en, this message translates to:
-  /// **'Calibrating the species-o-meter... 📡'**
-  String get analyzeMsg12;
+  /// **'Waiting for the model trace...'**
+  String get analyzeWaitingTrace;
 
-  /// No description provided for @analyzeMsg13.
+  /// No description provided for @analyzePreparingNextPage.
   ///
   /// In en, this message translates to:
-  /// **'Making sure it\'s not just a fancy cat... 🐱'**
-  String get analyzeMsg13;
+  /// **'Preparing next page...'**
+  String get analyzePreparingNextPage;
 
-  /// No description provided for @analyzeMsg14.
+  /// No description provided for @analyzeStrongMatch.
   ///
   /// In en, this message translates to:
-  /// **'Double-checking with a botanist friend... 🌺'**
-  String get analyzeMsg14;
+  /// **'Strong match'**
+  String get analyzeStrongMatch;
+
+  /// No description provided for @analyzePossibleMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Possible match'**
+  String get analyzePossibleMatch;
+
+  /// No description provided for @analyzeLowConfidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Low confidence'**
+  String get analyzeLowConfidence;
+
+  /// No description provided for @analyzeCheckingEvidence.
+  ///
+  /// In en, this message translates to:
+  /// **'Checking the evidence'**
+  String get analyzeCheckingEvidence;
+
+  /// No description provided for @analyzeDoneLikelyMatch.
+  ///
+  /// In en, this message translates to:
+  /// **'Done. I have a likely match.'**
+  String get analyzeDoneLikelyMatch;
+
+  /// No description provided for @analyzeProtectedSpecies.
+  ///
+  /// In en, this message translates to:
+  /// **'Protected species'**
+  String get analyzeProtectedSpecies;
 
   /// No description provided for @resultSpecies.
   ///

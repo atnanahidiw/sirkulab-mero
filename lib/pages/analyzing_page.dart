@@ -1,15 +1,14 @@
 import 'dart:async';
 import 'dart:convert';
-import 'dart:math';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:flutter_markdown_plus/flutter_markdown_plus.dart';
+import 'package:markdown/markdown.dart' as md;
 import 'package:provider/provider.dart';
-import '../core/navigation/app_page_route.dart';
 import '../l10n/app_localizations.dart';
 import '../services/model_service.dart';
 import '../services/species_service.dart';
 import '../utils/image_utils.dart';
-import 'result_page.dart';
 
 class AnalyzingPage extends StatefulWidget {
   final Uint8List rawImageBytes;
@@ -21,35 +20,20 @@ class AnalyzingPage extends StatefulWidget {
 }
 
 class _AnalyzingPageState extends State<AnalyzingPage>
-    with TickerProviderStateMixin {
-  List<String> _getMessages(AppLocalizations l10n) => [
-        l10n.analyzeMsg1,
-        l10n.analyzeMsg2,
-        l10n.analyzeMsg3,
-        l10n.analyzeMsg4,
-        l10n.analyzeMsg5,
-        l10n.analyzeMsg6,
-        l10n.analyzeMsg7,
-        l10n.analyzeMsg8,
-        l10n.analyzeMsg9,
-        l10n.analyzeMsg10,
-        l10n.analyzeMsg11,
-        l10n.analyzeMsg12,
-        l10n.analyzeMsg13,
-        l10n.analyzeMsg14,
-      ];
-
-  late AnimationController _pulseController;
-  late AnimationController _glowController;
-  late Animation<double> _pulseAnimation;
-  late Animation<double> _glowAnimation;
-
-  String _currentMessage = '';
-  int _messageIndex = 0;
-  Timer? _messageTimer;
-  bool _messageTimerInitialized = false;
+    with AutomaticKeepAliveClientMixin {
+  String _modelOutput = '';
+  String _pendingOutput = '';
   late final Uint8List _displayBytes;
-  bool _imageLoaded = false;
+  final ScrollController _outputController = ScrollController();
+  int _currentTraceIndex = 0;
+  Timer? _typewriterTimer;
+  bool _modelFinished = false;
+  bool _resultReady = false;
+  bool _handoffScheduled = false;
+  bool _preparingHandoff = false;
+  Uint8List? _pendingCompressedBytes;
+  String _pendingAnalysisResult = '';
+  SpeciesDetail? _pendingSpecies;
 
   // Species service — used to pre-resolve the DB lookup before navigating,
   // so ResultPage always receives fully-loaded data with no loading flash.
@@ -61,54 +45,86 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
     _displayBytes = widget.rawImageBytes;
 
-    _pulseController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 2200),
-    )..repeat(reverse: true);
-
-    _glowController = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1800),
-    )..repeat(reverse: true);
-
-    _pulseAnimation = Tween<double>(begin: 0.97, end: 1.03).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
-    );
-
-    _glowAnimation = Tween<double>(begin: 0.08, end: 0.32).animate(
-      CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
-    );
-
     _startAnalysis();
   }
 
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // ✅ Safe to call here — context (and l10n) is fully available.
-    //    Guard flag prevents re-initialisation on subsequent dependency changes.
-    if (!_messageTimerInitialized) {
-      _initMessageTimer();
-      _messageTimerInitialized = true;
-    }
-  }
+  void _appendTranscript(String chunk) {
+    if (!mounted || chunk.isEmpty) return;
 
-  void _initMessageTimer() {
-    final l10n = AppLocalizations.of(context)!;
-    final messages = _getMessages(l10n);
+    setState(() {
+      _pendingOutput += chunk;
+    });
 
-    _messageIndex = Random().nextInt(messages.length);
-    _currentMessage = messages[_messageIndex];
+    _startTypewriter();
 
-    _messageTimer = Timer.periodic(const Duration(seconds: 12), (_) {
-      if (mounted) {
-        setState(() {
-          _messageIndex = (_messageIndex + 1) % messages.length;
-          _currentMessage = messages[_messageIndex];
-        });
-      }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || !_outputController.hasClients) return;
+      _outputController.jumpTo(_outputController.position.maxScrollExtent);
     });
   }
+
+  void _completeTrace() {
+    _currentTraceIndex = 2;
+  }
+
+  void _startTypewriter() {
+    if (_typewriterTimer?.isActive == true) {
+      return;
+    }
+
+    _typewriterTimer = Timer.periodic(const Duration(milliseconds: 65), (
+      timer,
+    ) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+
+      if (_pendingOutput.isEmpty) {
+        timer.cancel();
+        _typewriterTimer = null;
+        _maybeScheduleHandoff();
+        return;
+      }
+
+      final nextChar = _pendingOutput.substring(0, 1);
+      setState(() {
+        _pendingOutput = _pendingOutput.substring(1);
+        _modelOutput += nextChar;
+      });
+
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_outputController.hasClients) return;
+        _outputController.jumpTo(_outputController.position.maxScrollExtent);
+      });
+    });
+  }
+
+  void _markModelFinished() {
+    _modelFinished = true;
+    _maybeScheduleHandoff();
+  }
+
+  void _maybeScheduleHandoff() {
+    if (!_modelFinished || !_resultReady || _handoffScheduled || _pendingOutput.isNotEmpty) {
+      return;
+    }
+
+    _handoffScheduled = true;
+    setState(() => _preparingHandoff = true);
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
+
+      Navigator.pop(context, {
+        'imageBytes': _pendingCompressedBytes,
+        'analysisResult': _pendingAnalysisResult,
+        'preloadedSpecies': _pendingSpecies,
+      });
+    });
+  }
+
+  @override
+  bool get wantKeepAlive => true;
 
   Future<void> _startAnalysis() async {
     // Give enough time for the transition to finish and for HomePage to dispose the camera
@@ -116,6 +132,7 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     await Future.delayed(const Duration(milliseconds: 600));
     if (!mounted) return;
 
+    final l10n = AppLocalizations.of(context)!;
     final modelService = Provider.of<ModelService>(context, listen: false);
 
     final compressedBytes = await ImageUtils.compressImage(
@@ -128,7 +145,16 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     // Step 1 — run the model to identify the species
     String result = '';
     try {
-      result = await modelService.identifySpecies(compressedBytes, 'jpeg');
+      setState(() {
+        _currentTraceIndex = 0;
+      });
+      result = await modelService.identifySpecies(
+        compressedBytes,
+        'jpeg',
+        languageName: _languageName(l10n),
+        onProgress: _handleModelProgress,
+        onTrace: _appendTranscript,
+      );
     } catch (e) {
       debugPrint('[AnalyzingPage] identifySpecies failed: $e');
     }
@@ -144,32 +170,31 @@ class _AnalyzingPageState extends State<AnalyzingPage>
 
     if (!mounted) return;
 
-    // Small pause so the animation doesn't snap away too abruptly.
-    await Future.delayed(const Duration(milliseconds: 100));
+    setState(() {
+      _completeTrace();
+    });
+
+    _pendingCompressedBytes = compressedBytes;
+    _pendingAnalysisResult = result;
+    _pendingSpecies = preloadedSpecies;
+    _resultReady = true;
+    _markModelFinished();
 
     debugPrint('[AnalyzingPage] result: $result\npreloadedSpecies: $preloadedSpecies');
-
-    // Return the results to HomePage instead of navigating here.
-    // This allows HomePage to keep the camera off during ResultPage.
-    Navigator.pop(context, {
-      'imageBytes': compressedBytes,
-      'analysisResult': result,
-      'preloadedSpecies': preloadedSpecies,
-    });
   }
+
+  String _languageName(AppLocalizations l10n) =>
+      l10n.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
 
   /// Parse [result] JSON and look up the species in the local DB.
   /// Returns null if parsing fails or the species isn't found.
   Future<SpeciesDetail?> _resolveSpecies(String result) async {
     try {
-      // Strip optional ```json fences
-      String jsonStr = result;
-      final fence = RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```').firstMatch(result);
-      if (fence != null) jsonStr = fence.group(1)!.trim();
+      final parsed = _parseJson(result);
+      if (parsed == null) return null;
 
-      final parsed    = jsonDecode(jsonStr) as Map<String, dynamic>;
-      final sciName   = (parsed['scientific_name'] as String? ?? '').trim();
-      final comName   = (parsed['common_name'] as String? ?? '').trim();
+      final sciName = (parsed['scientific_name'] as String? ?? '').trim();
+      final comName = (parsed['common_name'] as String? ?? '').trim();
 
       if (sciName.isEmpty) return null;
 
@@ -198,173 +223,165 @@ class _AnalyzingPageState extends State<AnalyzingPage>
     }
   }
 
+  Map<String, dynamic>? _parseJson(String result) {
+    try {
+      String jsonStr = result;
+      final fence =
+          RegExp(r'```(?:json)?\s*([\s\S]*?)\s*```').firstMatch(result);
+      if (fence != null) jsonStr = fence.group(1)!.trim();
+      return jsonDecode(jsonStr) as Map<String, dynamic>;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  void _handleModelProgress(String phase, double progress) {
+    final lower = phase.toLowerCase();
+    if (!mounted) return;
+
+    setState(() {
+      if (lower.contains('complete')) {
+        _completeTrace();
+      } else if (lower.contains('tool') ||
+          lower.contains('identifying') ||
+          lower.contains('search') ||
+          lower.contains('result')) {
+        _currentTraceIndex = 1;
+      } else {
+        _currentTraceIndex = 0;
+      }
+    });
+  }
+
   @override
   void dispose() {
-    _pulseController.dispose();
-    _glowController.dispose();
-    _messageTimer?.cancel();
+    _typewriterTimer?.cancel();
+    _outputController.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    super.build(context);
     final colorScheme = Theme.of(context).colorScheme;
     final textTheme = Theme.of(context).textTheme;
     final l10n = AppLocalizations.of(context)!;
+    final outputMarkdown = _buildOutputMarkdown(l10n);
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
       body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 24),
-
-            Text(
-              l10n.analyzeTitle,
-              style: textTheme.headlineSmall?.copyWith(
-                color: colorScheme.onSurface,
-                fontWeight: FontWeight.w600,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 36),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              const Spacer(),
+              Hero(
+                tag: 'analysis-image',
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(20),
+                  child: Image.memory(
+                    _displayBytes,
+                    height: 200,
+                    fit: BoxFit.cover,
+                    gaplessPlayback: true,
+                  ),
+                ),
               ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Animated image with glow ring
-            Expanded(
-              flex: 3,
-              child: Center(
-                child: RepaintBoundary(
-                  child: AnimatedBuilder(
-                    animation: Listenable.merge(
-                      [_pulseController, _glowController]
-                    ),
-                    builder: (context, child) {
-                      return Transform.scale(
-                        scale: _pulseAnimation.value,
-                        child: Container(
-                          margin: const EdgeInsets.symmetric(horizontal: 32),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: colorScheme.primary
-                                    .withValues(alpha: _glowAnimation.value),
-                                blurRadius: 24,
-                                spreadRadius: 6,
+              const SizedBox(height: 20),
+              AnimatedSwitcher(
+                duration: const Duration(milliseconds: 300),
+                transitionBuilder: (child, animation) => FadeTransition(
+                  opacity: animation,
+                  child: child,
+                ),
+                child: Text(
+                  _phaseLabel(l10n),
+                  key: ValueKey(_currentTraceIndex),
+                  style: textTheme.labelSmall?.copyWith(
+                    color: colorScheme.onSurfaceVariant,
+                    letterSpacing: 0.4,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 14),
+              SizedBox(
+                height: 320,
+                child: _buildOutputBox(colorScheme, textTheme, l10n, outputMarkdown),
+              ),
+              const SizedBox(height: 32),
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                child: _preparingHandoff
+                    ? Padding(
+                        padding: const EdgeInsets.only(bottom: 48),
+                        child: Align(
+                          alignment: Alignment.centerLeft,
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                            decoration: BoxDecoration(
+                              color: colorScheme.primaryContainer,
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Text(
+                              l10n.analyzePreparingNextPage,
+                              style: textTheme.labelSmall?.copyWith(
+                                color: colorScheme.onPrimaryContainer,
+                                fontWeight: FontWeight.w600,
+                                letterSpacing: 0.3,
                               ),
-                            ],
+                            ),
                           ),
-                          child: child,
                         ),
-                      );
-                    },
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(20),
-                      child: _buildImage(),
-                    ),
-                  ),
-                ),
+                      )
+                    : const SizedBox.shrink(),
               ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Progress bar
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 48),
-              child: ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: LinearProgressIndicator(
-                  minHeight: 6,
-                  backgroundColor: colorScheme.surfaceContainerHighest,
-                  valueColor:
-                      AlwaysStoppedAnimation<Color>(colorScheme.primary),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 32),
-
-            // Rotating fun messages
-            Expanded(
-              flex: 1,
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 32),
-                child: AnimatedSwitcher(
-                  duration: const Duration(milliseconds: 500),
-                  transitionBuilder: (child, animation) {
-                    return FadeTransition(
-                      opacity: animation,
-                      child: SlideTransition(
-                        position: Tween<Offset>(
-                          begin: const Offset(0, 0.3),
-                          end: Offset.zero,
-                        ).animate(animation),
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: Text(
-                    _currentMessage,
-                    key: ValueKey<String>(_currentMessage),
-                    textAlign: TextAlign.center,
-                    style: textTheme.bodyLarge?.copyWith(
-                      color: colorScheme.onSurfaceVariant,
-                      fontStyle: FontStyle.italic,
-                      height: 1.4,
-                    ),
-                  ),
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 24),
-          ],
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildImage() {
-    return Image.memory(
-      _displayBytes,
-      fit: BoxFit.cover,
-      gaplessPlayback: true,
-      // frameBuilder fades the image in smoothly instead of blinking
-      // blank → image. frame == null means the image is still decoding.
-      frameBuilder: (context, child, frame, wasSynchronouslyLoaded) {
-        if (wasSynchronouslyLoaded || frame != null) {
-          // Image is ready — mark loaded so we could conditionally hide
-          // a placeholder if we ever add one.
-          if (!_imageLoaded) {
-            // Schedule outside build so we don't call setState mid-build.
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) setState(() => _imageLoaded = true);
-            });
-          }
-          return child;
-        }
-        // Image is still decoding — show a neutral surface placeholder
-        // the exact same size so the layout doesn't jump.
-        return ColoredBox(
-          color: Theme.of(context).colorScheme.surfaceContainerHighest,
-          child: const AspectRatio(aspectRatio: 1),
-        );
-      },
-      errorBuilder: (context, error, stackTrace) {
-        debugPrint('[AnalyzingPage] Image.memory decode error: $error');
-        return ColoredBox(
-          color: Theme.of(context).colorScheme.errorContainer,
-          child: AspectRatio(
-            aspectRatio: 1,
-            child: Icon(
-              Icons.broken_image_outlined,
-              color: Theme.of(context).colorScheme.onErrorContainer,
-              size: 48,
-            ),
-          ),
-        );
-      },
+  String _buildOutputMarkdown(AppLocalizations l10n) {
+    final text = _modelOutput.trim();
+    if (text.isEmpty) return '_${l10n.analyzeWaitingTrace}_';
+    return text.replaceAll('\r\n', '\n');
+  }
+
+  String _phaseLabel(AppLocalizations l10n) => [
+      l10n.analyzeReadPhotoTitle,
+      l10n.analyzeSearchLibraryTitle,
+      l10n.analyzeChooseMatchTitle,
+    ][_currentTraceIndex];
+
+  Widget _buildOutputBox(
+    ColorScheme colorScheme,
+    TextTheme textTheme,
+    AppLocalizations l10n,
+    String markdown,
+  ) {
+    final bodyStyle = textTheme.bodyMedium?.copyWith(
+      color: colorScheme.onSurface,
+      height: 1.6,
+    );
+    return SingleChildScrollView(
+      controller: _outputController,
+      physics: const ClampingScrollPhysics(),
+      child: MarkdownBody(
+        data: markdown,
+        shrinkWrap: true,
+        extensionSet: md.ExtensionSet.gitHubFlavored,
+        styleSheet: MarkdownStyleSheet.fromTheme(Theme.of(context)).copyWith(
+          p: bodyStyle,
+          strong: bodyStyle?.copyWith(fontWeight: FontWeight.w600),
+          em: bodyStyle?.copyWith(fontStyle: FontStyle.italic),
+        ),
+      ),
     );
   }
+
 }
+

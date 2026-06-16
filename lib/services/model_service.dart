@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_gemma/flutter_gemma.dart';
 
+import 'analysis_story_formatter.dart';
 import 'model_boot_state.dart';
 import 'model_download_service.dart';
 import 'species_service.dart';
@@ -111,6 +112,19 @@ bool _isRepetitionLoop(String text, {int threshold = 6}) {
   return false;
 }
 
+void _emitProgress(
+  void Function(String phase, double progress)? onProgress,
+  String message,
+  double progress, {
+  void Function(String trace)? onTrace,
+  String? traceMessage,
+}) {
+  onProgress?.call(message, progress);
+  if (onTrace != null) {
+    onTrace('${traceMessage ?? message}\n\n');
+  }
+}
+
 abstract class ModelRuntime {
   Future<InferenceModel> getActiveModel({
     required int maxTokens,
@@ -129,8 +143,11 @@ abstract class ModelRuntime {
     int topK,
     double topP,
     int seed,
+    String languageName,
     void Function(String phase, double progress)? onProgress,
     void Function(String token)? onToken,
+    void Function(String thinking)? onThinking,
+    void Function(String trace)? onTrace,
   });
 
   // Cleanup resources
@@ -216,9 +233,15 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     int topK = 40,
     double topP = 0.9,
     int seed = 31415926,
+    String languageName = 'English',
+    bool isThinking = false,
     void Function(String phase, double progress)? onProgress,
     void Function(String token)? onToken,
+    void Function(String thinking)? onThinking,
+    void Function(String trace)? onTrace,
   }) async {
+    final bool isId = languageName == 'Bahasa Indonesia';
+    final formatter = AnalysisStoryFormatter(isId: isId);
     final resolvedTools =
         toolSpecs != null ? ToolSpec.toTools(toolSpecs) : const <Tool>[];
     final bool useToolCalling = resolvedTools.isNotEmpty;
@@ -228,7 +251,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         // ── Standard (no-tool) flow via Session ──
         // Must use createSession, not createChat, for Gemma 4 E2B compatibility.
         // createChat with ToolChoice.none suppresses text generation on this model.
-        onProgress?.call('Preparing session...', 0.15);
+        _emitProgress(onProgress, 'Preparing session...', 0.15);
 
         final session = await model.createSession(
           enableVisionModality: imageBytes != null,
@@ -237,10 +260,11 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           topK: topK,
           topP: topP,
           systemInstruction: systemInstruction,
+          enableThinking: isThinking,
         );
 
         try {
-          onProgress?.call('Sending question...', 0.35);
+          _emitProgress(onProgress, 'Sending question...', 0.35);
 
           if (imageBytes != null) {
             await session.addQueryChunk(Message.withImage(
@@ -254,7 +278,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
             isUser: true,
           ));
 
-          onProgress?.call('Generating answer...', 0.55);
+          _emitProgress(onProgress, 'Generating answer...', 0.55);
 
           final buffer = StringBuffer();
           await for (final token in session.getResponseAsync()) {
@@ -262,7 +286,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
             onToken?.call(token);
           }
 
-          onProgress?.call('Complete', 1.0);
+          _emitProgress(onProgress, 'Complete', 1.0);
           return buffer.toString();
         } finally {
           try {
@@ -274,13 +298,15 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
       }
 
       // ── Tool-calling flow via InferenceChat ──
-      onProgress?.call('Preparing chat...', 0.15);
+      _emitProgress(onProgress, 'Preparing chat...', 0.10,
+          onTrace: onTrace, traceMessage: formatter.wakingUp);
 
       final chat = await model.createChat(
         supportImage: imageBytes != null,
         tools: resolvedTools,
         supportsFunctionCalls: useToolCalling,
         toolChoice: useToolCalling ? ToolChoice.required : ToolChoice.none,
+        isThinking: isThinking,
         randomSeed: seed,
         temperature: temperature,
         topK: topK,
@@ -295,7 +321,8 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         // prompt for optimal multimodal attention.
         // https://huggingface.co/google/gemma-4-31B-it
         if (imageBytes != null) {
-          onProgress?.call('Sending image...', 0.30);
+          _emitProgress(onProgress, 'Sending image...', 0.15,
+              onTrace: onTrace, traceMessage: formatter.lookingAtPhoto);
           await chat.addQueryChunk(Message.withImage(
             text: '',               // image-only chunk comes first
             imageBytes: imageBytes,
@@ -303,18 +330,27 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           ));
         }
 
-        onProgress?.call('Sending prompt...', 0.35);
+        _emitProgress(onProgress, 'Sending prompt...', 0.20,
+            onTrace: onTrace, traceMessage: formatter.readingClues);
         await chat.addQueryChunk(Message.text(
-          text: prompt,            // instruction text always follows last
+          text: prompt,  // instruction text always follows last
           isUser: true,
         ));
 
         // ── 3. Agentic loop: generate → dispatch tools → repeat until no more tool calls ──
-        onProgress?.call(
+        _emitProgress(
+          onProgress,
           useToolCalling ? 'Identifying species...' : 'Generating answer...',
-          0.45
+          0.45,
+          onTrace: onTrace,
+          traceMessage: formatter.thinkingHard,
         );
-        
+        _emitProgress(onProgress, 'Starting reasoning...', 0.25,
+            onTrace: onTrace, traceMessage: formatter.investigating);
+        if (useToolCalling) {
+          onTrace?.call(formatter.opening());
+        }
+
         const int maxPasses = 5;  // Maximum agentic passes to prevent runaway loops.
         int pass = 0;
         while (true) {
@@ -323,7 +359,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
 
           if (pass > maxPasses) {
             debugPrint('[Pass $pass] Max passes ($maxPasses) exceeded — aborting.');
-            onProgress?.call('Complete', 1.0);
+            _emitProgress(onProgress, 'Complete', 1.0);
             return '';
           }
 
@@ -333,19 +369,21 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           await for (final response in chat.generateChatResponseAsync()) {
             if (response is TextResponse) {
               responseBuffer.write(response.token);
-              if (!useToolCalling) onToken?.call(response.token);
+              onToken?.call(response.token);
             } else if (response is ThinkingResponse) {
               debugPrint('[Pass $pass] Thinking: ${response.content}');
             } else if (response is FunctionCallResponse) {
               toolWasCalled = true;
               debugPrint('[Pass $pass] Tool call: ${response.name}(${response.args})');
               onProgress?.call('Running tool: ${response.name}...', 0.55);
+              onTrace?.call(formatter.toolCall(response.name, response.args, pass));
               final matchedSpec = toolSpecs!.firstWhere(
                 (s) => s.name == response.name,
                 orElse: () => throw Exception('No ToolSpec found for: ${response.name}'),
               );
               final result = await matchedSpec.execute(response.args);
               debugPrint('[Pass $pass] Tool result (${response.name}): $result');
+              onTrace?.call(formatter.toolResult(response.name, result, pass));
               await chat.addQueryChunk(Message.toolResponse(
                 toolName: response.name,
                 response: {'result': result},
@@ -356,12 +394,17 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
             } else if (response is ParallelFunctionCallResponse) {
               toolWasCalled = true;
               debugPrint('[Pass $pass] Parallel tool calls: ${response.calls.map((c) => '${c.name}(${c.args})').join(', ')}');
-              for (final call in response.calls) {
+              final callCount = response.calls.length;
+              onTrace?.call(formatter.parallelToolsIntro(callCount));
+              for (final (i, call) in response.calls.indexed) {
+                onTrace?.call(formatter.toolCall(call.name, call.args, pass,
+                    parallelIndex: i, parallelTotal: callCount));
                 final matchedSpec = toolSpecs!.firstWhere(
                   (s) => s.name == call.name,
                   orElse: () => throw Exception('No ToolSpec found for: ${call.name}'),
                 );
                 final result = await matchedSpec.execute(call.args);
+                onTrace?.call(formatter.toolResult(call.name, result, pass));
                 await chat.addQueryChunk(Message.toolResponse(
                   toolName: call.name,
                   response: {'result': result},
@@ -387,12 +430,14 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
           // No tool calls this pass — the model is done, return its text response
           if (!toolWasCalled) {
             debugPrint('[Pass $pass] No tool calls — final answer returned after $pass pass(es)');
-            onProgress?.call('Complete', 1.0);
+            _emitProgress(onProgress, 'Complete', 1.0,
+                onTrace: onTrace, traceMessage: formatter.done);
             return rawOutput.trim();
           }
 
           debugPrint('[Pass $pass] Tool(s) dispatched — starting pass ${pass + 1}');
-          onProgress?.call('Generating result...', 0.75);
+          _emitProgress(onProgress, 'Generating result...', 0.75,
+              onTrace: onTrace, traceMessage: formatter.puttingTogether);
         }
       } finally {
         await chat.close();
@@ -410,6 +455,7 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
     _cachedModel = null;
     _isInitialized = false;
   }
+
 }
 
 class ModelService extends ChangeNotifier {
@@ -541,8 +587,11 @@ class ModelService extends ChangeNotifier {
 
   Future<String> identifySpecies(
     Uint8List imageBytes,
-    String imageFormat,
-  ) async {
+    String imageFormat, {
+    required String languageName,
+    void Function(String phase, double progress)? onProgress,
+    void Function(String trace)? onTrace,
+  }) async {
     if (_model == null) {
       throw Exception('Model not loaded. Please wait for model to download.');
     }
@@ -604,15 +653,15 @@ class ModelService extends ChangeNotifier {
       final result = await _runtime.generateResponse(
         _model!,
         ChatPrompts.identifyInputPrompt,
-        systemInstruction: ChatPrompts.identifySystemInstruction,
+        systemInstruction: ChatPrompts.identifySystemInstruction(languageName),
         imageBytes: imageBytes,
         toolSpecs: [searchSpec],
         temperature: 0.6,
         topK: 100,
         topP: 0.9,
-        onProgress: (phase, progress) {
-          debugPrint('Progress: $phase ($progress)');
-        },
+        languageName: languageName,
+        onProgress: onProgress,
+        onTrace: onTrace,
       );
 
       // Strip fences then rsanitize common truncation patterns before parsing
@@ -631,6 +680,11 @@ class ModelService extends ChangeNotifier {
           status: 'Analysis complete',
           phase: ModelBootPhase.ready,
         ),
+      );
+
+      onTrace?.call(
+        AnalysisStoryFormatter(isId: languageName == 'Bahasa Indonesia')
+          .finalResult(repairedMap)
       );
 
       // Safely read confidence
@@ -674,7 +728,7 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
-      onProgress?.call('Starting...', 0.0);
+      _emitProgress(onProgress, 'Starting...', 0.0);
 
       // Use optimized generation method for text-based question
       final response = await _runtime.generateResponse(

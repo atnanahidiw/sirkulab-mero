@@ -50,9 +50,8 @@ class _ResultPageState extends State<ResultPage>
   bool _recognitionFailed = false;
   bool _hintsInteracted = false;
   bool _initialScrollDone = false;
-  bool _isTranslating = false;
-  bool _isTranslatingPopulationEstimate = false;
-  String _translatedPopulationEstimate = '';
+  bool _descriptionTranslationRequested = false;
+  String? _translatedEndangeredDescription;
   AppLocalizations? _l10n;
 
   @override
@@ -89,6 +88,7 @@ class _ResultPageState extends State<ResultPage>
       _initHintsAndMessage();
       _hintsInitialized = true;
     }
+    _maybeTranslateEndangeredDescription();
   }
 
   @override
@@ -132,7 +132,7 @@ class _ResultPageState extends State<ResultPage>
   bool get _chatEnabled => !_recognitionFailed;
 
   /// Input should be disabled while translation of the initial message is still streaming.
-  bool get _inputEnabled => !_isAnalyzing && !_isTranslating;
+  bool get _inputEnabled => !_isAnalyzing;
 
   // ── Hints & welcome message ──────────────────────────────────────────────
 
@@ -145,7 +145,9 @@ class _ResultPageState extends State<ResultPage>
     );
 
     final name = _species?.commonName ?? _jsonCommonName ?? '';
-    final description = _isListed ? (_species?.description ?? '') : '';
+    final description = _isListed
+        ? (_translatedEndangeredDescription ?? (_species?.description ?? ''))
+        : '';
 
     final rawBody = description.isNotEmpty
         ? _l10n!.resultInitialMsgEndangered(name, description)
@@ -153,114 +155,47 @@ class _ResultPageState extends State<ResultPage>
 
     if (rawBody.isNotEmpty) {
       _chatMessages.add({'role': 'assistant', 'content': rawBody});
-
-      // Translate async and swap message[0] when ready — non-blocking.
-      _translateWelcomeMessage(rawBody);
-    } else if (_isListed &&
-        (_species?.populationEstimate.isNotEmpty ?? false)) {
-      unawaited(_translatePopulationEstimate());
     }
   }
 
-  Future<void> _translateWelcomeMessage(String rawBody) async {
-    if (!mounted || _chatMessages.isEmpty) return;
-
-    _isTranslating = true;
-
-    // Start with empty content — we'll stream tokens into it.
-    setState(() {
-      _chatMessages[0] = {'role': 'assistant', 'content': ''};
-    });
-
-    try {
-      final modelService = Provider.of<ModelService>(context, listen: false);
-      final targetLang = _l10n?.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
-
-      // Check flag right before the model call.
-      if (!mounted) return;
-
-      await modelService.translate(
-        rawBody,
-        targetLang,
-        onToken: (token) {
-          if (!mounted) return;
-          setState(() {
-            _chatMessages[0]['content'] += token;
-          });
-        },
-      );
-    } catch (e) {
-      debugPrint('Translation failed: $e');
-      if (!mounted) return;
-      // Restore original message on failure.
-      setState(() {
-        if (_chatMessages.isNotEmpty &&
-            _chatMessages[0]['content'].toString().isEmpty) {
-          _chatMessages[0] = {'role': 'assistant', 'content': rawBody};
-        }
-      });
-    } finally {
-      if (mounted) {
-        setState(() => _isTranslating = false);
-      }
-      if (mounted &&
-          _isListed &&
-          (_species?.populationEstimate.isNotEmpty ?? false)) {
-        unawaited(_translatePopulationEstimate());
-      }
-    }
-  }
-
-  Future<void> _translatePopulationEstimate() async {
-    if (!mounted || _species == null) return;
-
-    final rawEstimate = _species!.populationEstimate.trim();
-    if (rawEstimate.isEmpty) return;
-
-    final targetLang =
-        _l10n?.localeName == 'id' ? 'Bahasa Indonesia' : 'English';
-    if (targetLang == 'English') {
-      if (mounted) {
-        setState(() {
-          _translatedPopulationEstimate = rawEstimate;
-        });
-      }
+  void _maybeTranslateEndangeredDescription() {
+    if (_descriptionTranslationRequested ||
+        _translatedEndangeredDescription != null ||
+        !_isListed ||
+        _species == null ||
+        _species!.description.isEmpty ||
+        _l10n == null ||
+        _l10n!.localeName == 'en') {
       return;
     }
 
-    if (_isTranslatingPopulationEstimate) return;
+    _descriptionTranslationRequested = true;
+    unawaited(_translateEndangeredDescription());
+  }
 
-    _isTranslatingPopulationEstimate = true;
-
-    if (mounted) {
-      setState(() {
-        _translatedPopulationEstimate = '';
-      });
-    }
-
+  Future<void> _translateEndangeredDescription() async {
     try {
       final modelService = Provider.of<ModelService>(context, listen: false);
-
-      await modelService.translate(
-        rawEstimate,
-        targetLang,
-        onToken: (token) {
-          if (!mounted) return;
-          setState(() {
-            _translatedPopulationEstimate += token;
-          });
-        },
+      final translated = await modelService.translate(
+        _species!.description,
+        _l10n!.localeName == 'id' ? 'Bahasa Indonesia' : 'English',
       );
-    } catch (e) {
-      debugPrint('Population estimate translation failed: $e');
-      if (!mounted) return;
+
+      if (!mounted || translated.isEmpty) return;
+
       setState(() {
-        _translatedPopulationEstimate = rawEstimate;
+        _translatedEndangeredDescription = translated;
+        if (_chatMessages.isNotEmpty && _chatMessages.first['role'] == 'assistant') {
+          final name = _species?.commonName ?? _jsonCommonName ?? '';
+          final updatedBody = _l10n!.resultInitialMsgEndangered(
+            name,
+            translated,
+          );
+          _chatMessages[0]['content'] = updatedBody;
+        }
       });
-    } finally {
-      if (mounted) {
-        setState(() => _isTranslatingPopulationEstimate = false);
-      }
+    } catch (e) {
+      debugPrint('Failed to translate endangered description: $e');
     }
   }
 
@@ -437,9 +372,6 @@ class _ResultPageState extends State<ResultPage>
   }
 
   String _populationEstimateDisplayText() {
-    if (_translatedPopulationEstimate.isNotEmpty) {
-      return _translatedPopulationEstimate;
-    }
     if (_species != null && _species!.populationEstimate.isNotEmpty) {
       return _species!.populationEstimate;
     }
@@ -525,7 +457,10 @@ class _ResultPageState extends State<ResultPage>
               background: Stack(
                 fit: StackFit.expand,
                 children: [
-                  Image.memory(widget.imageBytes, fit: BoxFit.cover),
+                  Hero(
+                    tag: 'analysis-image',
+                    child: Image.memory(widget.imageBytes, fit: BoxFit.cover),
+                  ),
                   // Top scrim — protects back button and action icons
                   DecoratedBox(
                     decoration: BoxDecoration(

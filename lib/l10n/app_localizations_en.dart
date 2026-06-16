@@ -301,46 +301,65 @@ class AppLocalizationsEn extends AppLocalizations {
   String get analyzeGoBack => 'Go Back';
 
   @override
-  String get analyzeMsg1 => 'Consulting the wildlife encyclopedia... 📚';
+  String get analyzeNarrativeTitle => 'How Mero thinks';
 
   @override
-  String get analyzeMsg2 => 'Asking the AI to put on its glasses... 🤓';
+  String get analyzeNarrativeSubtitle =>
+      'The AI reads the photo, checks the species library, and explains the match in simple steps.';
 
   @override
-  String get analyzeMsg3 => 'Cross-referencing with 10,000 species... 🔍';
+  String get analyzeReadPhotoTitle => 'Looking at the photo';
 
   @override
-  String get analyzeMsg4 => 'The AI is squinting really hard... 👀';
+  String get analyzeReadPhotoBody =>
+      'Looking at shape, color, size, and markings.';
 
   @override
-  String get analyzeMsg5 => 'Enhancing... enhancing... 🔬';
+  String get analyzeSearchLibraryTitle => 'Checking clues';
 
   @override
-  String get analyzeMsg6 => 'Running through the jungle database... 🌿';
+  String get analyzeSearchLibraryBody =>
+      'Comparing the clues with the local species database.';
 
   @override
-  String get analyzeMsg7 => 'Teaching the AI what fur looks like... 🐾';
+  String get analyzeChooseMatchTitle => 'Choosing the best match';
 
   @override
-  String get analyzeMsg8 => 'Comparing pixels to paws... 🐾';
+  String get analyzeChooseMatchBody =>
+      'Checking the strongest candidate and confidence.';
 
   @override
-  String get analyzeMsg9 => 'Flipping through nature magazines... 📰';
+  String get analyzeBestMatchTitle => 'Best match';
 
   @override
-  String get analyzeMsg10 => 'Sharpening AI neurons... 🧠';
+  String get analyzeShowDetails => 'Show detailed trace';
 
   @override
-  String get analyzeMsg11 => 'Downloading more RAM... just kidding! 😄';
+  String get analyzeHideDetails => 'Hide detailed trace';
 
   @override
-  String get analyzeMsg12 => 'Calibrating the species-o-meter... 📡';
+  String get analyzeWaitingTrace => 'Waiting for the model trace...';
 
   @override
-  String get analyzeMsg13 => 'Making sure it\'s not just a fancy cat... 🐱';
+  String get analyzePreparingNextPage => 'Preparing next page...';
 
   @override
-  String get analyzeMsg14 => 'Double-checking with a botanist friend... 🌺';
+  String get analyzeStrongMatch => 'Strong match';
+
+  @override
+  String get analyzePossibleMatch => 'Possible match';
+
+  @override
+  String get analyzeLowConfidence => 'Low confidence';
+
+  @override
+  String get analyzeCheckingEvidence => 'Checking the evidence';
+
+  @override
+  String get analyzeDoneLikelyMatch => 'Done. I have a likely match.';
+
+  @override
+  String get analyzeProtectedSpecies => 'Protected species';
 
   @override
   String get resultSpecies => 'Species';

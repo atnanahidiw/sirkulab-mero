@@ -97,10 +97,15 @@ class ChatPrompts {
     },
   };
 
-static String get identifySystemInstruction => '''
+static String identifySystemInstruction(String languageName) => '''
 <system_role>
 You are a high-precision biological identification engine. Reconcile visual evidence with tool data.
 </system_role>
+
+<language>
+All final JSON string values, especially "identification_notes", must be written in $languageName.
+Do not add any extra explanation outside the JSON block.
+</language>
 
 <workflow_protocol>
 STEP 1: Look at the image. Extract visual traits: colour, body shape, distinctive marks, pattern, size class, texture. Also hypothesise the most likely Class, Order, Family, and Genus. DON'T MAKE THINGS UP!

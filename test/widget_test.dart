@@ -211,9 +211,14 @@ class FakeModelDownloadService extends ModelDownloadService {
     notifyListeners();
   }
 
-  @override
   Future<String> identifySpecies(
-      Uint8List imageBytes, String imageFormat) async {
+    Uint8List imageBytes,
+    String imageFormat, {
+    required String languageName,
+    void Function(String phase, double progress)? onProgress,
+    void Function(String token)? onToken,
+    void Function(String trace)? onTrace,
+  }) async {
     return '';
   }
 
