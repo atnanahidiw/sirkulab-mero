@@ -407,7 +407,7 @@ abstract class AppLocalizations {
   /// No description provided for @homeDownloadModelWithButton.
   ///
   /// In en, this message translates to:
-  /// **'Download Model (0.5GB)'**
+  /// **'Download Model (2.4GB)'**
   String get homeDownloadModelWithButton;
 
   /// No description provided for @settingsTitle.

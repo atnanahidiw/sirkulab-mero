@@ -112,7 +112,7 @@ void _emitProgress(
 
 class ModelService extends ChangeNotifier {
   static const String _modelRevision = 'main';
-  static const ModelType modelType = ModelType.general;
+  static const ModelType modelType = ModelType.gemma4;
 
   static const int _fastVlmMaxTokens = 2048;
   static const int _gemmaMaxTokens = 4096;
@@ -126,7 +126,7 @@ class ModelService extends ChangeNotifier {
   InferenceModel? _model;
 
   final String modelUrl =
-      'https://huggingface.co/litert-community/FastVLM-0.5B/resolve/$_modelRevision/FastVLM-0.5B.litertlm';
+      'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';
 
   ModelService({
     ModelDownloadBackend? downloader,

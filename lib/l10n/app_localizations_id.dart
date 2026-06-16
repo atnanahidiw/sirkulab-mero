@@ -175,7 +175,7 @@ class AppLocalizationsId extends AppLocalizations {
   String get homeAiModel => 'Model AI';
 
   @override
-  String get homeDownloadModelWithButton => 'Unduh Model (0.5GB)';
+  String get homeDownloadModelWithButton => 'Unduh Model (2.4GB)';
 
   @override
   String get settingsTitle => 'Pengaturan';

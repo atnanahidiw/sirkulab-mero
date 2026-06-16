@@ -173,7 +173,7 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeAiModel => 'AI Model';
 
   @override
-  String get homeDownloadModelWithButton => 'Download Model (0.5GB)';
+  String get homeDownloadModelWithButton => 'Download Model (2.4GB)';
 
   @override
   String get settingsTitle => 'Settings';

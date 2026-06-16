@@ -83,7 +83,7 @@
   "homeModelStatusLoading": "Loading…",
   "homeModelStatusTapToDownload": "Tap to Download",
   "homeAiModel": "AI Model",
-  "homeDownloadModelWithButton": "Download Model (0.5GB)",
+  "homeDownloadModelWithButton": "Download Model (2.4GB)",
 
   "settingsTitle": "Settings",
   "settingsManageModel": "Manage Model",
