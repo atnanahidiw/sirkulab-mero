@@ -639,7 +639,9 @@ class _ModelStatusCard extends StatelessWidget {
             FilledButton.icon(
               onPressed: onDownload,
               icon: const Icon(Icons.download, size: 16),
-              label: Text(l10n.homeDownloadModelWithButton),
+              label: Text(
+                l10n.homeDownloadModelWithButton(modelService.downloadSizeLabel),
+              ),
             ),
           ],
         ],

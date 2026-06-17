@@ -279,7 +279,9 @@ class SettingsPage extends StatelessWidget {
               Text(l10n.settingsCapabilities,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               Text(l10n.settingsCapabilityMultimodal),
-              Text(l10n.settingsCapabilityContext),
+              Text(l10n.settingsCapabilityContext(
+                ModelService.maxTokens.toString(),
+              )),
               Text(l10n.settingsCapabilityInference),
               const SizedBox(height: 8),
               Text(l10n.settingsNote,

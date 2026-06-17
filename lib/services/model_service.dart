@@ -128,6 +128,10 @@ class ModelService extends ChangeNotifier {
   final String modelUrl =
       'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';
 
+  /// Human-readable download size. Kept here next to the model URL so swapping
+  /// models only touches this file, never the l10n.
+  final String downloadSizeLabel = '2.4GB';
+
   ModelService({
     ModelDownloadBackend? downloader,
     ModelRuntime? runtime,

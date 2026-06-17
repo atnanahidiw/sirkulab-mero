@@ -173,7 +173,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get homeAiModel => 'AI Model';
 
   @override
-  String get homeDownloadModelWithButton => 'Download Model (2.4GB)';
+  String homeDownloadModelWithButton(String size) {
+    return 'Download Model ($size)';
+  }
 
   @override
   String get settingsTitle => 'Settings';
@@ -235,7 +237,9 @@ class AppLocalizationsEn extends AppLocalizations {
   String get settingsCapabilityMultimodal => '• Multimodal (text + image)';
 
   @override
-  String get settingsCapabilityContext => '• 2048 token context window';
+  String settingsCapabilityContext(String tokens) {
+    return '• $tokens token context window';
+  }
 
   @override
   String get settingsCapabilityInference => '• On-device inference';

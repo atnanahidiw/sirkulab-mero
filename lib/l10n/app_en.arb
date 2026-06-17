@@ -83,7 +83,14 @@
   "homeModelStatusLoading": "Loading…",
   "homeModelStatusTapToDownload": "Tap to Download",
   "homeAiModel": "AI Model",
-  "homeDownloadModelWithButton": "Download Model (2.4GB)",
+  "homeDownloadModelWithButton": "Download Model ({size})",
+  "@homeDownloadModelWithButton": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
 
   "settingsTitle": "Settings",
   "settingsManageModel": "Manage Model",
@@ -112,7 +119,14 @@
   },
   "settingsCapabilities": "Capabilities:",
   "settingsCapabilityMultimodal": "• Multimodal (text + image)",
-  "settingsCapabilityContext": "• 2048 token context window",
+  "settingsCapabilityContext": "• {tokens} token context window",
+  "@settingsCapabilityContext": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
   "settingsCapabilityInference": "• On-device inference",
   "settingsNote": "Note:",
   "settingsOfflineNote": "Model works offline after initial download.",

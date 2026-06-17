@@ -175,7 +175,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get homeAiModel => 'Model AI';
 
   @override
-  String get homeDownloadModelWithButton => 'Unduh Model (2.4GB)';
+  String homeDownloadModelWithButton(String size) {
+    return 'Unduh Model ($size)';
+  }
 
   @override
   String get settingsTitle => 'Pengaturan';
@@ -237,7 +239,9 @@ class AppLocalizationsId extends AppLocalizations {
   String get settingsCapabilityMultimodal => '• Multimodal (teks + gambar)';
 
   @override
-  String get settingsCapabilityContext => '• Jendela konteks 2048 token';
+  String settingsCapabilityContext(String tokens) {
+    return '• Jendela konteks $tokens token';
+  }
 
   @override
   String get settingsCapabilityInference => '• Inferensi pada perangkat';

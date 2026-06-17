@@ -407,8 +407,8 @@ abstract class AppLocalizations {
   /// No description provided for @homeDownloadModelWithButton.
   ///
   /// In en, this message translates to:
-  /// **'Download Model (2.4GB)'**
-  String get homeDownloadModelWithButton;
+  /// **'Download Model ({size})'**
+  String homeDownloadModelWithButton(String size);
 
   /// No description provided for @settingsTitle.
   ///
@@ -527,8 +527,8 @@ abstract class AppLocalizations {
   /// No description provided for @settingsCapabilityContext.
   ///
   /// In en, this message translates to:
-  /// **'• 2048 token context window'**
-  String get settingsCapabilityContext;
+  /// **'• {tokens} token context window'**
+  String settingsCapabilityContext(String tokens);
 
   /// No description provided for @settingsCapabilityInference.
   ///

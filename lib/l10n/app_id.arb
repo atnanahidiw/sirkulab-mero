@@ -83,7 +83,14 @@
   "homeModelStatusLoading": "Memuat…",
   "homeModelStatusTapToDownload": "Ketuk untuk Mengunduh",
   "homeAiModel": "Model AI",
-  "homeDownloadModelWithButton": "Unduh Model (2.4GB)",
+  "homeDownloadModelWithButton": "Unduh Model ({size})",
+  "@homeDownloadModelWithButton": {
+    "placeholders": {
+      "size": {
+        "type": "String"
+      }
+    }
+  },
 
   "settingsTitle": "Pengaturan",
   "settingsManageModel": "Kelola Model",
@@ -112,7 +119,14 @@
   },
   "settingsCapabilities": "Kemampuan:",
   "settingsCapabilityMultimodal": "• Multimodal (teks + gambar)",
-  "settingsCapabilityContext": "• Jendela konteks 2048 token",
+  "settingsCapabilityContext": "• Jendela konteks {tokens} token",
+  "@settingsCapabilityContext": {
+    "placeholders": {
+      "tokens": {
+        "type": "String"
+      }
+    }
+  },
   "settingsCapabilityInference": "• Inferensi pada perangkat",
   "settingsNote": "Catatan:",
   "settingsOfflineNote": "Model bekerja secara offline setelah unduhan awal.",
