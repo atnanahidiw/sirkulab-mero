@@ -44,6 +44,21 @@ android {
         // WebGPU accelerator — not supported on Android, web-only
         excludes.add("lib/arm64-v8a/libLiteRtWebGpuAccelerator.so")
         excludes.add("lib/arm64-v8a/libLiteRtTopKWebGpuSampler.so")
+
+        // NPU / RAG backends are not used by this app, so keep them out of
+        // the release APK. The .litertlm CPU/GPU path stays intact.
+        excludes.add("lib/arm64-v8a/libLiteRtDispatch_Qualcomm.so")
+        excludes.add("lib/arm64-v8a/libQnnHtp.so")
+        excludes.add("lib/arm64-v8a/libQnnSystem.so")
+        excludes.add("lib/arm64-v8a/libQnnHtpV73Stub.so")
+        excludes.add("lib/arm64-v8a/libQnnHtpV73Skel.so")
+        excludes.add("lib/arm64-v8a/libQnnHtpV75Stub.so")
+        excludes.add("lib/arm64-v8a/libQnnHtpV75Skel.so")
+        excludes.add("lib/arm64-v8a/libQnnHtpV79Stub.so")
+        excludes.add("lib/arm64-v8a/libQnnHtpV79Skel.so")
+        excludes.add("lib/arm64-v8a/libQnnHtpV81Stub.so")
+        excludes.add("lib/arm64-v8a/libQnnHtpV81Skel.so")
+        excludes.add("lib/arm64-v8a/libqdrant_edge_ffi.so")
     }
 
     kotlin {
