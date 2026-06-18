@@ -23,6 +23,7 @@ dependencies:
   url_launcher: ^6.2.0
   image: ^4.2.0
   share_plus: ^13.1.0
+  flutter_onnxruntime: ^1.4.1
   flutter_local_notifications: ^17.2.2
   google_fonts: ^6.2.1
   flutter_markdown_plus_latex: ^1.0.5
@@ -49,6 +50,15 @@ flutter:
   uses-material-design: true
   assets:
     - assets/data/species_data.sqlite
+    # Bundled vision model (Talk2DINO, int8 ONNX) + precomputed attribute
+    # label-text embeddings. Produced offline; see
+    # docs/plans/smaller-footprint-architecture.md.
+    - assets/models/dino_image_encoder.onnx
+    - assets/models/dino_attribute_embeddings.json
+    # v2 check_visual_evidence — runtime text encoder + CLIP BPE tokenizer
+    - assets/models/dino_text_encoder.onnx
+    - assets/models/clip_vocab.json
+    - assets/models/clip_merges.txt
 
   # For iOS, need to set minimum version
   # Add to ios/Podfile: platform :ios, '16.0'

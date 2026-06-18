@@ -9,6 +9,7 @@ import 'model_boot_state.dart';
 import 'model_download_service.dart';
 import 'model_runtime.dart';
 import 'species_service.dart';
+import 'vision_runtime.dart';
 import '../models/chat_prompts.dart';
 import '../models/model_spec.dart';
 
@@ -112,25 +113,31 @@ void _emitProgress(
 
 class ModelService extends ChangeNotifier {
   static const String _modelRevision = 'main';
-  static const ModelType modelType = ModelType.gemma4;
 
-  static const int _fastVlmMaxTokens = 2048;
-  static const int _gemmaMaxTokens = 4096;
-  static int get maxTokens =>
-      modelType == ModelType.gemma4 ? _gemmaMaxTokens : _fastVlmMaxTokens;
+  // ───────────────────────── Model configuration ─────────────────────────
+  // Text reasoning core. The model is TEXT-ONLY and never sees the photo — the
+  // image is handled by [VisionRuntime] through the `extract_visual_features`
+  // tool. Swapping the LLM should only touch this block.
+  static const ModelType modelType = ModelType.qwen3;
+  static const int _maxTokens = 4096;
+  static int get maxTokens => _maxTokens;
+
+  // Qwen3-0.6B (LiteRT) — ~0.47 GB; strong tool calling + reasoning mode.
+  final String modelUrl =
+      'https://huggingface.co/litert-community/Qwen3-0.6B/resolve/$_modelRevision/Qwen3-0.6B.litertlm';
+
+  /// Human-readable *download* size (the vision model is bundled in assets, so
+  /// only the LLM is downloaded). Kept here next to the URL so swapping models
+  /// only touches this file, never the l10n.
+  final String downloadSizeLabel = '0.5GB';
+  // ────────────────────────────────────────────────────────────────────────
 
   late final ModelRuntime _runtime;
   late final ModelDownloadService _downloadService;
   late final bool _ownsDownloadService;
   final SpeciesService _speciesService = SpeciesService();
+  final VisionRuntime _vision = VisionRuntime();
   InferenceModel? _model;
-
-  final String modelUrl =
-      'https://huggingface.co/litert-community/gemma-4-E2B-it-litert-lm/resolve/$_modelRevision/gemma-4-E2B-it.litertlm';
-
-  /// Human-readable download size. Kept here next to the model URL so swapping
-  /// models only touches this file, never the l10n.
-  final String downloadSizeLabel = '2.4GB';
 
   ModelService({
     ModelDownloadBackend? downloader,
@@ -143,6 +150,10 @@ class ModelService extends ChangeNotifier {
         FlutterGemmaModelRuntime(
           modelType: modelType,
         );
+    // The vision model is bundled in assets → load it eagerly, offline.
+    unawaited(_vision.loadFromAssets().catchError((Object e) {
+      debugPrint('VisionRuntime load failed: $e');
+    }));
     if (downloadService != null) {
       _downloadService = downloadService;
       _ownsDownloadService = false;
@@ -164,7 +175,7 @@ class ModelService extends ChangeNotifier {
 
   bool get isInitialized => _downloadService.isInitialized;
   bool get isLoading => _downloadService.isLoading;
-  bool get isModelLoaded => _downloadService.isModelLoaded;
+  bool get isModelLoaded => _downloadService.isModelLoaded && _vision.isLoaded;
   String get status => _downloadService.status;
   String? get error => _downloadService.error;
   double? get downloadProgress => _downloadService.downloadProgress;
@@ -264,6 +275,43 @@ class ModelService extends ChangeNotifier {
     }
 
     try {
+      // Vision tool — the text-only LLM "observes" the photo through this.
+      final extractSpec = ToolSpec(
+        name: ChatPrompts.extractVisualFeaturesToolDef['name'] as String,
+        description:
+            ChatPrompts.extractVisualFeaturesToolDef['description'] as String,
+        parameters: ChatPrompts.extractVisualFeaturesToolDef['parameters']
+            as Map<String, dynamic>,
+        execute: (args) async {
+          final focus = (args['focus'] as List?)?.cast<String>();
+          final traits =
+              await _vision.extractVisualFeatures(imageBytes, focus: focus);
+          return jsonEncode(traits);
+        },
+      );
+
+      // Verify tool (v2) — score arbitrary claims against the photo via the
+      // runtime text encoder. Only advertised when the text encoder loaded, so
+      // the prompt never offers a tool the runtime can't back.
+      final checkSpec = ToolSpec(
+        name: ChatPrompts.checkVisualEvidenceToolDef['name'] as String,
+        description:
+            ChatPrompts.checkVisualEvidenceToolDef['description'] as String,
+        parameters: ChatPrompts.checkVisualEvidenceToolDef['parameters']
+            as Map<String, dynamic>,
+        execute: (args) async {
+          final claims = (args['claims'] as List?)?.cast<String>() ?? const [];
+          if (claims.isEmpty) {
+            return 'No claims provided. Pass one or more visual claims to score.';
+          }
+          final scores = await _vision.checkVisualEvidence(imageBytes, claims);
+          return jsonEncode({
+            for (final e in scores.entries)
+              e.key: double.parse(e.value.toStringAsFixed(3)),
+          });
+        },
+      );
+
       final searchSpec = ToolSpec(
         name: ChatPrompts.speciesSearchToolDef['name'] as String,
         description: ChatPrompts.speciesSearchToolDef['description'] as String,
@@ -317,12 +365,17 @@ class ModelService extends ChangeNotifier {
         ),
       );
 
+      // No image is sent to the model — it is text-only and reaches the photo
+      // only through the vision tools.
       final result = await _runtime.generateResponse(
         _model!,
         ChatPrompts.identifyInputPrompt,
         systemInstruction: ChatPrompts.identifySystemInstruction(languageName),
-        imageBytes: imageBytes,
-        toolSpecs: [searchSpec],
+        toolSpecs: [
+          extractSpec,
+          if (_vision.canVerify) checkSpec,
+          searchSpec,
+        ],
         useNativeToolCalling: false,
         temperature: 0.6,
         topK: 100,
@@ -331,6 +384,7 @@ class ModelService extends ChangeNotifier {
         onProgress: onProgress,
         onTrace: onTrace,
       );
+      _vision.disposeImageCache();
 
       // Strip fences then rsanitize common truncation patterns before parsing
       final repaired = _sanitizeBrokenJson(_stripJsonFences(result));
@@ -476,6 +530,7 @@ class ModelService extends ChangeNotifier {
       _downloadService.dispose();
     }
     _runtime.dispose();
+    unawaited(_vision.dispose());
     super.dispose();
   }
 }

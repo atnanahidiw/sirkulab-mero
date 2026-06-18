@@ -71,3 +71,6 @@ Thumbs.db
 # Temporary files
 tmp/
 temp/
+.venv-export/
+__pycache__/
+*.pyc

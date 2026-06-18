@@ -98,13 +98,16 @@ class FlutterGemmaModelRuntime implements ModelRuntime {
         return _cachedModel!;
       }
 
+      // Only the (multimodal) Gemma path needs vision; text models like Qwen3
+      // must NOT enable the vision modality — the image is handled by the
+      // separate VisionRuntime tool.
+      final isMultimodal = modelType == ModelType.gemma4;
       _cachedModel = await FlutterGemma.getActiveModel(
         maxTokens: maxTokens,
         preferredBackend: _preferredBackend,
-        enableSpeculativeDecoding:
-            modelType == ModelType.gemma4 ? true : null,
-        supportImage: true,
-        maxNumImages: 1,
+        enableSpeculativeDecoding: isMultimodal ? true : null,
+        supportImage: isMultimodal,
+        maxNumImages: isMultimodal ? 1 : 0,
       );
 
       _isInitialized = true;

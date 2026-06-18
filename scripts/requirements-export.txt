@@ -1,0 +1,17 @@
+# Deps for scripts/export_vision_model.py (run on a machine with PyTorch).
+# Talk2DINO is pulled from the HF Hub (trust_remote_code); these cover its
+# transitive imports (dinotext.py: timm, einops, transformers, clip, omegaconf …).
+torch
+torchvision
+pillow
+numpy
+onnx
+onnxruntime
+transformers<5            # Talk2DINO remote code targets 4.x (5.x breaks weight finalize)
+timm
+einops
+omegaconf
+pyyaml
+ftfy
+regex
+clip @ git+https://github.com/openai/CLIP.git   # OpenAI CLIP (`import clip`)
