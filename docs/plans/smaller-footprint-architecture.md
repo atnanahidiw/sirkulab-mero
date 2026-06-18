@@ -82,7 +82,7 @@ DINOclip replaces **only** the model's "look at the image and describe the trait
 - **Export reality (important).** Neither option ships as a ready *small* mobile file, so we produce the ONNX export ourselves:
   - **dino.txt / Talk2DINO (preferred):** 2025 research releases, **no turnkey ONNX/mobile build**. You export the frozen DINOv2 backbone (DINOv2→ONNX is well-trodden) + the small text-alignment head + text encoder → ONNX → int8. More work, but iNaturalist-SOTA quality. DINOv2-small image side ≈ **~22 MB** int8.
   - **MobileCLIP (turnkey prototype / fallback):** the published TFLite files are *full-precision combined* and **large** — S1 ≈ 324 MB, S2 ≈ 379 MB, B ≈ 572 MB ([anton96vice/mobileclip2_tflite](https://huggingface.co/anton96vice/mobileclip2_tflite)) — but MobileCLIP exports to ONNX cleanly (Apple model) and int8 image-encoder-only is ≈ **12–21 MB** (S0/S1).
-  - Either way, attribute-label text embeddings are **precomputed offline**, so the text encoder isn't needed at runtime for `extract_visual_features` (only for arbitrary-claim `check_visual_evidence` — see §8). "Tiny, bundled vision model" is achievable, but it's a **one-time quantization/export step**, not an off-the-shelf file.
+  - Either way, attribute-label text embeddings are **precomputed offline**, so the text encoder isn't needed at runtime for `extract_visual_features` (only for arbitrary-claim `check_visual_evidence` — see §8.3.8). "Tiny, bundled vision model" is achievable, but it's a **one-time quantization/export step**, not an off-the-shelf file.
 
 ### 3.3 Why DINO's capabilities fit *this* use case
 
@@ -224,7 +224,21 @@ Step-up option if reasoning is insufficient: Qwen2.5-1.5B (1.46 GB) + DINO ≈ 1
 
 ---
 
-## 7. Implementation phases
+## 7. Decision summary
+
+- **Reasoning core:** **Qwen3-0.6B** (0.47 GB) on `flutter_gemma` — smaller than Gemma 1B, stronger tool calling, reasoning mode, working GPU. *(There is no small Gemma 4 to use here; the smallest Gemma 4 is E2B at 2.58 GB.)*
+- **Vision:** **a zero-shot visual-feature extractor — dino.txt preferred (iNaturalist-SOTA), MobileCLIP as the turnkey prototype/fallback** — int8 ONNX (~12–22 MB, bundled in assets), running on **`flutter_onnxruntime`** (CoreML on iOS, NNAPI on Android). *(Plain DINOv2 can't be used — it has no text encoder; the text-aligned dino.txt/Talk2DINO is required.)* It replaces only the model's "look & describe" step, producing the trait *text* that feeds the **unchanged** text-based search. Knowledge-guided, open-set, and its text↔image scoring is what reproduces the iterative "fix-on-retry."
+- **Unchanged:** SQLite DB grounding, **`search_similar_features` (FTS5 + Sørensen–Dice text matching)**, 4-pass cap, confidence thresholds, offline-first. No reference-image dataset.
+- **Outcome:** ~2.58 GB → ~0.5–0.6 GB planned (the shipped vision encoder is fp16, larger — see §8.3.1/§8.3.12), satisfies all three writeup objections, and improves tool-call reliability, latency, and explainability.
+
+---
+
+## 8. Implementation
+
+One narrative in three parts: the **rollout plan** (§8.1), the **component design**
+(§8.2), and **what actually got built** with its challenges (§8.3).
+
+### 8.1 Rollout phases
 
 1. **Vision spike (offline).** Export the image encoder → **int8 ONNX** (~12–22 MB) — **MobileCLIP first** to validate the pipeline quickly, **dino.txt** as the production target (iNaturalist-SOTA). Precompute the per-attribute **label-text embeddings** (start from the `visual_group` enum + values already in the DB's `visualFeatures`) and ship them as an asset table. Validate that zero-shot attribute scoring reproduces the DB's curated trait text on a held-out set; measure how often the extracted traits retrieve the correct species through the existing search; **A/B MobileCLIP vs dino.txt** on the same set. (Cross-platform target: one `.onnx` for Android + iOS.)
 2. **Flutter vision tool.** Wire [`flutter_onnxruntime`](https://pub.dev/packages/flutter_onnxruntime) (CoreML on iOS, NNAPI on Android); implement `extract_visual_features(image[, focus])` and `check_visual_evidence(image, claims)` Dart handlers (shared image↔text scoring + per-photo embedding cache).
@@ -233,20 +247,9 @@ Step-up option if reasoning is insufficient: Qwen2.5-1.5B (1.46 GB) + DINO ≈ 1
 5. **Evidence UI.** Surface matched traits + DINOclip scores (the writeup's Next Step #3).
 6. **Benchmark** vs current Gemma 4 E2B: accuracy, latency, size, hallucination rate.
 
----
+### 8.2 Component shape (app lifecycle & components)
 
-## 8. Decision summary
-
-- **Reasoning core:** **Qwen3-0.6B** (0.47 GB) on `flutter_gemma` — smaller than Gemma 1B, stronger tool calling, reasoning mode, working GPU. *(There is no small Gemma 4 to use here; the smallest Gemma 4 is E2B at 2.58 GB.)*
-- **Vision:** **a zero-shot visual-feature extractor — dino.txt preferred (iNaturalist-SOTA), MobileCLIP as the turnkey prototype/fallback** — int8 ONNX (~12–22 MB, bundled in assets), running on **`flutter_onnxruntime`** (CoreML on iOS, NNAPI on Android). *(Plain DINOv2 can't be used — it has no text encoder; the text-aligned dino.txt/Talk2DINO is required.)* It replaces only the model's "look & describe" step, producing the trait *text* that feeds the **unchanged** text-based search. Knowledge-guided, open-set, and its text↔image scoring is what reproduces the iterative "fix-on-retry."
-- **Unchanged:** SQLite DB grounding, **`search_similar_features` (FTS5 + Sørensen–Dice text matching)**, 4-pass cap, confidence thresholds, offline-first. No reference-image dataset.
-- **Outcome:** ~2.58 GB → ~0.5–0.6 GB, satisfies all three writeup objections, and improves tool-call reliability, latency, and explainability.
-
----
-
-## 9. Implementation shape (app lifecycle & components)
-
-### 9.1 Delivery — what ships where
+#### 8.2.1 Delivery — what ships where
 | Model | Size | Delivery | Runtime |
 |---|---|---|---|
 | Vision (MobileCLIP/DINOclip, int8 image-encoder ONNX) | ~12–22 MB | **bundled in `assets/`** | `flutter_onnxruntime` |
@@ -254,7 +257,7 @@ Step-up option if reasoning is insufficient: Qwen2.5-1.5B (1.46 GB) + DINO ≈ 1
 
 Boot: load the vision model from assets (instant, offline) **and** check/download Qwen3 → ready ⇔ both loaded. `ModelBootPhase` is unchanged; "downloading/installing" now refers only to Qwen3 (5× smaller than today). This preserves the "download once, then fully offline" deployment story.
 
-### 9.2 New — `lib/services/vision_runtime.dart`
+#### 8.2.2 New — `lib/services/vision_runtime.dart`
 Owns the ONNX vision model and all image↔text scoring:
 ```dart
 class VisionRuntime {
@@ -267,10 +270,10 @@ class VisionRuntime {
 - Image embedding computed **once per photo and cached** → `extract` + multiple `check` calls reuse it.
 - Attribute label-text embeddings are **precomputed offline** and shipped as an asset table → `extract` needs only the image encoder at runtime.
 
-### 9.3 `model_runtime.dart` — LLM goes text-only
+#### 8.2.3 `model_runtime.dart` — LLM goes text-only
 flutter_gemma runtime stays structurally the same (function-call loop), minus the image: **no `imageBytes` is sent to the model** (Qwen3 is text-only; the photo goes only to the vision tools). Simpler than today — no multimodal session / image prefill.
 
-### 9.4 `model_service.dart` — owns both runtimes, wires the tools
+#### 8.2.4 `model_service.dart` — owns both runtimes, wires the tools
 Holds the LLM runtime **and** `VisionRuntime` (+ existing `SpeciesService`, `DownloadService`). `identifySpecies(imageBytes, …)` builds three tools whose `execute` closures capture the photo + backend, then runs the LLM loop **without passing the image to the model**:
 ```dart
 final tools = [
@@ -284,7 +287,7 @@ await _llm.generateResponse(ChatPrompts.identifyInputPrompt,
 ```
 `isModelLoaded = vision.isLoaded && llm.isLoaded`; `downloadSizeLabel='0.47GB'`; `modelUrl→Qwen3-0.6B.litertlm`. `askQuestion`/`translate` unchanged. Image embedding disposed when identification ends.
 
-### 9.5 Assets & pubspec
+#### 8.2.5 Assets & pubspec
 ```
 assets/models/
   vision_image_encoder.int8.onnx   # ~12–22 MB  (dino.txt preferred; MobileCLIP to prototype)
@@ -294,46 +297,49 @@ assets/models/
 ```
 Deps: `flutter_onnxruntime` (+ `image` already present for resize/normalize). The `VisionRuntime` is model-agnostic, so MobileCLIP↔dino.txt is a file swap behind the same interface.
 
-### 9.6 Unchanged
+#### 8.2.6 Unchanged
 `species_service.dart` (FTS5 + Dice), `model_download_service.dart` (single-model, just URL/size), `analyzing_page.dart` (same `identifySpecies` signature + `onTrace` streaming), SQLite DB, boot-state machine, l10n, Q&A flow.
 
-### 9.7 Phasing note
-**v1 = `extract_visual_features` + existing search** (one bundled model file, image encoder only). **v2** adds `check_visual_evidence` (arbitrary-claim scoring → also ship the text encoder). Both are now implemented — see §10.8.
+#### 8.2.7 Phasing note
+**v1 = `extract_visual_features` + existing search** (one bundled model file, image encoder only). **v2** adds `check_visual_evidence` (arbitrary-claim scoring → also ship the text encoder). Both are now implemented — see §8.3.8.
 
 ---
 
-## 10. Implementation — what we actually built (challenges & solutions)
+### 8.3 What we built — challenges & solutions
 
 This section records the real v1 build of the vision tool: the exporter, the two
 shipped assets, and the problems that surfaced once we touched the real models
-(several invalidated assumptions in §3.2/§9).
+(several invalidated assumptions in §3.2/§8.2).
 
 > **Terminology — "DINOclip" → Talk2DINO.** The planning sections (title, §3.2)
 > use the working name *DINOclip* for the text-aligned DINO vision tool. The
 > implementation settled on a concrete model: **Talk2DINO**
 > (`lorebianchi98/Talk2DINO-ViTB`, DINOv2 ViT-B/14-reg + CLIP-text alignment).
 > Wherever the earlier text says "DINOclip", read "Talk2DINO" — and note it is a
-> *segmentation*-oriented model, which drove the approximations below (§10.2).
+> *segmentation*-oriented model, which drove the approximations below (§8.3.2).
 
-### 10.1 What ships
+#### 8.3.1 What ships
 
 | Artifact | Size | Notes |
 | --- | --- | --- |
-| `assets/models/dino_image_encoder.onnx` | ~90 MB (int8) | DINOv2 **ViT-B/14-reg** image encoder with pooling baked into the graph |
+| `assets/models/dino_image_encoder.onnx` | ~173 MB (fp16) | DINOv2 **ViT-B/14-reg** image encoder with pooling baked into the graph |
+| `assets/models/dino_text_encoder.onnx` | ~129 MB (fp16) | CLIP text → Talk2DINO projection (v2 `check_visual_evidence`) |
 | `assets/models/dino_attribute_embeddings.json` | ~2.5 MB | 7 attributes × controlled-vocab labels, each with its text embedding |
-| `scripts/export_vision_model.py` | — | One-shot exporter; pulls Talk2DINO from HF, writes both assets |
-| `scripts/requirements-export.txt` | — | Pinned deps for the exporter (run via `uv`) |
+| `assets/models/clip_vocab.json` + `clip_merges.txt` | ~1.5 MB | CLIP BPE tables for the Dart tokenizer |
+| `scripts/export_vision_model.py` / `validate_vision_model.py` | — | Create + validate; pull Talk2DINO from HF, run via `uv` |
 
-Both binaries are **git-ignored** (`assets/models/`) and regenerated on demand —
+Binaries are **git-ignored** (`assets/models/`) and regenerated on demand —
 `uv venv .venv-export && uv pip install -r scripts/requirements-export.txt &&
 .venv-export/bin/python scripts/export_vision_model.py`.
 
-Note the size revision: §6 budgeted a ViT-**S** (~22 MB int8). The text-aligned
-weights only exist for ViT-**B** (`lorebianchi98/Talk2DINO-ViTB`), so the real
-encoder is ~90 MB int8 — still negligible beside the ~474 MB LLM and the 2.58 GB
-model it replaces.
+Two size revisions from the plan: (1) §6 budgeted a ViT-**S** (~22 MB int8), but
+the text-aligned weights only exist for ViT-**B**; (2) the precision is **fp16,
+not int8** — int8 is unusable here (§8.3.10). Net bundled vision assets ≈ **305 MB
+fp16**. Still well under the ~474 MB LLM + the 2.58 GB model this replaces, though
+notably larger than the int8 budget; `--quant dynamic` (~½) is a smaller on-device
+candidate pending `MatMulInteger` support (§8.3.10).
 
-### 10.2 Challenge — Talk2DINO is a *segmentation* model, not a whole-image classifier
+#### 8.3.2 Challenge — Talk2DINO is a *segmentation* model, not a whole-image classifier
 
 §3.2 assumed a CLIP-style "embed the image → cosine vs label text" encoder. The
 real model is different in three ways that broke that assumption:
@@ -356,7 +362,7 @@ and cosine-match against the projected label embeddings (same space). This keeps
 [vision_runtime.dart](../../lib/services/vision_runtime.dart) as a simple
 embed-once-then-argmax engine and avoids the un-exportable attention machinery.
 
-### 10.3 Challenge — naïve mean-pooling matched the *background*
+#### 8.3.3 Challenge — naïve mean-pooling matched the *background*
 
 The first export mean-pooled all 1369 patches. Validation on real photos exposed
 the failure: a **panda** matched **plant** traits ("various shades of green",
@@ -378,7 +384,7 @@ We compared three poolings on tiger/panda; the winner is decisive:
 Plain CLS token alone scored ~0.05 (it's outside the patch-aligned text space) —
 confirming the saliency-over-patches formulation is the right one.
 
-### 10.4 Challenge — int8 quantization perturbs a softmax-sensitive output
+#### 8.3.4 Challenge — int8 quantization perturbs a softmax-sensitive output
 
 After switching to saliency pooling, the int8 encoder's raw embedding diverged
 from fp32 (cosine parity fell from ~0.997 to **0.53–0.82**) — the softmax
@@ -390,7 +396,7 @@ identical to fp32 for every attribute** — quantization moves the vector within
 region that doesn't change which vocabulary label is nearest. So int8 (90 MB) is
 safe; no fp16/fp32 upsize needed.
 
-### 10.5 Challenge — `distinctive_marks` contract mismatch
+#### 8.3.5 Challenge — `distinctive_marks` contract mismatch
 
 The first exporter omitted `distinctive_marks` as "free-form / hard to
 enumerate", but the `search_similar_features` schema lists it **required** and the
@@ -403,7 +409,7 @@ exporter's `ATTRIBUTE_COLUMNS`; the vision tool now emits all **7** attributes t
 search tool expects. Keep the exporter's `ATTRIBUTE_COLUMNS` and the tool's
 `required` list in sync — `extract_visual_features` can only emit what's scored.
 
-### 10.6 Toolchain pitfalls (for whoever re-runs the export)
+#### 8.3.6 Toolchain pitfalls (for whoever re-runs the export)
 
 - **`transformers` 5.x breaks Talk2DINO's remote code** (`all_tied_weights_keys`
   in the weight-finalize path). Pin `transformers<5`.
@@ -412,7 +418,7 @@ search tool expects. Keep the exporter's `ATTRIBUTE_COLUMNS` and the tool's
 - DINOv2 loads via `torch.hub` on first run (needs network); xFormers warnings
   are harmless on CPU.
 
-### 10.7 Honest limitations
+#### 8.3.7 Honest limitations
 
 The single-vector approximation is **strong on coarse traits** (colour, texture,
 distinctive_marks) but **noisier on fine ones** — e.g. the panda's `visual_group`
@@ -421,9 +427,9 @@ dropping the attention-weighted multi-head pooling, and it is exactly what the
 agentic retry loop (§4: re-observe with `focus`, then `check_visual_evidence` in
 v2) is designed to recover from. If fine-attribute accuracy proves limiting,
 the upgrade path is to reproduce Talk2DINO's `avg_self_attn` pooling in an
-exportable form, or move to its full disentangled matching (§10.2).
+exportable form, or move to its full disentangled matching (§8.3.2).
 
-### 10.8 v2 — `check_visual_evidence` (arbitrary-claim scoring), implemented
+#### 8.3.8 v2 — `check_visual_evidence` (arbitrary-claim scoring), implemented
 
 v1 only `extract`s attributes; the prompt's retry loop also calls
 `check_visual_evidence` to score free-text claims against the photo. Unlike the
@@ -469,7 +475,7 @@ plant" **−0.02**.
 image encoder — ~158 MB of bundled vision assets total, still far under the
 2.58 GB model this architecture replaces.
 
-### 10.9 Covering data beyond the curated DB (answering constraint §2)
+#### 8.3.9 Covering data beyond the curated DB (answering constraint §2)
 
 A fair objection: `dino_attribute_embeddings.json` labels are **derived from the
 species DB** (`build_vocabularies` takes the distinct, trimmed, first-seen-casing
@@ -486,7 +492,7 @@ extends past the curated set:
   first-pass observation degrades gracefully on novel subjects instead of failing.
 
 - **`check_visual_evidence` is open-vocabulary — the real escape hatch.** Its text
-  encoder + Dart CLIP tokenizer (§10.8) embed **arbitrary free text at runtime**,
+  encoder + Dart CLIP tokenizer (§8.3.8) embed **arbitrary free text at runtime**,
   not the precomputed labels. The LLM can propose any hypothesis for a species
   absent from the DB ("long curved casque on the bill", "bioluminescent flank
   spots") and have DINO score it against the photo. Coverage here is bounded by
@@ -511,6 +517,55 @@ extends past the curated set:
 So the derived-label caveat constrains only the closed `extract` path; the open
 `check` path and the LLM are exactly the mechanism that satisfies "covers data
 beyond the curated set."
+
+#### 8.3.10 Challenge — on-device quantization (the int8 trap)
+
+The first device run surfaced a failure no Python validation could: the int8
+image encoder **failed to load** on Android —
+`ORT_NOT_IMPLEMENTED: Could not find an implementation for ConvInteger(10)`.
+`flutter_onnxruntime`'s ORT-Android build has no `ConvInteger` kernel. And
+because `isModelLoaded` ANDs `vision.isLoaded`, a vision-load failure doesn't
+just disable a tool — it **blocks boot entirely** (the Qwen text model loaded
+fine; the app still never went ready). Lesson: validate the *runtime/op support*
+on-device, not just numerics on desktop.
+
+Working through the quantization options showed int8 is a dead end for these
+**embedding** models specifically:
+
+| Mode | Loads on ORT-Android? | Accuracy | Size (img) | Why |
+| --- | --- | --- | --- | --- |
+| dynamic int8 (full) | ❌ | good | ~90 MB | emits `ConvInteger` (no kernel) |
+| static int8 (QDQ) | ✅ | **destroyed** | ~88 MB | int8 *activations* collapse the 768-d cosine geometry — tiger→"green", text parity ≈ 0 |
+| dynamic int8, MatMul-only | ✅* | good (~0.99) | ~92 MB | excludes Conv → `MatMulInteger`; *needs that kernel on the target build |
+| **fp16** ✅ (shipped) | ✅ | ~1.000 | ~173 MB | standard `Conv`/`MatMul` + `Cast`; no integer ops |
+
+Key insight: dynamic int8 keeps **activations in fp32** (so cosine angles
+survive) but produces `ConvInteger`/`MatMulInteger`; static int8 uses the
+mobile-supported `QLinearConv`/`QLinearMatMul` but **quantises activations**,
+which is exactly what destroys a normalised-embedding model. There's no int8 mode
+that is both supported *and* accurate here.
+
+**Solution — fp16.** `float16` weights with `keep_io_types` (fp32 I/O, so the Dart
+side is unchanged) and `Cast` nodes wherever a fp16 kernel is missing — so it runs
+on any ORT build and stays numerically ~lossless (validated cosine 1.000, labels
+== fp32). One gotcha: `onnxconverter_common`'s converter left mixed-type `Div`
+nodes that ORT rejects at load; **`onnxruntime.transformers`'s converter** inserts
+the casts correctly. The exporter's `--quant` defaults to `fp16`; `dynamic`
+(MatMul-only, ~½ size) is offered as a smaller candidate to A/B on-device.
+
+**On-device A/B + indicator.** To find the smallest mode that *actually loads* on
+the target, `VisionRuntime` accepts an ordered list of image-encoder assets and
+tries each in turn: `dino_image_encoder.int8.onnx` (MatMul-only dynamic, ~92 MB)
+first, then `dino_image_encoder.onnx` (fp16) as the guaranteed fallback —
+whichever loads wins, and the active backend (`int8`/`fp16`) is surfaced in
+**Settings → Model info → "Vision engine"** (with verify availability). The
+int8 load failure, if any, arrives as a catchable `PlatformException`, so the
+fallback is clean. A production build bundles just one precision. (The dynamic
+*text* encoder came out larger than fp16, so only the image encoder has an int8
+variant.)
+
+**Follow-up (not yet done):** the AND-gate boot dependency means any future vision
+failure bricks startup — consider degrading to a vision-disabled mode instead.
 
 ---
 

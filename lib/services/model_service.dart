@@ -151,8 +151,12 @@ class ModelService extends ChangeNotifier {
           modelType: modelType,
         );
     // The vision model is bundled in assets → load it eagerly, offline.
-    unawaited(_vision.loadFromAssets().catchError((Object e) {
+    // notifyListeners on completion so the UI's vision indicator updates.
+    unawaited(_vision.loadFromAssets().then((_) {
+      notifyListeners();
+    }).catchError((Object e) {
       debugPrint('VisionRuntime load failed: $e');
+      notifyListeners();
     }));
     if (downloadService != null) {
       _downloadService = downloadService;
@@ -176,6 +180,13 @@ class ModelService extends ChangeNotifier {
   bool get isInitialized => _downloadService.isInitialized;
   bool get isLoading => _downloadService.isLoading;
   bool get isModelLoaded => _downloadService.isModelLoaded && _vision.isLoaded;
+
+  /// Vision diagnostics for the UI: did the image encoder load, which backend
+  /// (int8/fp16/none), and is claim-verification (text encoder) available.
+  bool get visionLoaded => _vision.isLoaded;
+  String get visionBackend => _vision.imageBackend;
+  bool get visionCanVerify => _vision.canVerify;
+
   String get status => _downloadService.status;
   String? get error => _downloadService.error;
   double? get downloadProgress => _downloadService.downloadProgress;

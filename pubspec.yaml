@@ -54,6 +54,9 @@ flutter:
     # label-text embeddings. Produced offline; see
     # docs/plans/smaller-footprint-architecture.md.
     - assets/models/dino_image_encoder.onnx
+    # Smaller int8 (MatMul-only) image encoder, tried first; falls back to the
+    # fp16 above if ORT-Android lacks the MatMulInteger kernel. Drop one for prod.
+    - assets/models/dino_image_encoder.int8.onnx
     - assets/models/dino_attribute_embeddings.json
     # v2 check_visual_evidence — runtime text encoder + CLIP BPE tokenizer
     - assets/models/dino_text_encoder.onnx

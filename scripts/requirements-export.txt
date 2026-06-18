@@ -6,7 +6,7 @@ torchvision
 pillow
 numpy
 onnx
-onnxruntime
+onnxruntime               # also provides the fp16 converter (onnxruntime.transformers)
 transformers<5            # Talk2DINO remote code targets 4.x (5.x breaks weight finalize)
 timm
 einops

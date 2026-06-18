@@ -26,14 +26,24 @@ import 'clip_tokenizer.dart';
 /// `assets/`, so it needs no download and works fully offline.
 class VisionRuntime {
   VisionRuntime({
-    this.modelAsset = 'assets/models/dino_image_encoder.onnx',
+    List<String>? imageModelAssets,
     this.attributeEmbeddingsAsset = 'assets/models/dino_attribute_embeddings.json',
     this.textModelAsset = 'assets/models/dino_text_encoder.onnx',
     ClipTokenizer? tokenizer,
-  }) : _tokenizer = tokenizer ?? ClipTokenizer();
+  })  : imageModelAssets = imageModelAssets ?? _defaultImageAssets,
+        _tokenizer = tokenizer ?? ClipTokenizer();
 
-  /// Bundled int8 DINO image-encoder ONNX (dino.txt / Talk2DINO).
-  final String modelAsset;
+  /// Candidate image-encoder ONNX assets, tried in order. The smaller int8
+  /// (MatMul-only dynamic) variant is preferred; fp16 is the guaranteed-to-load
+  /// fallback. Whichever loads first wins, and [imageBackend] records it. A
+  /// production build can bundle just one. (int8 may fail on ORT-Android if it
+  /// lacks the MatMulInteger kernel — same class of gap as ConvInteger.)
+  final List<String> imageModelAssets;
+
+  static const List<String> _defaultImageAssets = [
+    'assets/models/dino_image_encoder.int8.onnx',
+    'assets/models/dino_image_encoder.onnx',
+  ];
 
   /// Precomputed label-text embeddings per attribute, produced offline with the
   /// SAME model's text encoder. JSON shape:
@@ -60,6 +70,9 @@ class VisionRuntime {
 
   OrtSession? _session;
   OrtSession? _textSession;
+  // Which image-encoder asset actually loaded (basename), e.g.
+  // 'dino_image_encoder.int8.onnx' — surfaced to the UI as the active backend.
+  String? _imageAsset;
   // attribute → ordered list of (label, L2-normalised embedding)
   final Map<String, List<_LabelEmbedding>> _attributeVocab = {};
 
@@ -74,8 +87,34 @@ class VisionRuntime {
   /// text encoder fails to load, the runtime still serves v1 (`extract`).
   bool get canVerify => _textSession != null && _tokenizer.isLoaded;
 
+  /// Short label of the active image backend for the UI: 'int8' (MatMul-only
+  /// dynamic), 'fp16', or 'none' if nothing loaded. Derived from the asset that
+  /// actually loaded so it reflects on-device op support, not just what shipped.
+  String get imageBackend {
+    if (_imageAsset == null) return 'none';
+    return _imageAsset!.contains('.int8.') ? 'int8' : 'fp16';
+  }
+
   Future<void> loadFromAssets() async {
-    _session ??= await OnnxRuntime().createSessionFromAsset(modelAsset);
+    // Try each candidate image encoder in order; the first that loads wins. An
+    // int8 asset can fail on-device (no MatMulInteger kernel) → fall to fp16.
+    if (_session == null) {
+      for (final asset in imageModelAssets) {
+        try {
+          _session = await OnnxRuntime().createSessionFromAsset(asset);
+          _imageAsset = asset.split('/').last;
+          break;
+        } catch (e) {
+          debugPrint('VisionRuntime: image encoder "$asset" failed to load, '
+              'trying next candidate: $e');
+        }
+      }
+      if (_session == null) {
+        throw StateError(
+          'VisionRuntime: no image encoder loaded (tried $imageModelAssets).',
+        );
+      }
+    }
     if (_attributeVocab.isEmpty) await _loadAttributeVocab();
     // v2 text encoder + tokenizer — best-effort; degrade to v1 if unavailable.
     if (_textSession == null) {
@@ -183,6 +222,7 @@ class VisionRuntime {
     await _textSession?.close();
     _session = null;
     _textSession = null;
+    _imageAsset = null;
     _attributeVocab.clear();
   }
 

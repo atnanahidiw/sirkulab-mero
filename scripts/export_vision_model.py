@@ -216,9 +216,140 @@ def build_vocabularies(db_path: str, max_per_attr: int = 256) -> dict:
 
 
 # ──────────────────────────────────────────────────────────────────────────
-# Export
+# Export + mobile-safe quantization
 # ──────────────────────────────────────────────────────────────────────────
-def export_onnx(enc: VisionEncoder, out_dir: str, quantize: bool) -> str:
+# Quantization modes. For these *embedding* models the int8 paths both fail:
+#   fp16    — float16 weights via onnxruntime.transformers (Casts to fp32 where
+#             no fp16 kernel exists; standard Conv/MatMul only). Near-fp32
+#             accuracy (cosine ~1.0) AND always runs on ORT-Android. DEFAULT.
+#   qdq     — static int8 → QLinearConv/QLinearMatMul (mobile-supported), but
+#             int8 *activations* crush the 768-d embedding direction → cosine
+#             geometry collapses (tiger→"green", parity≈0). Unusable here.
+#   dynamic — int8 dynamic, MatMul-only (Conv excluded → no ConvInteger).
+#             Activations stay fp32 so accuracy is fine (~0.99), ~half fp16 size,
+#             but emits MatMulInteger — verify it loads on the target ORT-Android
+#             build before relying on it (full quantize_dynamic also hits the
+#             unsupported ConvInteger; that's why Conv is excluded here).
+#   none    — fp32 (largest; reference).
+# Net: fp16 always works + is accurate (default); dynamic is smaller but unverified.
+QUANT_MODES = ("fp16", "qdq", "dynamic", "none")
+
+# Varied subjects so static calibration sees a representative activation range.
+CALIB_IMAGE_URLS = [
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Tiger.50.jpg/500px-Tiger.50.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/Grosser_Panda.JPG/500px-Grosser_Panda.JPG",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Eopsaltria_australis_-_Mogo_Campground.jpg/500px-Eopsaltria_australis_-_Mogo_Campground.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/8/84/Red_eyed_tree_frog_edit2.jpg/500px-Red_eyed_tree_frog_edit2.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Orchid_-_Phalaenopsis.jpg/500px-Orchid_-_Phalaenopsis.jpg",
+    "https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Acporcellus.jpg/500px-Acporcellus.jpg",
+]
+
+
+def _calib_image_feeds(input_name: str):
+    """Preprocessed image tensors for static calibration. Best-effort download;
+    returns whatever succeeds (None if the network is unavailable)."""
+    import tempfile
+    import urllib.request
+
+    feeds = []
+    for url in CALIB_IMAGE_URLS:
+        try:
+            req = urllib.request.Request(url, headers={"User-Agent": "Mozilla/5.0 (mero)"})
+            data = urllib.request.urlopen(req, timeout=60).read()
+            tmp = os.path.join(tempfile.gettempdir(), os.path.basename(url))
+            with open(tmp, "wb") as f:
+                f.write(data)
+            img = Image.open(tmp).convert("RGB").resize((INPUT_SIZE, INPUT_SIZE))
+            arr = (np.asarray(img, np.float32) / 255.0 - np.array([0.485, 0.456, 0.406], np.float32)) \
+                / np.array([0.229, 0.224, 0.225], np.float32)
+            feeds.append({input_name: arr.transpose(2, 0, 1)[None]})
+        except Exception as e:  # noqa: BLE001
+            print(f"    [warn] calib image skipped ({e})")
+    return feeds
+
+
+def _calib_text_feeds(input_name: str):
+    """Tokenised sample claims for static calibration (offline)."""
+    import clip
+
+    phrases = [
+        "orange and black stripes", "a large striped cat", "black and white fur",
+        "a bear-like body", "green leafy plant", "bright red scales",
+        "long curved casque on the bill", "iridescent blue feathers",
+        "smooth grey skin", "spiky projections along the body",
+        "a small brown rodent", "webbed feet and a flat bill",
+        "elongated serpentine body", "translucent fins", "furry and round",
+        "dark facial markings", "a tall wading bird", "rough bark texture",
+    ]
+    return [
+        {input_name: clip.tokenize([p]).numpy().astype(np.int32)} for p in phrases
+    ]
+
+
+def _quantize(fp32: str, final: str, quant: str, input_name: str, calib_feeds) -> None:
+    """Apply the chosen quantization, writing `final` and removing `fp32`."""
+    if quant == "none":
+        os.replace(fp32, final)
+        return
+    if quant == "fp16":
+        # onnxruntime.transformers' fp16 converter inserts Casts correctly for
+        # this graph (onnxconverter_common leaves mixed-type Div nodes that ORT
+        # rejects at load). keep_io_types → fp32 I/O, so Dart sends fp32 as-is.
+        import onnx
+        from onnxruntime.transformers.onnx_model import OnnxModel
+
+        om = OnnxModel(onnx.load(fp32))
+        om.convert_float_to_float16(keep_io_types=True)
+        om.save_model_to_file(final)
+        os.remove(fp32)
+        return
+    if quant == "dynamic":
+        # Exclude Conv (the single patch-embed) so we DON'T emit ConvInteger,
+        # which ORT-Android lacks. Only MatMul is quantized → MatMulInteger,
+        # activations stay fp32 so accuracy is preserved (~cosine 0.99). ~half
+        # the fp16 size, but MatMulInteger support on the target build is not
+        # guaranteed — verify on-device before relying on it.
+        from onnxruntime.quantization import QuantType, quantize_dynamic
+
+        quantize_dynamic(fp32, final, weight_type=QuantType.QInt8,
+                         op_types_to_quantize=["MatMul"])
+        os.remove(fp32)
+        return
+    # qdq — static int8, mobile-safe
+    from onnxruntime.quantization import (CalibrationDataReader, QuantFormat,
+                                          QuantType, quantize_static)
+    from onnxruntime.quantization.shape_inference import quant_pre_process
+
+    if not calib_feeds:
+        raise RuntimeError(
+            "qdq needs calibration data but none was available (offline?). "
+            "Re-run with --quant fp16 for a no-calibration mobile-safe export.")
+
+    class _Reader(CalibrationDataReader):
+        def __init__(self, feeds):
+            self._it = iter(feeds)
+
+        def get_next(self):
+            return next(self._it, None)
+
+    pre = fp32 + ".pre.onnx"
+    try:
+        quant_pre_process(fp32, pre, skip_symbolic_shape=True)
+        src = pre
+    except Exception as e:  # noqa: BLE001 — some graphs defeat shape inference
+        print(f"    [warn] quant_pre_process failed ({e}); quantizing raw fp32")
+        src = fp32
+    quantize_static(
+        src, final, _Reader(calib_feeds),
+        quant_format=QuantFormat.QDQ, per_channel=True,
+        weight_type=QuantType.QInt8, activation_type=QuantType.QUInt8,
+    )
+    for p in (fp32, pre):
+        if os.path.exists(p):
+            os.remove(p)
+
+
+def export_onnx(enc: VisionEncoder, out_dir: str, quant: str) -> str:
     import torch
 
     fp32 = os.path.join(out_dir, "dino_image_encoder.fp32.onnx")
@@ -230,39 +361,31 @@ def export_onnx(enc: VisionEncoder, out_dir: str, quantize: bool) -> str:
         opset_version=17, do_constant_folding=True,
         dynamo=False,  # stable TorchScript exporter (dynamo path needs onnxscript)
     )
-    if quantize:
-        from onnxruntime.quantization import quantize_dynamic, QuantType
-        quantize_dynamic(fp32, final, weight_type=QuantType.QInt8)
-        os.remove(fp32)
-    else:
-        os.replace(fp32, final)
-    print(f"  wrote {final}  ({os.path.getsize(final) / 1e6:.1f} MB)")
+    calib = _calib_image_feeds(enc.input_name) if quant == "qdq" else None
+    _quantize(fp32, final, quant, enc.input_name, calib)
+    print(f"  wrote {final}  ({os.path.getsize(final) / 1e6:.1f} MB, quant={quant})")
     return final
 
 
-def export_text_onnx(enc: VisionEncoder, out_dir: str, quantize: bool) -> str:
+def export_text_onnx(enc: VisionEncoder, out_dir: str, quant: str) -> str:
     """Export the runtime text encoder (token_ids → 768-d) for v2's
     check_visual_evidence (arbitrary-claim scoring)."""
     import torch
 
     fp32 = os.path.join(out_dir, "dino_text_encoder.fp32.onnx")
     final = os.path.join(out_dir, "dino_text_encoder.onnx")
-    # int32 token IDs, [batch, context_length]; batch axis is dynamic.
+    # int32 token IDs, fixed [1, context_length] — the runtime scores one claim
+    # per run, and a static shape lets QDQ shape-inference/quantization succeed.
     dummy = torch.zeros(1, enc.context_length, dtype=torch.int32)
     dummy[0, 0], dummy[0, 1] = 49406, 49407  # SOT, EOT
     torch.onnx.export(
         enc.text_module, dummy, fp32,
         input_names=["token_ids"], output_names=["text_embeds"],
-        dynamic_axes={"token_ids": {0: "batch"}, "text_embeds": {0: "batch"}},
         opset_version=17, do_constant_folding=True, dynamo=False,
     )
-    if quantize:
-        from onnxruntime.quantization import quantize_dynamic, QuantType
-        quantize_dynamic(fp32, final, weight_type=QuantType.QInt8)
-        os.remove(fp32)
-    else:
-        os.replace(fp32, final)
-    print(f"  wrote {final}  ({os.path.getsize(final) / 1e6:.1f} MB)")
+    calib = _calib_text_feeds("token_ids") if quant == "qdq" else None
+    _quantize(fp32, final, quant, "token_ids", calib)
+    print(f"  wrote {final}  ({os.path.getsize(final) / 1e6:.1f} MB, quant={quant})")
     return final
 
 
@@ -304,8 +427,11 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--db", default="assets/data/species_data.sqlite")
     ap.add_argument("--out", default="assets/models")
-    ap.add_argument("--no-quantize", action="store_true",
-                    help="skip int8 quantization (larger, debug)")
+    ap.add_argument("--quant", choices=QUANT_MODES, default="fp16",
+                    help="quantization: fp16=accurate + runs on-device (default); "
+                         "qdq=static int8 but destroys embedding accuracy; "
+                         "dynamic=accurate but BROKEN on ORT-Android (ConvInteger); "
+                         "none=fp32")
     ap.add_argument("--hf-model", default=HF_MODEL)
     args = ap.parse_args()
 
@@ -317,14 +443,14 @@ def main():
     print("[2/4] building attribute vocabularies from DB …")
     vocab = build_vocabularies(args.db)
 
-    print("[3/5] exporting image encoder → ONNX …")
-    export_onnx(enc, args.out, quantize=not args.no_quantize)
+    print(f"[3/5] exporting image encoder → ONNX (quant={args.quant}) …")
+    export_onnx(enc, args.out, args.quant)
 
     print("[4/5] encoding attribute labels → embeddings …")
     export_embeddings(enc, vocab, args.out)
 
     print("[5/5] exporting text encoder + tokenizer (v2: check_visual_evidence) …")
-    export_text_onnx(enc, args.out, quantize=not args.no_quantize)
+    export_text_onnx(enc, args.out, args.quant)
     dump_tokenizer(enc, args.out)
 
     print("\nDONE. Update lib/services/vision_runtime.dart constants to match:")
