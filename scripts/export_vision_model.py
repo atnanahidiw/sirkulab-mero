@@ -82,16 +82,37 @@ INPUT_SIZE = 518
 # HF model bundling DINOv2 backbone + CLIP + the text projection head.
 HF_MODEL = "lorebianchi98/Talk2DINO-ViTB"
 
-# Prompt template applied to label TEXT before embedding (the stored label string
-# stays raw — only the embedding changes). Templating CATEGORY labels improves
-# zero-shot: measured +10.3 pts on visual_group with "a close-up photo of a {}"
-# (scripts/eval_vision.py; docs/.../05_implementation-accuracy-tuning.md).
-# Descriptive attributes (color/texture/…) are full phrases — templating breaks
-# them grammatically — so they stay raw "{}".
-ATTR_TEMPLATES = {
-    "visual_group": "a close-up photo of a {}",
+# Prompt ensembles applied to label TEXT before embedding (the stored label
+# string stays raw — only the embedding changes). We keep multiple prompts
+# around so the exporter can choose the strongest prompt-specific embedding.
+#
+# visual_group gets image-like prompts because it is a coarse category label.
+# The other attributes are phrase-like trait descriptions, so they get a small
+# generic ensemble that keeps the wording flexible without forcing awkward
+# grammar.
+ATTR_PROMPT_ENSEMBLES = {
+    "visual_group": (
+        "{}",
+        "a photo of a {}",
+        "a close-up photo of a {}",
+        "an image of a {}",
+        "a field guide photo of a {}",
+    ),
 }
-DEFAULT_LABEL_TEMPLATE = "{}"
+DEFAULT_PROMPT_ENSEMBLE = (
+    "{}",
+    "trait: {}",
+    "appearance: {}",
+)
+
+
+def _max_prompt_index(vectors: np.ndarray) -> int:
+    """Return the prompt embedding with the largest average similarity."""
+    if len(vectors) == 1:
+        return 0
+    sims = vectors @ vectors.T
+    scores = sims.mean(axis=1)
+    return int(np.argmax(scores))
 
 
 @dataclass
@@ -422,10 +443,18 @@ def export_embeddings(enc: VisionEncoder, vocab: dict, out_dir: str) -> str:
     for attr, labels in vocab.items():
         if not labels:
             continue
-        tmpl = ATTR_TEMPLATES.get(attr, DEFAULT_LABEL_TEMPLATE)
-        embs = enc.encode_text([tmpl.format(lbl) for lbl in labels])  # [N, D], L2-norm
-        if tmpl != DEFAULT_LABEL_TEMPLATE:
-            print(f"    templated {attr!r} labels with {tmpl!r}")
+        templates = ATTR_PROMPT_ENSEMBLES.get(attr, DEFAULT_PROMPT_ENSEMBLE)
+        prompt_embs = []
+        for tmpl in templates:
+            prompt_embs.append(enc.encode_text([tmpl.format(lbl) for lbl in labels]))
+        prompt_stack = np.stack(prompt_embs, axis=0)  # [T, N, D]
+        fused_embs = []
+        for i, _lbl in enumerate(labels):
+            label_prompts = prompt_stack[:, i, :]
+            fused_embs.append(label_prompts[_max_prompt_index(label_prompts)])
+        embs = np.asarray(fused_embs, dtype=np.float32)
+        if templates != DEFAULT_PROMPT_ENSEMBLE:
+            print(f"    prompt-max {attr!r} labels with {len(templates)} templates")
         table[attr] = [
             # store the RAW label (the runtime/search use it); only the emb is templated
             {"label": lbl, "emb": [round(float(x), 6) for x in embs[i]]}

@@ -28,14 +28,16 @@ a callable, scored tool.
 | [02 — verify tool](02_implementation-verify-tool.md) | ✅ done | v2 `check_visual_evidence`: runtime text encoder + Dart CLIP tokenizer |
 | [03 — quantization](03_implementation-quantization.md) | ✅ done | on-device int8/fp16 (ConvInteger → fp16 → MatMul-only int8) |
 | [04 — tool calling](04_implementation-tool-calling.md) | 🔧 in progress | agentic loop: native vs custom, thinking mode, tool ordering, runtime bugs |
-| [05 — accuracy tuning](05_implementation-accuracy-tuning.md) | 🔬 open | trait mislabels: prompt templates, few-shot prototypes, Gemma-4 distillation |
+| [05 — accuracy tuning](05_implementation-accuracy-tuning.md) | 🔬 open | trait mislabels: prompt templates, prompt fusion, few-shot prototypes, Gemma-4 distillation |
 
 ## Current state (top of mind)
 
 - Pipeline runs end-to-end on-device: Qwen3 calls `extract_visual_features` →
   DINO returns traits → search → synthesis.
-- **Open problem:** zero-shot trait accuracy — e.g. a lizard scored as "Mollusk &
-  marine invertebrate". Being worked in **stage 05** (`scripts/debug_vision.py`).
+- **Open problem:** zero-shot trait accuracy. We improved `visual_group`
+  materially with prompt templating and then prototypes, but the descriptive
+  traits are still weak and repetitive across species. Being worked in
+  **stage 05** (`scripts/debug_vision.py`, `scripts/eval_combined_vision.py`).
 
 ## Code & tooling pointers
 - Runtime: `lib/services/vision_runtime.dart`, `clip_tokenizer.dart`,

@@ -89,6 +89,34 @@ scored as "Mollusk") **without rebuilding the app**. Two levers:
     --attrs visual_group,color --topk 8 --template "a photo of a {}"
 ```
 
+### `build_prototypes.py` — build `visual_group` prototypes
+Computes a frozen prototype vector per `visual_group` from labeled images in the
+sibling `sirkulab-mero-data` repo. It now auto-sweeps a few aggregation
+strategies, keeps the best `visual_group` eval score, and writes the protobuf
+prototype asset plus the eval report. This is the training-free path for the
+`visual_group` field discussed in `docs/smaller-footprint-pipeline/05_implementation-accuracy-tuning.md`.
+
+```bash
+.venv-export/bin/python scripts/build_prototypes.py
+#   --data-repo ../sirkulab-mero-data
+#   --max-per-group 8
+#   --strategy auto|mean|medoid|trimmed_90|trimmed_80|trimmed_70|topk_5
+#   --output assets/models/visual_group_prototypes.pb
+```
+
+### `eval_combined_vision.py` — evaluate the shipped vision output
+Scores the actual app mix: text embeddings for the non-`visual_group` traits and
+protobuf prototypes for `visual_group`. It also runs the same SQLite reranker
+the app uses and reports rank-1 / rank-5 / MRR, plus a text-only `visual_group`
+baseline, then writes per-image results and a summary note to the sibling data
+repo.
+
+```bash
+.venv-export/bin/python scripts/eval_combined_vision.py
+#   --data-repo ../sirkulab-mero-data
+#   --limit 40
+```
+
 ### `compare_pooling.py` — pooling diagnostic (design tool)
 Compares DINO single-vector poolings (`mean` / `cls` / `cls_sim_w`) on real
 photos — the evidence behind the shipped CLS-saliency choice

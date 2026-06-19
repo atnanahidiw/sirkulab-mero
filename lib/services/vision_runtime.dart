@@ -28,6 +28,7 @@ class VisionRuntime {
   VisionRuntime({
     this.modelAsset = 'assets/models/dino_image_encoder.onnx',
     this.attributeEmbeddingsAsset = 'assets/models/dino_attribute_embeddings.json',
+    this.visualGroupPrototypesAsset = 'assets/models/visual_group_prototypes.pb',
     this.textModelAsset = 'assets/models/dino_text_encoder.onnx',
     ClipTokenizer? tokenizer,
   }) : _tokenizer = tokenizer ?? ClipTokenizer();
@@ -40,6 +41,10 @@ class VisionRuntime {
   /// SAME model's text encoder. JSON shape:
   /// `{ "color": [{"label": "orange", "emb": [..]}, ..], "pattern": [..], .. }`
   final String attributeEmbeddingsAsset;
+
+  /// Frozen `visual_group` prototype vectors, serialized as protobuf bytes.
+  /// If unavailable, the runtime falls back to the text-embedding baseline.
+  final String visualGroupPrototypesAsset;
 
   /// Bundled int8 text-encoder ONNX (CLIP text → Talk2DINO projection). Powers
   /// `check_visual_evidence` — embeds arbitrary claim text at runtime.
@@ -63,13 +68,17 @@ class VisionRuntime {
   OrtSession? _textSession;
   // attribute → ordered list of (label, L2-normalised embedding)
   final Map<String, List<_LabelEmbedding>> _attributeVocab = {};
+  final List<_LabelEmbedding> _visualGroupPrototypes = [];
 
   // Per-photo image-embedding cache so extract + multiple verify calls on the
   // same photo reuse one forward pass.
   Uint8List? _cachedImageKey;
   Float32List? _cachedImageEmbedding;
 
-  bool get isLoaded => _session != null && _attributeVocab.isNotEmpty;
+  bool get isLoaded =>
+      _session != null &&
+      _attributeVocab.isNotEmpty &&
+      _visualGroupPrototypes.isNotEmpty;
 
   /// Whether `check_visual_evidence` (the text-encoder path) is available. If the
   /// text encoder fails to load, the runtime still serves v1 (`extract`).
@@ -78,6 +87,7 @@ class VisionRuntime {
   Future<void> loadFromAssets() async {
     _session ??= await OnnxRuntime().createSessionFromAsset(modelAsset);
     if (_attributeVocab.isEmpty) await _loadAttributeVocab();
+    if (_visualGroupPrototypes.isEmpty) await _loadVisualGroupPrototypes();
     // v2 text encoder + tokenizer — best-effort; degrade to v1 if unavailable.
     if (_textSession == null) {
       try {
@@ -107,6 +117,22 @@ class VisionRuntime {
     }
   }
 
+  Future<void> _loadVisualGroupPrototypes() async {
+    final raw = await rootBundle.load(visualGroupPrototypesAsset);
+    final parsed = _parseVisualGroupPrototypes(
+      raw.buffer.asUint8List(raw.offsetInBytes, raw.lengthInBytes),
+    );
+    if (parsed.isEmpty) {
+      throw StateError(
+        'VisionRuntime: no visual_group prototypes found in '
+        '$visualGroupPrototypesAsset',
+      );
+    }
+    _visualGroupPrototypes
+      ..clear()
+      ..addAll(parsed);
+  }
+
   /// Tool 1 — observe the photo: returns the best-matching label per attribute,
   /// as the structured trait text `search_similar_features` consumes.
   /// [focus] restricts which attributes to (re)examine on a retry.
@@ -121,7 +147,12 @@ class VisionRuntime {
 
     final result = <String, String>{};
     for (final attr in attributes) {
-      final labels = _attributeVocab[attr]!;
+      final labels = attr == 'visual_group'
+          ? _visualGroupPrototypes
+          : _attributeVocab[attr]!;
+      if (labels.isEmpty) {
+        throw StateError('VisionRuntime: no labels loaded for $attr');
+      }
       var bestLabel = '';
       var bestScore = -2.0;
       for (final le in labels) {
@@ -187,6 +218,7 @@ class VisionRuntime {
     _session = null;
     _textSession = null;
     _attributeVocab.clear();
+    _visualGroupPrototypes.clear();
   }
 
   // ── internals ──
@@ -263,10 +295,148 @@ class VisionRuntime {
     }
     return s;
   }
+
+  List<_LabelEmbedding> _parseVisualGroupPrototypes(Uint8List bytes) {
+    final reader = _ProtoReader(bytes);
+    final out = <_LabelEmbedding>[];
+    while (!reader.isEof) {
+      final tag = reader.readTag();
+      final fieldNo = tag >> 3;
+      final wireType = tag & 0x7;
+      if (fieldNo == 2 && wireType == 2) {
+        out.add(_parsePrototype(reader.readBytes()));
+        continue;
+      }
+      reader.skipField(wireType);
+    }
+    return out;
+  }
+
+  _LabelEmbedding _parsePrototype(Uint8List bytes) {
+    final reader = _ProtoReader(bytes);
+    String label = '';
+    final emb = <double>[];
+    while (!reader.isEof) {
+      final tag = reader.readTag();
+      final fieldNo = tag >> 3;
+      final wireType = tag & 0x7;
+      switch (fieldNo) {
+        case 1:
+          label = reader.readString();
+          break;
+        case 3:
+          if (wireType == 2) {
+            emb.addAll(reader.readPackedFloats());
+          } else if (wireType == 5) {
+            emb.add(reader.readFloat());
+          } else {
+            reader.skipField(wireType);
+          }
+          break;
+        default:
+          reader.skipField(wireType);
+      }
+    }
+    return _LabelEmbedding(label, _l2normalize(Float32List.fromList(emb)));
+  }
 }
 
 class _LabelEmbedding {
   const _LabelEmbedding(this.label, this.embedding);
   final String label;
   final Float32List embedding;
+}
+
+class _ProtoReader {
+  _ProtoReader(Uint8List bytes)
+      : _bytes = bytes,
+        _data = ByteData.sublistView(bytes);
+
+  final Uint8List _bytes;
+  final ByteData _data;
+  int _offset = 0;
+
+  bool get isEof => _offset >= _bytes.length;
+
+  int readTag() => readVarint();
+
+  int readVarint() {
+    var result = 0;
+    var shift = 0;
+    while (true) {
+      if (_offset >= _bytes.length) {
+        throw const FormatException('Unexpected end of protobuf varint');
+      }
+      final b = _data.getUint8(_offset++);
+      result |= (b & 0x7f) << shift;
+      if ((b & 0x80) == 0) return result;
+      shift += 7;
+      if (shift > 63) {
+        throw const FormatException('Protobuf varint overflow');
+      }
+    }
+  }
+
+  Uint8List readBytes() {
+    final length = readVarint();
+    final start = _offset;
+    final end = start + length;
+    if (end > _bytes.length) {
+      throw const FormatException('Truncated protobuf length-delimited field');
+    }
+    _offset = end;
+    return Uint8List.sublistView(_bytes, start, end);
+  }
+
+  String readString() => utf8.decode(readBytes(), allowMalformed: true);
+
+  double readFloat() {
+    if (_offset + 4 > _bytes.length) {
+      throw const FormatException('Truncated protobuf float');
+    }
+    final value = _data.getFloat32(_offset, Endian.little);
+    _offset += 4;
+    return value;
+  }
+
+  List<double> readPackedFloats() {
+    final bytes = readBytes();
+    if (bytes.lengthInBytes % 4 != 0) {
+      throw const FormatException('Packed float field has invalid length');
+    }
+    final data = ByteData.sublistView(bytes);
+    final out = <double>[];
+    for (var offset = 0; offset < bytes.lengthInBytes; offset += 4) {
+      out.add(data.getFloat32(offset, Endian.little));
+    }
+    return out;
+  }
+
+  double readDouble() {
+    if (_offset + 8 > _bytes.length) {
+      throw const FormatException('Truncated protobuf double');
+    }
+    final value = _data.getFloat64(_offset, Endian.little);
+    _offset += 8;
+    return value;
+  }
+
+  void skipField(int wireType) {
+    switch (wireType) {
+      case 0:
+        readVarint();
+        return;
+      case 1:
+        _offset += 8;
+        return;
+      case 2:
+        _offset += readVarint();
+        return;
+      case 5:
+        _offset += 4;
+        return;
+      default:
+        throw FormatException('Unsupported protobuf wire type: $wireType');
+    }
+  }
 }

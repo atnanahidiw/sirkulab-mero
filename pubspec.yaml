@@ -54,6 +54,8 @@ flutter:
     # label-text embeddings. Produced offline; see docs/smaller-footprint-pipeline/.
     - assets/models/dino_image_encoder.onnx
     - assets/models/dino_attribute_embeddings.json
+    - assets/models/visual_group_prototypes.pb
+    - assets/models/visual_group_prototypes.proto
     # v2 check_visual_evidence — runtime text encoder + CLIP BPE tokenizer
     - assets/models/dino_text_encoder.onnx
     - assets/models/clip_vocab.json
