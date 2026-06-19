@@ -180,13 +180,6 @@ class ModelService extends ChangeNotifier {
   bool get isInitialized => _downloadService.isInitialized;
   bool get isLoading => _downloadService.isLoading;
   bool get isModelLoaded => _downloadService.isModelLoaded && _vision.isLoaded;
-
-  /// Vision diagnostics for the UI: did the image encoder load, which backend
-  /// (int8/fp16/none), and is claim-verification (text encoder) available.
-  bool get visionLoaded => _vision.isLoaded;
-  String get visionBackend => _vision.imageBackend;
-  bool get visionCanVerify => _vision.canVerify;
-
   String get status => _downloadService.status;
   String? get error => _downloadService.error;
   double? get downloadProgress => _downloadService.downloadProgress;
@@ -286,6 +279,15 @@ class ModelService extends ChangeNotifier {
     }
 
     try {
+      // Tool ordering: the model must OBSERVE before it can SEARCH. A 0.6B model
+      // otherwise jumps straight to search_similar_features with all-"none"
+      // traits (it can't see the photo). This flag gates search until extract
+      // has run at least once. `observed` holds the latest real traits so the
+      // search can backfill fields the model fails to copy (it tends to pass
+      // "unknown" even right after observing).
+      var hasObserved = false;
+      final observed = <String, String>{};
+
       // Vision tool — the text-only LLM "observes" the photo through this.
       final extractSpec = ToolSpec(
         name: ChatPrompts.extractVisualFeaturesToolDef['name'] as String,
@@ -297,9 +299,19 @@ class ModelService extends ChangeNotifier {
           final focus = (args['focus'] as List?)?.cast<String>();
           final traits =
               await _vision.extractVisualFeatures(imageBytes, focus: focus);
+          hasObserved = true;
+          observed.addAll(traits); // merge so focused re-observes update fields
           return jsonEncode(traits);
         },
       );
+
+      // A search value is "missing" if blank or a filler the model emits when it
+      // fails to copy the observed trait → fall back to the real observed value.
+      String trait(Map<String, dynamic> args, String argKey, String traitKey) {
+        final v = (args[argKey] as String?)?.trim() ?? '';
+        const filler = {'', 'none', 'unknown', 'n/a', 'na', 'null'};
+        return filler.contains(v.toLowerCase()) ? (observed[traitKey] ?? '') : v;
+      }
 
       // Verify tool (v2) — score arbitrary claims against the photo via the
       // runtime text encoder. Only advertised when the text encoder loaded, so
@@ -329,14 +341,24 @@ class ModelService extends ChangeNotifier {
         parameters: ChatPrompts.speciesSearchToolDef['parameters']
             as Map<String, dynamic>,
         execute: (args) async {
+          // Guardrail: refuse to search before the photo has been observed, so
+          // an all-"none" search can't short-circuit the workflow.
+          if (!hasObserved) {
+            return 'ERROR: You have not observed the photo yet. Call '
+                'extract_visual_features FIRST to get the real visual traits, '
+                'then call search_similar_features with those values (never "none").';
+          }
+          // Backfill visual traits the model failed to copy from the observation
+          // (it often passes "unknown"). Taxonomy hints are the model's own
+          // inference, so those are left as-is.
           final results = await _speciesService.searchSimilarByFeatures(
-            color: args['color'] as String? ?? '',
-            bodyShape: args['body_shape'] as String? ?? '',
-            distinctiveMarks: args['distinctive_marks'] as String? ?? '',
-            texture: args['texture'] as String? ?? '',
-            sizeClass: args['size_class'] as String? ?? '',
-            pattern: args['pattern'] as String? ?? '',
-            visualGroup: args['visualGroup'] as String? ?? '',
+            color: trait(args, 'color', 'color'),
+            bodyShape: trait(args, 'body_shape', 'body_shape'),
+            distinctiveMarks: trait(args, 'distinctive_marks', 'distinctive_marks'),
+            texture: trait(args, 'texture', 'texture'),
+            sizeClass: trait(args, 'size_class', 'size_class'),
+            pattern: trait(args, 'pattern', 'pattern'),
+            visualGroup: trait(args, 'visualGroup', 'visual_group'),
             taxClass: args['taxClass'] as String? ?? '',
             taxOrder: args['taxOrder'] as String? ?? '',
             taxFamily: args['taxFamily'] as String? ?? '',
@@ -387,7 +409,13 @@ class ModelService extends ChangeNotifier {
           if (_vision.canVerify) checkSpec,
           searchSpec,
         ],
-        useNativeToolCalling: false,
+        // Native function calling: Qwen3 emits real tool calls via its chat
+        // template, avoiding the conflicting custom-JSON envelope that made the
+        // model skip the tools and emit an immediate "Unknown" answer.
+        useNativeToolCalling: true,
+        // Thinking mode: lets Qwen3 plan the multi-step workflow (observe →
+        // search → verify) instead of shortcutting — the 0.6B's planning lever.
+        enableThinking: true,
         temperature: 0.6,
         topK: 100,
         topP: 0.9,

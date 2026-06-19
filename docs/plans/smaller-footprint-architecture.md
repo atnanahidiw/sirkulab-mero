@@ -229,7 +229,7 @@ Step-up option if reasoning is insufficient: Qwen2.5-1.5B (1.46 GB) + DINO ≈ 1
 - **Reasoning core:** **Qwen3-0.6B** (0.47 GB) on `flutter_gemma` — smaller than Gemma 1B, stronger tool calling, reasoning mode, working GPU. *(There is no small Gemma 4 to use here; the smallest Gemma 4 is E2B at 2.58 GB.)*
 - **Vision:** **a zero-shot visual-feature extractor — dino.txt preferred (iNaturalist-SOTA), MobileCLIP as the turnkey prototype/fallback** — int8 ONNX (~12–22 MB, bundled in assets), running on **`flutter_onnxruntime`** (CoreML on iOS, NNAPI on Android). *(Plain DINOv2 can't be used — it has no text encoder; the text-aligned dino.txt/Talk2DINO is required.)* It replaces only the model's "look & describe" step, producing the trait *text* that feeds the **unchanged** text-based search. Knowledge-guided, open-set, and its text↔image scoring is what reproduces the iterative "fix-on-retry."
 - **Unchanged:** SQLite DB grounding, **`search_similar_features` (FTS5 + Sørensen–Dice text matching)**, 4-pass cap, confidence thresholds, offline-first. No reference-image dataset.
-- **Outcome:** ~2.58 GB → ~0.5–0.6 GB planned (the shipped vision encoder is fp16, larger — see §8.3.1/§8.3.12), satisfies all three writeup objections, and improves tool-call reliability, latency, and explainability.
+- **Outcome:** ~2.58 GB → ~0.7 GB on-device (~0.47 GB LLM download + ~225 MB bundled vision assets; see §8.3.1/§8.3.10), satisfies all three writeup objections, and improves tool-call reliability, latency, and explainability.
 
 ---
 
@@ -322,7 +322,7 @@ shipped assets, and the problems that surfaced once we touched the real models
 
 | Artifact | Size | Notes |
 | --- | --- | --- |
-| `assets/models/dino_image_encoder.onnx` | ~173 MB (fp16) | DINOv2 **ViT-B/14-reg** image encoder with pooling baked into the graph |
+| `assets/models/dino_image_encoder.onnx` | ~92 MB (dynamic int8) | DINOv2 **ViT-B/14-reg** image encoder with pooling baked into the graph |
 | `assets/models/dino_text_encoder.onnx` | ~129 MB (fp16) | CLIP text → Talk2DINO projection (v2 `check_visual_evidence`) |
 | `assets/models/dino_attribute_embeddings.json` | ~2.5 MB | 7 attributes × controlled-vocab labels, each with its text embedding |
 | `assets/models/clip_vocab.json` + `clip_merges.txt` | ~1.5 MB | CLIP BPE tables for the Dart tokenizer |
@@ -333,11 +333,10 @@ Binaries are **git-ignored** (`assets/models/`) and regenerated on demand —
 .venv-export/bin/python scripts/export_vision_model.py`.
 
 Two size revisions from the plan: (1) §6 budgeted a ViT-**S** (~22 MB int8), but
-the text-aligned weights only exist for ViT-**B**; (2) the precision is **fp16,
-not int8** — int8 is unusable here (§8.3.10). Net bundled vision assets ≈ **305 MB
-fp16**. Still well under the ~474 MB LLM + the 2.58 GB model this replaces, though
-notably larger than the int8 budget; `--quant dynamic` (~½) is a smaller on-device
-candidate pending `MatMulInteger` support (§8.3.10).
+the text-aligned weights only exist for ViT-**B**; (2) precision is per-encoder —
+**image = dynamic int8 (~92 MB, verified on-device), text = fp16 (~129 MB)** — see
+§8.3.10. Net bundled vision assets ≈ **225 MB**, well under the ~474 MB LLM + the
+2.58 GB model this replaces.
 
 #### 8.3.2 Challenge — Talk2DINO is a *segmentation* model, not a whole-image classifier
 
@@ -437,7 +436,7 @@ attribute path (labels precomputed offline), arbitrary claims must be embedded
 **at runtime**, which needs the text encoder *and* a tokenizer on-device.
 
 **What we added**
-- **`dino_text_encoder.onnx`** (~66 MB int8) — exported wrapper around CLIP text
+- **`dino_text_encoder.onnx`** (~129 MB fp16) — exported wrapper around CLIP text
   + `project_clip_txt` (the same path as the attribute embeddings, just with
   tokenisation lifted out). Input `token_ids` int32 `[1,77]` → 768-d L2-norm in
   DINO space. CLIP loads fp16; we cast to fp32 before export so the text encoder
@@ -471,9 +470,9 @@ scoring is correctly discriminative — tiger "a large striped cat" **+0.34** �
 "an aquatic fish" +0.02; panda "a bear-like body" **+0.29** ≫ "green leafy
 plant" **−0.02**.
 
-**Size.** +66 MB (text encoder) + ~1.5 MB (vocab/merges) on top of the 90 MB
-image encoder — ~158 MB of bundled vision assets total, still far under the
-2.58 GB model this architecture replaces.
+**Size.** ~129 MB (fp16 text encoder) + ~1.5 MB (vocab/merges) on top of the
+~92 MB int8 image encoder — ~225 MB of bundled vision assets total, still far
+under the 2.58 GB model this architecture replaces.
 
 #### 8.3.9 Covering data beyond the curated DB (answering constraint §2)
 
@@ -536,33 +535,27 @@ Working through the quantization options showed int8 is a dead end for these
 | --- | --- | --- | --- | --- |
 | dynamic int8 (full) | ❌ | good | ~90 MB | emits `ConvInteger` (no kernel) |
 | static int8 (QDQ) | ✅ | **destroyed** | ~88 MB | int8 *activations* collapse the 768-d cosine geometry — tiger→"green", text parity ≈ 0 |
-| dynamic int8, MatMul-only | ✅* | good (~0.99) | ~92 MB | excludes Conv → `MatMulInteger`; *needs that kernel on the target build |
-| **fp16** ✅ (shipped) | ✅ | ~1.000 | ~173 MB | standard `Conv`/`MatMul` + `Cast`; no integer ops |
+| **dynamic int8, MatMul-only** ✅ (shipped) | ✅ **verified** | good (~0.99) | ~92 MB | excludes Conv → `MatMulInteger`, which the ARM build *does* implement |
+| fp16 | ✅ | ~1.000 | ~173 MB | standard `Conv`/`MatMul` + `Cast`; safe but ~2× the size |
 
 Key insight: dynamic int8 keeps **activations in fp32** (so cosine angles
-survive) but produces `ConvInteger`/`MatMulInteger`; static int8 uses the
-mobile-supported `QLinearConv`/`QLinearMatMul` but **quantises activations**,
-which is exactly what destroys a normalised-embedding model. There's no int8 mode
-that is both supported *and* accurate here.
+survive) but full dynamic quant produces `ConvInteger`, which ORT-Android lacks;
+static int8 uses the mobile-supported `QLinearConv`/`QLinearMatMul` but
+**quantises activations**, which destroys a normalised-embedding model.
 
-**Solution — fp16.** `float16` weights with `keep_io_types` (fp32 I/O, so the Dart
-side is unchanged) and `Cast` nodes wherever a fp16 kernel is missing — so it runs
-on any ORT build and stays numerically ~lossless (validated cosine 1.000, labels
-== fp32). One gotcha: `onnxconverter_common`'s converter left mixed-type `Div`
-nodes that ORT rejects at load; **`onnxruntime.transformers`'s converter** inserts
-the casts correctly. The exporter's `--quant` defaults to `fp16`; `dynamic`
-(MatMul-only, ~½ size) is offered as a smaller candidate to A/B on-device.
+**Solution — dynamic int8, MatMul-only (image) + fp16 (text).** Excluding the lone
+patch-embed Conv from dynamic quant drops `ConvInteger` and emits only
+`MatMulInteger` — and an on-device test (Settings → Model info indicator)
+**confirmed the ARM build implements `MatMulInteger`**, so the ~92 MB int8 image
+encoder loads and is accurate. The **text** encoder ships **fp16** (~129 MB):
+dynamic int8 is *larger* for the text transformer, and static int8 collapses it.
+fp16 stayed available as a no-risk fallback (`onnxruntime.transformers`'s
+converter, not `onnxconverter_common`, which left mixed-type `Div` nodes ORT
+rejects). Exporter defaults: `--image-quant dynamic --text-quant fp16`.
 
-**On-device A/B + indicator.** To find the smallest mode that *actually loads* on
-the target, `VisionRuntime` accepts an ordered list of image-encoder assets and
-tries each in turn: `dino_image_encoder.int8.onnx` (MatMul-only dynamic, ~92 MB)
-first, then `dino_image_encoder.onnx` (fp16) as the guaranteed fallback —
-whichever loads wins, and the active backend (`int8`/`fp16`) is surfaced in
-**Settings → Model info → "Vision engine"** (with verify availability). The
-int8 load failure, if any, arrives as a catchable `PlatformException`, so the
-fallback is clean. A production build bundles just one precision. (The dynamic
-*text* encoder came out larger than fp16, so only the image encoder has an int8
-variant.)
+> The A/B probe + the "Vision engine" settings indicator that confirmed
+> `MatMulInteger` support were removed once verified; the runtime now loads the
+> single int8 image encoder directly.
 
 **Follow-up (not yet done):** the AND-gate boot dependency means any future vision
 failure bricks startup — consider degrading to a vision-disabled mode instead.

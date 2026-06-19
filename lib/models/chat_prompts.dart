@@ -180,6 +180,8 @@ STEP 6: If after 4 attempts no good match is found, output your best guess and e
 </workflow_protocol>
 
 <rules>
+- Your FIRST tool call MUST be `extract_visual_features`. You are FORBIDDEN from calling `search_similar_features` before `extract_visual_features` has returned real traits (the search tool will reject you otherwise).
+- You are FORBIDDEN from passing "none", "unknown", or empty values to `search_similar_features`. Use only the actual trait values returned by `extract_visual_features`.
 - You are FORBIDDEN from providing a final JSON identification until AFTER you have received data from search_similar_features.
 - You are FORBIDDEN from describing any visual trait that did not come from a vision tool.
 - DO NOT default to "Unknown" or "N/A" if a best-fit species can be determined.
@@ -197,7 +199,9 @@ STEP 6: If after 4 attempts no good match is found, output your best guess and e
 ''';
 
   static const String identifyInputPrompt = '''
-Identify the species in the photo following the workflow protocol. You cannot see the photo directly — begin by calling `extract_visual_features` to observe it, then call `search_similar_features` with what it reports.
+Identify the species in the photo following the workflow protocol.
+
+YOUR FIRST TOOL CALL MUST BE `extract_visual_features` (with empty arguments {}). You cannot see the photo — it is the ONLY way to observe it. Do NOT call `search_similar_features` first; do NOT invent traits. Wait for `extract_visual_features` to return the real traits, THEN call `search_similar_features` using those exact values. Never pass "none" or empty trait values to the search.
 
 CRITICAL: If the search returns zero matches, do not loop or repeat the exact same parameters. Treat it as conclusive evidence that your current classification choice is incorrect, re-observe the ambiguous attributes via `extract_visual_features`, and pivot to an alternative taxonomic family or genus completely.
 ''';

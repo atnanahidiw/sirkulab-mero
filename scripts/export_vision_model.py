@@ -427,11 +427,16 @@ def main():
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--db", default="assets/data/species_data.sqlite")
     ap.add_argument("--out", default="assets/models")
-    ap.add_argument("--quant", choices=QUANT_MODES, default="fp16",
-                    help="quantization: fp16=accurate + runs on-device (default); "
-                         "qdq=static int8 but destroys embedding accuracy; "
-                         "dynamic=accurate but BROKEN on ORT-Android (ConvInteger); "
-                         "none=fp32")
+    # Per-encoder defaults pick each encoder's best option:
+    #   image = dynamic int8 (MatMul-only → MatMulInteger, verified on ORT-Android;
+    #           ~92 MB — far smaller than fp16's ~173 MB, no big embedding table)
+    #   text  = fp16 (~129 MB, lossless). dynamic int8 is LARGER here (~141 MB):
+    #           CLIP's 49k-token embedding is a Gather, not a MatMul, so MatMul-only
+    #           quant leaves it fp32 while fp16 halves it.
+    ap.add_argument("--image-quant", choices=QUANT_MODES, default="dynamic",
+                    help="image encoder precision (default: dynamic int8, verified on ORT-Android)")
+    ap.add_argument("--text-quant", choices=QUANT_MODES, default="fp16",
+                    help="text encoder precision (default: fp16; smaller AND more accurate than int8 here)")
     ap.add_argument("--hf-model", default=HF_MODEL)
     args = ap.parse_args()
 
@@ -443,14 +448,14 @@ def main():
     print("[2/4] building attribute vocabularies from DB …")
     vocab = build_vocabularies(args.db)
 
-    print(f"[3/5] exporting image encoder → ONNX (quant={args.quant}) …")
-    export_onnx(enc, args.out, args.quant)
+    print(f"[3/5] exporting image encoder → ONNX (quant={args.image_quant}) …")
+    export_onnx(enc, args.out, args.image_quant)
 
     print("[4/5] encoding attribute labels → embeddings …")
     export_embeddings(enc, vocab, args.out)
 
-    print("[5/5] exporting text encoder + tokenizer (v2: check_visual_evidence) …")
-    export_text_onnx(enc, args.out, args.quant)
+    print(f"[5/5] exporting text encoder (quant={args.text_quant}) + tokenizer …")
+    export_text_onnx(enc, args.out, args.text_quant)
     dump_tokenizer(enc, args.out)
 
     print("\nDONE. Update lib/services/vision_runtime.dart constants to match:")

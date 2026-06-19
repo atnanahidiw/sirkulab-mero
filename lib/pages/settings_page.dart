@@ -284,23 +284,6 @@ class SettingsPage extends StatelessWidget {
               )),
               Text(l10n.settingsCapabilityInference),
               const SizedBox(height: 8),
-              const Text('Vision engine',
-                  style: TextStyle(fontWeight: FontWeight.bold)),
-              _statusLine(
-                ok: modelService.visionLoaded,
-                text: modelService.visionLoaded
-                    ? 'Image encoder: ${modelService.visionBackend}'
-                        '${modelService.visionBackend == 'int8' ? ' (MatMulInteger OK)' : ''}'
-                    : 'Image encoder: failed to load',
-              ),
-              _statusLine(
-                ok: modelService.visionCanVerify,
-                neutralWhenOff: true,
-                text: modelService.visionCanVerify
-                    ? 'Verify (text encoder): available'
-                    : 'Verify (text encoder): off',
-              ),
-              const SizedBox(height: 8),
               Text(l10n.settingsNote,
                   style: const TextStyle(fontWeight: FontWeight.bold)),
               Text(l10n.settingsOfflineNote),
@@ -312,31 +295,6 @@ class SettingsPage extends StatelessWidget {
             onPressed: () => Navigator.pop(context),
             child: const Text('OK'),
           ),
-        ],
-      ),
-    );
-  }
-
-  /// Small "✓ / ✗" status row used by the vision-engine indicator.
-  Widget _statusLine({
-    required bool ok,
-    required String text,
-    bool neutralWhenOff = false,
-  }) {
-    final color = ok
-        ? Colors.green
-        : (neutralWhenOff ? Colors.grey : Colors.red);
-    final icon = ok
-        ? Icons.check_circle
-        : (neutralWhenOff ? Icons.remove_circle_outline : Icons.error);
-    return Padding(
-      padding: const EdgeInsets.only(top: 2),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Icon(icon, size: 16, color: color),
-          const SizedBox(width: 6),
-          Expanded(child: Text(text)),
         ],
       ),
     );
