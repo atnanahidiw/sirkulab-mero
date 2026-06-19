@@ -74,11 +74,26 @@ Hard checks: assets present · CLIP tokenizer ↔ `clip.tokenize` exact (9/9) ·
 image embedding dim 768 & finite · **int8 top-1 labels == fp32** · text-encoder
 torch↔ONNX parity ≥ threshold · true claims outscore a wrong control claim.
 
+### `debug_vision.py` — tune zero-shot traits on a real photo
+Runs the shipped pipeline (saliency-pooled image ↔ attribute label text) on one
+image and prints ranked predictions, so you can fix mislabels (e.g. a lizard
+scored as "Mollusk") **without rebuilding the app**. Two levers:
+- `--template "a photo of a {}"` / `--compare-templates` — CLIP-style prompt
+  templating (usually beats raw category text). If a template wins, bake it into
+  `export_vision_model.py:export_embeddings` and re-export.
+- `--probe "a lizard|a sea slug|a reptile"` — score arbitrary candidate wordings.
+
+```bash
+.venv-export/bin/python scripts/debug_vision.py --image photo.jpg --compare-templates
+.venv-export/bin/python scripts/debug_vision.py --image photo.jpg \
+    --attrs visual_group,color --topk 8 --template "a photo of a {}"
+```
+
 ### `compare_pooling.py` — pooling diagnostic (design tool)
 Compares DINO single-vector poolings (`mean` / `cls` / `cls_sim_w`) on real
 photos — the evidence behind the shipped CLS-saliency choice
-(`docs/plans/smaller-footprint-architecture.md` §10.3). Re-run it if you revisit
-pooling. Not a pass/fail check; it just prints top labels per attribute.
+(`docs/smaller-footprint-pipeline/01_implementation-vision-export.md`). Re-run it if you
+revisit pooling. Not a pass/fail check; it just prints top labels per attribute.
 
 ```bash
 .venv-export/bin/python scripts/compare_pooling.py
@@ -104,4 +119,4 @@ python scripts/build_species_db.py
 
 The species DB (`assets/data/species_data.sqlite`) is committed; the vision
 assets (`assets/models/`) are git-ignored — regenerate them on demand. See
-`assets/models/README.md` and `docs/plans/smaller-footprint-architecture.md`.
+`assets/models/README.md` and `docs/smaller-footprint-pipeline/`.

@@ -23,7 +23,8 @@ scoring) and exits non-zero on any hard failure.
 >   CLIP's 49k-token embedding is a `Gather`, not a `MatMul`, so MatMul-only quant
 >   leaves it fp32 while fp16 halves it. (static int8/QDQ collapses the geometry.)
 >
-> Defaults: `--image-quant dynamic --text-quant fp16`. See design doc §8.3.10.
+> Defaults: `--image-quant dynamic --text-quant fp16`. See
+> `docs/smaller-footprint-pipeline/03_implementation-quantization.md`.
 
 Outputs (consumed by `lib/services/vision_runtime.dart`):
 
@@ -51,4 +52,5 @@ Outputs (consumed by `lib/services/vision_runtime.dart`):
 After exporting, copy the printed model constants (input/output names, input
 size, mean/std) into `lib/services/vision_runtime.dart`.
 
-See `docs/plans/smaller-footprint-architecture.md` (§3.2, §9) for the full design.
+See `docs/smaller-footprint-pipeline/` (`00_plan.md` for the design;
+`01_implementation-vision-export.md` for this exporter) for the full story.

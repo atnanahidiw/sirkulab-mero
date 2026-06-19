@@ -51,8 +51,7 @@ flutter:
   assets:
     - assets/data/species_data.sqlite
     # Bundled vision model (Talk2DINO, int8 ONNX) + precomputed attribute
-    # label-text embeddings. Produced offline; see
-    # docs/plans/smaller-footprint-architecture.md.
+    # label-text embeddings. Produced offline; see docs/smaller-footprint-pipeline/.
     - assets/models/dino_image_encoder.onnx
     - assets/models/dino_attribute_embeddings.json
     # v2 check_visual_evidence — runtime text encoder + CLIP BPE tokenizer

@@ -2,7 +2,7 @@
 """Compare DINO single-vector pooling strategies for zero-shot attributes.
 
 This is the diagnostic behind the design choice in
-`docs/plans/smaller-footprint-architecture.md` §10.3: Talk2DINO is a *dense*
+`docs/smaller-footprint-pipeline/01_implementation-vision-export.md` (Challenge 2): Talk2DINO is a *dense*
 model, so reducing its patch tokens to one vector needs a pooling. We compare
 three exportable options against the precomputed attribute vocabulary on real
 photos, so the winner is picked from evidence rather than intuition:
