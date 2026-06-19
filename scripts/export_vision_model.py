@@ -82,6 +82,17 @@ INPUT_SIZE = 518
 # HF model bundling DINOv2 backbone + CLIP + the text projection head.
 HF_MODEL = "lorebianchi98/Talk2DINO-ViTB"
 
+# Prompt template applied to label TEXT before embedding (the stored label string
+# stays raw — only the embedding changes). Templating CATEGORY labels improves
+# zero-shot: measured +10.3 pts on visual_group with "a close-up photo of a {}"
+# (scripts/eval_vision.py; docs/.../05_implementation-accuracy-tuning.md).
+# Descriptive attributes (color/texture/…) are full phrases — templating breaks
+# them grammatically — so they stay raw "{}".
+ATTR_TEMPLATES = {
+    "visual_group": "a close-up photo of a {}",
+}
+DEFAULT_LABEL_TEMPLATE = "{}"
+
 
 @dataclass
 class VisionEncoder:
@@ -411,8 +422,12 @@ def export_embeddings(enc: VisionEncoder, vocab: dict, out_dir: str) -> str:
     for attr, labels in vocab.items():
         if not labels:
             continue
-        embs = enc.encode_text(labels)  # [N, D], L2-normalised
+        tmpl = ATTR_TEMPLATES.get(attr, DEFAULT_LABEL_TEMPLATE)
+        embs = enc.encode_text([tmpl.format(lbl) for lbl in labels])  # [N, D], L2-norm
+        if tmpl != DEFAULT_LABEL_TEMPLATE:
+            print(f"    templated {attr!r} labels with {tmpl!r}")
         table[attr] = [
+            # store the RAW label (the runtime/search use it); only the emb is templated
             {"label": lbl, "emb": [round(float(x), 6) for x in embs[i]]}
             for i, lbl in enumerate(labels)
         ]
