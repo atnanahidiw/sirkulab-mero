@@ -1,0 +1,164 @@
+# `scripts/` — offline build & validation tools
+
+Python tooling that produces the assets the Flutter app bundles. Nothing here
+runs on-device or at app runtime; these are one-shot generators you run on a dev
+machine, then commit/ship their outputs.
+
+Two asset pipelines live here:
+
+- **Species database** — `build_species_db.py` → `assets/data/species_data.sqlite`
+- **Vision model** (Talk2DINO + tokenizer) — `export_vision_model.py` →
+  `assets/models/*`, checked by `validate_vision_model.py`, with
+  `compare_pooling.py` as the design diagnostic.
+- **Model comparisons** — the per-backbone variants live under
+  `scripts/smaller-footprint-pipeline-v2/`, with explicit compare scripts in
+  `scripts/smaller-footprint-pipeline-v2/comparison/`. The root `compare_*.py`
+  files are temporary shims for the transition.
+
+---
+
+## Setup (vision scripts)
+
+The vision scripts need PyTorch + Talk2DINO deps. Use a throwaway `uv` venv:
+
+```bash
+uv venv .venv-export
+VIRTUAL_ENV=.venv-export uv pip install -r scripts/requirements-export.txt
+```
+
+Run them with that interpreter, e.g. `uv run --python .venv-export/bin/python scripts/<name>.py`.
+First run downloads the Talk2DINO / DINOv2 / CLIP weights from Hugging Face
+(needs network). `build_species_db.py` has **no** third-party deps (stdlib only).
+
+---
+
+## Scripts
+
+### `build_species_db.py` — create the species DB
+Builds the FTS5 SQLite retrieval DB from the per-species JSON files, applying the
+same token normalisation the Dart reranker uses at query time (so the index and
+runtime queries agree).
+
+```bash
+uv run --python .venv-export/bin/python scripts/build_species_db.py \
+  --data-dir assets/data/species_data \
+  --output   assets/data/species_data.sqlite
+```
+Defaults are the paths above, so bare `uv run --python .venv-export/bin/python scripts/build_species_db.py` works.
+
+### `export_vision_model.py` — create the vision assets
+Pulls **Talk2DINO** (`lorebianchi98/Talk2DINO-ViTB`) from HF and writes five
+assets to `assets/models/`:
+
+| Asset | What it is |
+| --- | --- |
+| `image_encoder_talk2dino.onnx` | int8 DINOv2 image encoder, CLS-saliency pooled → 768-d |
+| `attribute_embeddings_talk2dino.json` | per-attribute controlled-vocab label embeddings |
+| `text_encoder_talk2dino.onnx` | int8 CLIP-text→DINO encoder for `check_visual_evidence` |
+| `clip_vocab_talk2dino.json` + `clip_merges_talk2dino.txt` | CLIP BPE tables for the Dart tokenizer |
+
+```bash
+uv run --python .venv-export/bin/python scripts/export_vision_model.py
+#   --hf-model lorebianchi98/Talk2DINO-ViTB   --out assets/models
+#   --db assets/data/species_data.sqlite      --no-quantize
+```
+Prints the model constants (`_inputSize`, `_mean`/`_std`, tensor names) to paste
+into `lib/services/vision_runtime.dart` if they ever change.
+
+### `validate_vision_model.py` — validate the vision assets
+Checks every exported asset the way the app uses it; **exits non-zero on any hard
+failure**. Run it after every export.
+
+```bash
+uv run --python .venv-export/bin/python scripts/validate_vision_model.py
+#   --images tiger=/path/a.jpg,panda=/path/b.jpg   (skip built-in downloads)
+#   --no-download   --models-dir assets/models   --text-parity-min 0.85
+```
+Hard checks: assets present · CLIP tokenizer ↔ `clip.tokenize` exact (9/9) ·
+image embedding dim 768 & finite · **int8 top-1 labels == fp32** · text-encoder
+torch↔ONNX parity ≥ threshold · true claims outscore a wrong control claim.
+
+### `debug_vision.py` — tune zero-shot traits on a real photo
+Runs the shipped pipeline (saliency-pooled image ↔ attribute label text) on one
+image and prints ranked predictions, so you can fix mislabels (e.g. a lizard
+scored as "Mollusk") **without rebuilding the app**. Two levers:
+- `--template "a photo of a {}"` / `--compare-templates` — CLIP-style prompt
+  templating (usually beats raw category text). If a template wins, bake it into
+  `export_vision_model.py:export_embeddings` and re-export.
+- `--probe "a lizard|a sea slug|a reptile"` — score arbitrary candidate wordings.
+
+```bash
+uv run --python .venv-export/bin/python scripts/debug_vision.py --image photo.jpg --compare-templates
+uv run --python .venv-export/bin/python scripts/debug_vision.py --image photo.jpg \
+    --attrs visual_group,color --topk 8 --template "a photo of a {}"
+```
+
+### `build_prototypes.py` — build `visual_group` prototypes
+Computes a frozen prototype vector per `visual_group` from labeled images in the
+sibling `sirkulab-mero-data` repo. It now auto-sweeps a few aggregation
+strategies, keeps the best `visual_group` eval score, and writes the protobuf
+prototype asset plus the eval report. This is the training-free path for the
+`visual_group` field discussed in `docs/smaller-footprint-pipeline/05_implementation-accuracy-tuning.md`.
+
+```bash
+uv run --python .venv-export/bin/python scripts/build_prototypes.py
+#   --data-repo ../sirkulab-mero-data
+#   --max-per-group 8
+#   --strategy auto|mean|medoid|trimmed_90|trimmed_80|trimmed_70|topk_5
+#   --output assets/models/visual_group_prototypes.pb
+```
+
+### `eval_combined_vision.py` — evaluate the shipped vision output
+Scores the actual app mix: text embeddings for the non-`visual_group` traits and
+protobuf prototypes for `visual_group`. It also runs the same SQLite reranker
+the app uses and reports rank-1 / rank-5 / MRR, plus a text-only `visual_group`
+baseline, then writes per-image results and a summary note to the sibling data
+repo.
+
+```bash
+uv run --python .venv-export/bin/python scripts/eval_combined_vision.py
+#   --data-repo ../sirkulab-mero-data
+#   --limit 40
+```
+
+### `compare_pooling.py` — pooling diagnostic (design tool)
+Compares DINO single-vector poolings (`mean` / `cls` / `cls_sim_w`) on real
+photos — the evidence behind the shipped CLS-saliency choice
+(`docs/smaller-footprint-pipeline/01_implementation-vision-export.md`). Re-run it if you
+revisit pooling. Not a pass/fail check; it just prints top labels per attribute.
+
+```bash
+uv run --python .venv-export/bin/python scripts/compare_pooling.py
+#   --attrs color,texture,pattern,visual_group,body_shape   --topk 3
+#   --images tiger=/path/a.jpg,panda=/path/b.jpg
+```
+
+### `smaller-footprint-pipeline/` — model-specific variants
+The model-by-model export, validate, eval, and prototype scripts live in
+`scripts/smaller-footprint-pipeline-v2/`. The comparison scripts live in the nested
+`comparison/` folder, one file per model.
+
+```bash
+uv run --python .venv-export/bin/python scripts/smaller-footprint-pipeline-v2/export_vision_model_bioclip.py
+uv run --python .venv-export/bin/python scripts/smaller-footprint-pipeline-v2/comparison/compare_bioclip.py
+```
+
+### `requirements-export.txt`
+Pinned deps for the exported vision scripts (`transformers<5`, OpenAI CLIP, etc.).
+
+---
+
+## Typical flow
+
+```bash
+# species DB (stdlib only)
+uv run --python .venv-export/bin/python scripts/build_species_db.py
+
+# vision assets (in the uv venv)
+uv run --python .venv-export/bin/python scripts/export_vision_model.py
+uv run --python .venv-export/bin/python scripts/validate_vision_model.py   # must pass
+```
+
+The species DB (`assets/data/species_data.sqlite`) is committed; the vision
+assets (`assets/models/`) are git-ignored — regenerate them on demand. See
+`assets/models/README.md` and `docs/smaller-footprint-pipeline/`.
