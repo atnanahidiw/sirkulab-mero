@@ -11,7 +11,7 @@ import 'clip_tokenizer.dart';
 /// On-device vision tool backing `extract_visual_features` (and, in v2,
 /// `check_visual_evidence`).
 ///
-/// It runs a **text-aligned** DINO image encoder — dino.txt / Talk2DINO
+/// It runs a **text-aligned** DINO image encoder — Talk2DINO
 /// (DINOv2 + text alignment; SOTA on iNaturalist zero-shot) — via ONNX Runtime
 /// ([flutter_onnxruntime]; CoreML on iOS, NNAPI on Android).
 ///
@@ -26,10 +26,10 @@ import 'clip_tokenizer.dart';
 /// `assets/`, so it needs no download and works fully offline.
 class VisionRuntime {
   VisionRuntime({
-    this.modelAsset = 'assets/models/dino_image_encoder.onnx',
-    this.attributeEmbeddingsAsset = 'assets/models/dino_attribute_embeddings.json',
+    this.modelAsset = 'assets/models/image_encoder_talk2dino.onnx',
+    this.attributeEmbeddingsAsset = 'assets/models/attribute_embeddings_talk2dino.json',
     this.visualGroupPrototypesAsset = 'assets/models/visual_group_prototypes.pb',
-    this.textModelAsset = 'assets/models/dino_text_encoder.onnx',
+    this.textModelAsset = 'assets/models/text_encoder_talk2dino.onnx',
     ClipTokenizer? tokenizer,
   }) : _tokenizer = tokenizer ?? ClipTokenizer();
 

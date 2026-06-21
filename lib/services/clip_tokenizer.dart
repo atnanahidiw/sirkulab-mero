@@ -7,13 +7,13 @@ import 'package:flutter/services.dart' show rootBundle;
 /// `SimpleTokenizer` + `clip.tokenize`, so `check_visual_evidence` claims are
 /// tokenised on-device exactly as the exported text encoder expects.
 ///
-/// Vocab (`clip_vocab.json`) and merges (`clip_merges.txt`) are produced by
+/// Vocab (`clip_vocab_talk2dino.json`) and merges (`clip_merges_talk2dino.txt`) are produced by
 /// `scripts/export_vision_model.py` (`dump_tokenizer`). The byte↔unicode map is
 /// recomputed here (it's a deterministic standard table).
 class ClipTokenizer {
   ClipTokenizer({
-    this.vocabAsset = 'assets/models/clip_vocab.json',
-    this.mergesAsset = 'assets/models/clip_merges.txt',
+    this.vocabAsset = 'assets/models/clip_vocab_talk2dino.json',
+    this.mergesAsset = 'assets/models/clip_merges_talk2dino.txt',
     this.contextLength = 77,
   });
 

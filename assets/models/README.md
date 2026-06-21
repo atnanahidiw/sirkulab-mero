@@ -1,4 +1,4 @@
-# Vision model assets ("dino") — produced offline
+# Vision model assets ("talk2dino") — produced offline
 
 These are NOT committed binaries. Generate them once with the exporter and they
 land here automatically:
@@ -28,7 +28,7 @@ scoring) and exits non-zero on any hard failure.
 
 Outputs (consumed by `lib/services/vision_runtime.dart`):
 
-- `dino_image_encoder.onnx` (~92 MB, dynamic int8) — image encoder. **Talk2DINO** (DINOv2 ViT-B/14
+- `image_encoder_talk2dino.onnx` (~92 MB, dynamic int8) — image encoder. **Talk2DINO** (DINOv2 ViT-B/14
   + text alignment) loaded from HF `lorebianchi98/Talk2DINO-ViTB`. Image side is
   DINOv2 `x_norm_patchtokens` **CLS-saliency-weighted pooled** to one 768-d
   vector (each patch weighted by softmax cosine-sim to the CLS token — a
@@ -37,15 +37,15 @@ Outputs (consumed by `lib/services/vision_runtime.dart`):
   is much worse). Exports cleanly and matches the runtime's cosine matching.
   Input 518px, ImageNet mean/std. Plain DINOv2 alone can't be used — no text
   encoder.
-- `dino_attribute_embeddings.json` — per-attribute controlled vocabulary with
+- `attribute_embeddings_talk2dino.json` — per-attribute controlled vocabulary with
   each label's text embedding, derived from the species DB columns (color,
   body_shape, distinctive_marks, texture, size_class, pattern, visual_group) and
   encoded with the model's text encoder. Shape:
   `{ "color": [{"label":"...","emb":[..]}, ..], ... }`.
-- `dino_text_encoder.onnx` (~129 MB fp16) — runtime text encoder (CLIP text →
+- `text_encoder_talk2dino.onnx` (~129 MB fp16) — runtime text encoder (CLIP text →
   Talk2DINO projection → 768-d). Powers `check_visual_evidence`: embeds
   arbitrary claim text on-device. Input `token_ids` int32 `[1,77]`.
-- `clip_vocab.json` + `clip_merges.txt` — CLIP BPE vocab/merges so
+- `clip_vocab_talk2dino.json` + `clip_merges_talk2dino.txt` — CLIP BPE vocab/merges so
   `lib/services/clip_tokenizer.dart` reproduces `clip.tokenize` exactly
   (the text encoder needs the same token IDs CLIP was trained on).
 - `visual_group_prototypes.pb` — protobuf-encoded frozen `visual_group`

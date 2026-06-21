@@ -52,14 +52,14 @@ flutter:
     - assets/data/species_data.sqlite
     # Bundled vision model (Talk2DINO, int8 ONNX) + precomputed attribute
     # label-text embeddings. Produced offline; see docs/smaller-footprint-pipeline/.
-    - assets/models/dino_image_encoder.onnx
-    - assets/models/dino_attribute_embeddings.json
+    - assets/models/image_encoder_talk2dino.onnx
+    - assets/models/attribute_embeddings_talk2dino.json
     - assets/models/visual_group_prototypes.pb
     - assets/models/visual_group_prototypes.proto
     # v2 check_visual_evidence — runtime text encoder + CLIP BPE tokenizer
-    - assets/models/dino_text_encoder.onnx
-    - assets/models/clip_vocab.json
-    - assets/models/clip_merges.txt
+    - assets/models/text_encoder_talk2dino.onnx
+    - assets/models/clip_vocab_talk2dino.json
+    - assets/models/clip_merges_talk2dino.txt
 
   # For iOS, need to set minimum version
   # Add to ios/Podfile: platform :ios, '16.0'

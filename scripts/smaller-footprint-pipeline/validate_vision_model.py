@@ -104,10 +104,10 @@ class DartTokenizerMirror:
             r"\p{L}+|\p{N}|[^\s\p{L}\p{N}]+",
             re2.IGNORECASE,
         )
-        with open(os.path.join(models_dir, "clip_vocab.json"), encoding="utf-8") as f:
+        with open(os.path.join(models_dir, "clip_vocab_talk2dino.json"), encoding="utf-8") as f:
             self.vocab = json.load(f)
         self.ranks = {}
-        with open(os.path.join(models_dir, "clip_merges.txt"), encoding="utf-8") as f:
+        with open(os.path.join(models_dir, "clip_merges_talk2dino.txt"), encoding="utf-8") as f:
             for i, line in enumerate(f.read().split("\n")):
                 if not line:
                     continue
@@ -223,8 +223,8 @@ def main() -> int:
 
     # ── 0. assets present ──
     print("[0/4] assets present …")
-    required = ["dino_image_encoder.onnx", "dino_attribute_embeddings.json",
-                "dino_text_encoder.onnx", "clip_vocab.json", "clip_merges.txt"]
+    required = ["image_encoder_talk2dino.onnx", "attribute_embeddings_talk2dino.json",
+                "text_encoder_talk2dino.onnx", "clip_vocab_talk2dino.json", "clip_merges_talk2dino.txt"]
     for fn in required:
         p = os.path.join(md, fn)
         ok = os.path.exists(p) and os.path.getsize(p) > 0
@@ -252,9 +252,9 @@ def main() -> int:
     model = AutoModel.from_pretrained(args.hf_model, trust_remote_code=True).eval()
     model.clip_model.float()
     backbone = model.model
-    isess = ort.InferenceSession(os.path.join(md, "dino_image_encoder.onnx"))
-    tsess = ort.InferenceSession(os.path.join(md, "dino_text_encoder.onnx"))
-    vocab = json.load(open(os.path.join(md, "dino_attribute_embeddings.json")))
+    isess = ort.InferenceSession(os.path.join(md, "image_encoder_talk2dino.onnx"))
+    tsess = ort.InferenceSession(os.path.join(md, "text_encoder_talk2dino.onnx"))
+    vocab = json.load(open(os.path.join(md, "attribute_embeddings_talk2dino.json")))
 
     @torch.no_grad()
     def torch_image(x):

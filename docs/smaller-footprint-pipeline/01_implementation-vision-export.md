@@ -1,7 +1,7 @@
 # 01 · Implementation — vision export (Talk2DINO → ONNX)
 
 **Status:** ✅ done · **Owns:** `scripts/export_vision_model.py`, `validate_vision_model.py`, `lib/services/vision_runtime.dart`
-**Produces:** `assets/models/dino_image_encoder.onnx` (+ `dino_attribute_embeddings.json`)
+**Produces:** `assets/models/image_encoder_talk2dino.onnx` (+ `attribute_embeddings_talk2dino.json`)
 
 Turn the [plan](00_plan.md)'s "DINO zero-shot attribute scorer" into a real,
 bundled ONNX asset. This stage is where most planning assumptions met reality.
@@ -9,8 +9,8 @@ bundled ONNX asset. This stage is where most planning assumptions met reality.
 ## What ships
 | Artifact | Size | Notes |
 | --- | --- | --- |
-| `dino_image_encoder.onnx` | ~92 MB (dynamic int8) | DINOv2 **ViT-B/14-reg**, pooling baked into the graph |
-| `dino_attribute_embeddings.json` | ~2.5 MB | 7 attributes × controlled-vocab labels, each with its text embedding |
+| `image_encoder_talk2dino.onnx` | ~92 MB (dynamic int8) | DINOv2 **ViT-B/14-reg**, pooling baked into the graph |
+| `attribute_embeddings_talk2dino.json` | ~2.5 MB | 7 attributes × controlled-vocab labels, each with its text embedding |
 
 Binaries are **git-ignored**; regenerate with
 `uv venv .venv-export && uv pip install -r scripts/requirements-export.txt && .venv-export/bin/python scripts/export_vision_model.py`.

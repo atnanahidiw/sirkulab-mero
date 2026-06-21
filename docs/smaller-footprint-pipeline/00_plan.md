@@ -172,7 +172,7 @@ Every "look at the image" instruction becomes a tool call, and a hard rule forbi
 
 ## 10. Coverage beyond the curated DB (answering constraint §2)
 
-The `dino_attribute_embeddings.json` labels are **DB-derived** (distinct trait values), so the closed `extract` path can only emit existing labels — but coverage still extends past the curated set:
+The `attribute_embeddings_talk2dino.json` labels are **DB-derived** (distinct trait values), so the closed `extract` path can only emit existing labels — but coverage still extends past the curated set:
 
 - **`extract` is closed-vocab but compositional** — colour/shape/texture/pattern aren't species-specific, so a never-seen subject reuses labels other species contributed. It spans a *trait space*, not a *species list*.
 - **`check_visual_evidence` is open-vocabulary** — its runtime text encoder + Dart CLIP tokenizer embed **arbitrary** claims, so the LLM can test hypotheses for species absent from the DB. Bounded by the open-world DINO/CLIP space, not `assets/data`.
@@ -198,3 +198,13 @@ So the derived-label caveat constrains only the closed `extract` path; the open 
 - dino.txt — "DINOv2 Meets Text" (CVPR 2025, iNaturalist zero-shot SOTA) — https://arxiv.org/html/2412.16334v1
 - Talk2DINO (DINOv2 + CLIP-text alignment, ICCV 2025) — https://arxiv.org/html/2411.19331v3 · weights: https://huggingface.co/lorebianchi98/Talk2DINO-ViTB
 - MobileCLIP TFLite (S1 ≈ 324 MB …) — https://huggingface.co/anton96vice/mobileclip2_tflite
+
+**Alternative-approach research (new-plan candidates, 2024–2026)** — see the model
+comparison + conformance check in [05c](05c_implementation-model-consolidation.md)
+- BioCLIP 2 (zero-shot from species names; +18% vs BioCLIP, >20% on rare/camera-trap) — https://imageomics.github.io/bioclip-2/ · paper: https://arxiv.org/pdf/2505.23883
+- CuPL — "What does a platypus look like?" (LLM-customized prompts for zero-shot) — https://openreview.net/forum?id=3ly9cG9Ql9h
+- Improved Zero-Shot Classification by Adapting VLMs with Text Descriptions (CVPR 2024) — https://arxiv.org/pdf/2401.02460
+- Zero-Shot Fine-Grained Image Classification using LVLMs (EMNLP 2025 Findings; descriptions-only, +20–36% fine-grained) — https://aclanthology.org/2025.findings-emnlp.1280.pdf
+- Making Better Mistakes — Hierarchy-Aware Language Prompts (taxonomy-pruned zero-shot) — https://arxiv.org/html/2503.02248v1
+- RA-TTA — Retrieval-Augmented Test-Time Adaptation for VLMs (ICLR 2025) — https://proceedings.iclr.cc/paper_files/paper/2025/file/fa1790d7c3036c691d0b2fb3b9a0ce64-Paper-Conference.pdf
+- FishNet++ (MLLM + retrieved descriptions for marine species) — https://arxiv.org/pdf/2509.25564

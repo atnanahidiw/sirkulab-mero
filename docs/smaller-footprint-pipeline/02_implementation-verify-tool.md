@@ -1,7 +1,7 @@
 # 02 · Implementation — verify tool (`check_visual_evidence`)
 
 **Status:** ✅ done · **Owns:** `lib/services/clip_tokenizer.dart`, the text-encoder path in `vision_runtime.dart`, the v2 export in `export_vision_model.py`
-**Produces:** `assets/models/dino_text_encoder.onnx`, `clip_vocab.json`, `clip_merges.txt`
+**Produces:** `assets/models/text_encoder_talk2dino.onnx`, `clip_vocab_talk2dino.json`, `clip_merges_talk2dino.txt`
 
 v1 ([stage 01](01_implementation-vision-export.md)) only `extract`s attributes.
 The retry loop also wants `check_visual_evidence` — scoring **free-text claims**
@@ -10,8 +10,8 @@ arbitrary claims must be embedded **at runtime**, which needs the text encoder
 *and* a tokenizer on-device.
 
 ## What we added
-- **`dino_text_encoder.onnx`** (~129 MB fp16) — exported wrapper around CLIP text + `project_clip_txt` (the same path as the attribute embeddings, tokenisation lifted out). Input `token_ids` int32 `[1,77]` → 768-d L2-norm in DINO space. CLIP loads fp16; we cast to fp32 before export so the text encoder and the precomputed attribute embeddings stay numerically consistent.
-- **`clip_tokenizer.dart`** — a faithful Dart port of CLIP's byte-level BPE (`SimpleTokenizer` + `clip.tokenize`), driven by two dumped assets (`clip_vocab.json`, `clip_merges.txt`). `check_visual_evidence` tokenises each claim → text encoder → cosine vs the cached image embedding.
+- **`text_encoder_talk2dino.onnx`** (~129 MB fp16) — exported wrapper around CLIP text + `project_clip_txt` (the same path as the attribute embeddings, tokenisation lifted out). Input `token_ids` int32 `[1,77]` → 768-d L2-norm in DINO space. CLIP loads fp16; we cast to fp32 before export so the text encoder and the precomputed attribute embeddings stay numerically consistent.
+- **`clip_tokenizer.dart`** — a faithful Dart port of CLIP's byte-level BPE (`SimpleTokenizer` + `clip.tokenize`), driven by two dumped assets (`clip_vocab_talk2dino.json`, `clip_merges_talk2dino.txt`). `check_visual_evidence` tokenises each claim → text encoder → cosine vs the cached image embedding.
 - **Wiring** — `VisionRuntime.checkVisualEvidence`, plus `ModelService` registers the tool **only when `canVerify`** (text encoder loaded), so the prompt never advertises a tool the runtime can't back. If the text encoder fails to load, the runtime degrades to v1 cleanly.
 
 ## Challenge — on-device tokenisation must be exact

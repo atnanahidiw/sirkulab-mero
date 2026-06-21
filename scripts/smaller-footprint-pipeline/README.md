@@ -10,6 +10,10 @@ Two asset pipelines live here:
 - **Vision model** (Talk2DINO + tokenizer) — `export_vision_model.py` →
   `assets/models/*`, checked by `validate_vision_model.py`, with
   `compare_pooling.py` as the design diagnostic.
+- **Model comparisons** — the per-backbone variants live under
+  `scripts/smaller-footprint-pipeline/`, with explicit compare scripts in
+  `scripts/smaller-footprint-pipeline/comparison/`. The root `compare_*.py`
+  files are temporary shims for the transition.
 
 ---
 
@@ -48,10 +52,10 @@ assets to `assets/models/`:
 
 | Asset | What it is |
 | --- | --- |
-| `dino_image_encoder.onnx` | int8 DINOv2 image encoder, CLS-saliency pooled → 768-d |
-| `dino_attribute_embeddings.json` | per-attribute controlled-vocab label embeddings |
-| `dino_text_encoder.onnx` | int8 CLIP-text→DINO encoder for `check_visual_evidence` |
-| `clip_vocab.json` + `clip_merges.txt` | CLIP BPE tables for the Dart tokenizer |
+| `image_encoder_talk2dino.onnx` | int8 DINOv2 image encoder, CLS-saliency pooled → 768-d |
+| `attribute_embeddings_talk2dino.json` | per-attribute controlled-vocab label embeddings |
+| `text_encoder_talk2dino.onnx` | int8 CLIP-text→DINO encoder for `check_visual_evidence` |
+| `clip_vocab_talk2dino.json` + `clip_merges_talk2dino.txt` | CLIP BPE tables for the Dart tokenizer |
 
 ```bash
 .venv-export/bin/python scripts/export_vision_model.py
@@ -129,8 +133,18 @@ revisit pooling. Not a pass/fail check; it just prints top labels per attribute.
 #   --images tiger=/path/a.jpg,panda=/path/b.jpg
 ```
 
+### `smaller-footprint-pipeline/` — model-specific variants
+The model-by-model export, validate, eval, and prototype scripts live in
+`scripts/smaller-footprint-pipeline/`. The comparison scripts live in the nested
+`comparison/` folder, one file per model.
+
+```bash
+.venv-export/bin/python scripts/smaller-footprint-pipeline/export_vision_model_bioclip.py
+.venv-export/bin/python scripts/smaller-footprint-pipeline/comparison/compare_bioclip.py
+```
+
 ### `requirements-export.txt`
-Pinned deps for all three vision scripts (`transformers<5`, OpenAI CLIP, etc.).
+Pinned deps for the exported vision scripts (`transformers<5`, OpenAI CLIP, etc.).
 
 ---
 

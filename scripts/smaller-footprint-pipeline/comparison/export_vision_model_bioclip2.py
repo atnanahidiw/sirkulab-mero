@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """Export the on-device vision model + attribute embeddings for Mero.
 
-Produces the two bundled assets consumed by `lib/services/vision_runtime.dart`:
+Produces the bundled assets consumed by `lib/services/vision_runtime.dart`:
 
-  assets/models/dino_image_encoder.onnx        # int8 image encoder
-  assets/models/dino_attribute_embeddings.json # per-attribute label text embeddings
+  assets/models/image_encoder_bioclip2.onnx        # image encoder
+  assets/models/attribute_embeddings_bioclip2.json # per-attribute label text embeddings
 
 The vision tool does ZERO-SHOT ATTRIBUTE CLASSIFICATION: embed the photo, then
 for each trait attribute score the image embedding against that attribute's
@@ -12,28 +12,16 @@ controlled vocabulary of label-text embeddings and pick the best label. The
 vocabularies are derived from the species DB so the extracted trait text matches
 exactly what `search_similar_features` (FTS5 + Dice) compares against.
 
-Model — DINO + text (Talk2DINO)
+Model — CLIP-style image/text encoder (BioCLIP 2, ViT-L/14)
 -------------------------------
-Talk2DINO aligns CLIP **text** into DINOv2's image-feature space (the projection
-runs on the text side; the DINO image features stay native). It's a dense
-open-vocabulary model whose published image representation uses multi-head
-"disentangled self-attention" pooling — which does not cleanly ONNX-export and
-needs forward hooks + an is_training branch.
+BioCLIP 2 (ViT-L/14) is loaded through open_clip from
+`hf-hub:imageomics/bioclip-2`. The model already exposes a standard
+`encode_image` / `encode_text` interface, so the export is now a straight
+image-text pair with no saliency-pooling approximation.
 
-We ship a tractable single-vector APPROXIMATION (decided in design review):
-  • image  = DINOv2-ViT-B/14-reg `forward_features['x_norm_patchtokens']`,
-             CLS-SALIENCY-weighted pooled → one 768-d vector, L2-normalised
-             (each patch weighted by softmax cosine-sim to the CLS token, a
-             cheap exportable saliency proxy that foregrounds the subject;
-             plain mean lets background dominate — empirically much worse).
-  • text   = the REAL Talk2DINO `encode_text` (CLIP text → project_clip_txt),
-             L2-normalised — same 768-d space, so cosine is meaningful.
-This drops the attention-weighted pooling (good enough for coarse attributes)
-in exchange for a clean export and the single-vector cosine the Dart runtime
-([vision_runtime.dart]) already implements.
-
-Everything (DINOv2 backbone + CLIP + projection) comes from the HF model
-`lorebianchi98/Talk2DINO-ViTB` via `AutoModel(trust_remote_code=True)`.
+The exporter uses the model's own preprocessing, tokenizer, and embedding
+dimension. The resulting ONNX graphs are therefore model-native rather than a
+Talk2DINO-style reconstruction.
 
 SETUP (uv)
 ----------
@@ -41,8 +29,8 @@ SETUP (uv)
 
 USAGE
 -----
-  python scripts/export_vision_model.py            # downloads HF weights itself
-  python scripts/validate_vision_model.py          # validate the produced assets
+  python scripts/smaller-footprint-pipeline/comparison/export_vision_model_bioclip2.py   # downloads HF weights itself
+  python scripts/smaller-footprint-pipeline/comparison/validate_vision_model_bioclip2.py # validate the produced assets
 
 After running, update the model constants printed at the end into
 `lib/services/vision_runtime.dart` (input name/size, output name, mean/std).
@@ -74,13 +62,16 @@ ATTRIBUTE_COLUMNS = {
     "visual_group": "visual_group",
 }
 
-# Input resolution shared by the export and the precomputed embeddings.
-# 518 = Talk2DINO's config `resize_dim`; 518/14 = 37 patches/side (clean for the
-# ViT-B/14 backbone). The text projection was aligned at this resolution.
-INPUT_SIZE = 518
+# Model suffix used in exported artifact names.
+SUFFIX = "bioclip2"
+INPUT_SIZE = 224  # bioclip2 native size (import fallback); runtime resolves enc.input_size dynamically
 
-# HF model bundling DINOv2 backbone + CLIP + the text projection head.
-HF_MODEL = "lorebianchi98/Talk2DINO-ViTB"
+# Human-readable label used in logs / summaries.
+DISPLAY_NAME = "BioCLIP 2 (ViT-L/14)"
+
+# open_clip model id.
+HF_MODEL = "hf-hub:imageomics/bioclip-2"
+OPEN_CLIP_PRETRAINED = None
 
 # Prompt ensembles applied to label TEXT before embedding (the stored label
 # string stays raw — only the embedding changes). We keep multiple prompts
@@ -120,8 +111,10 @@ class VisionEncoder:
     """Uniform interface over the two backends."""
 
     name: str
+    input_size: int
     input_name: str
     output_name: str
+    embed_dim: int
     mean: tuple
     std: tuple
     # callables set by the loader
@@ -133,91 +126,88 @@ class VisionEncoder:
 
 
 # ──────────────────────────────────────────────────────────────────────────
-# Model: Talk2DINO (DINO + text)
+# Model: BioCLIP 2 (ViT-L/14)
 # ──────────────────────────────────────────────────────────────────────────
-def load_talk2dino(hf_model: str = HF_MODEL) -> VisionEncoder:
-    """Load Talk2DINO from the HF Hub (bundles DINOv2 + CLIP + the projection).
-
-    image  = DINOv2 `forward_features['x_norm_patchtokens']`, CLS-saliency-weighted
-             pooled → 768-d.
-    text   = the real `encode_text` (CLIP text → project_clip_txt) → 768-d.
-    Both L2-normalised into DINO's space, so cosine is meaningful.
-    """
+def load_bioclip2(hf_model: str = HF_MODEL) -> VisionEncoder:
+    """Load BioCLIP 2 (ViT-L/14) via open_clip."""
     import torch
-    import clip
-    from transformers import AutoModel
+    import open_clip
 
-    print(f"  loading {hf_model} (downloads DINOv2 + CLIP weights on first run) …")
-    model = AutoModel.from_pretrained(hf_model, trust_remote_code=True).eval()
-    # CLIP loads in fp16; cast to fp32 so the attribute embeddings and the
-    # exported text encoder are numerically consistent and quantizable.
-    model.clip_model.float()
+    print(f"  loading {hf_model} via open_clip …")
+    model, _, preprocess = open_clip.create_model_and_transforms(
+        hf_model, pretrained=OPEN_CLIP_PRETRAINED
+    )
+    model = model.float().eval()
+    tokenizer = open_clip.get_tokenizer(hf_model)
 
-    # The bundled DINOv2 backbone. `encode_image` calls `self.model.forward_features`.
-    backbone = getattr(model, "model", None)
-    if backbone is None:
-        raise AttributeError(
-            "Could not find the DINOv2 backbone at `model.model`; inspect the "
-            "loaded Talk2DINO module and adjust.")
+    input_size = getattr(getattr(model, "visual", None), "image_size", None)
+    if isinstance(input_size, (tuple, list)):
+        input_size = int(input_size[0])
+    if input_size is None:
+        for t in getattr(preprocess, "transforms", []):
+            size = getattr(t, "size", None)
+            if size is not None:
+                input_size = int(size[0] if isinstance(size, (tuple, list)) else size)
+                break
+    if input_size is None:
+        raise AttributeError("Could not infer the image size from open_clip.")
+
+    mean = std = None
+    for t in getattr(preprocess, "transforms", []):
+        if t.__class__.__name__ == "Normalize":
+            mean = tuple(float(x) for x in t.mean)
+            std = tuple(float(x) for x in t.std)
+            break
+    if mean is None or std is None:
+        raise AttributeError("Could not infer the normalization from open_clip.")
+
+    embed_dim = int(getattr(model, "embed_dim", 0) or 0)
+    if embed_dim <= 0:
+        embed_dim = int(getattr(getattr(model, "visual", None), "output_dim", 0) or 0)
+    if embed_dim <= 0:  # robust: a dummy forward yields the dim for any open_clip model
+        with torch.no_grad():
+            embed_dim = int(model.encode_image(
+                torch.zeros(1, 3, input_size, input_size)).shape[-1])
 
     class _ImageHead(torch.nn.Module):
-        """DINOv2 patch tokens → CLS-saliency-weighted pool → L2-norm vector.
-
-        A plain mean drags in background (grass/foliage), which dominates the
-        cosine and lands on the wrong labels (a panda matched plant traits). We
-        weight each patch by its cosine similarity to the CLS token (a cheap,
-        ONNX-exportable saliency proxy that foregrounds the subject and stays in
-        Talk2DINO's text-aligned space). Validated far better than mean/CLS on
-        tiger/panda zero-shot."""
-
-        def __init__(self, dino):
+        def __init__(self, clip_model):
             super().__init__()
-            self.dino = dino
+            self.clip_model = clip_model
 
         def forward(self, pixel_values):
-            feats = self.dino.forward_features(pixel_values)
-            patch = feats["x_norm_patchtokens"]          # (B, L, D)
-            cls = feats["x_norm_clstoken"]               # (B, D)
-            cls_n = cls / (cls.norm(dim=-1, keepdim=True) + 1e-6)
-            sal = torch.softmax((patch * cls_n.unsqueeze(1)).sum(-1), dim=1)  # (B, L)
-            pooled = (sal.unsqueeze(-1) * patch).sum(dim=1)                   # (B, D)
-            return pooled / pooled.norm(dim=-1, keepdim=True)
+            emb = self.clip_model.encode_image(pixel_values)
+            return emb / (emb.norm(dim=-1, keepdim=True) + 1e-6)
 
     @torch.no_grad()
     def encode_text(texts):
-        emb = model.encode_text(list(texts))             # (N, D), DINO space
-        emb = emb / emb.norm(dim=-1, keepdim=True)
+        token_ids = tokenizer(list(texts))
+        emb = model.encode_text(token_ids)
+        emb = emb / (emb.norm(dim=-1, keepdim=True) + 1e-6)
         return emb.detach().cpu().numpy().astype(np.float32)
 
     class _TextHead(torch.nn.Module):
-        """token_ids[B,77] → CLIP text → project_clip_txt → L2-norm 768-d.
-
-        Same path as `encode_text`, but tokenisation is lifted out so the graph
-        takes integer token IDs (the Dart CLIP tokenizer produces them at
-        runtime for arbitrary `check_visual_evidence` claims)."""
-
-        def __init__(self, clip_model, proj):
+        def __init__(self, clip_model):
             super().__init__()
             self.clip_model = clip_model
-            self.proj = proj
 
         def forward(self, token_ids):
-            t = self.clip_model.encode_text(token_ids)   # [B, 512]
-            p = self.proj.project_clip_txt(t)            # [B, 768], DINO space
-            return p / p.norm(dim=-1, keepdim=True)
+            token_ids = token_ids.to(dtype=torch.long)
+            emb = self.clip_model.encode_text(token_ids)
+            return emb / (emb.norm(dim=-1, keepdim=True) + 1e-6)
 
-    # DINOv2 uses ImageNet normalisation.
     return VisionEncoder(
-        name="talk2dino-salpool(dinov2_vitb14_reg)",
+        name=DISPLAY_NAME,
+        input_size=input_size,
         input_name="pixel_values",
         output_name="image_embeds",
-        mean=(0.485, 0.456, 0.406),
-        std=(0.229, 0.224, 0.225),
-        image_module=_ImageHead(backbone).eval(),
+        embed_dim=embed_dim,
+        mean=mean,
+        std=std,
+        image_module=_ImageHead(model).eval(),
         encode_text=encode_text,
-        text_module=_TextHead(model.clip_model, model.proj).eval(),
-        context_length=77,
-        tokenizer=clip.simple_tokenizer.SimpleTokenizer(),
+        text_module=_TextHead(model).eval(),
+        context_length=int(getattr(tokenizer, "context_length", getattr(model, "context_length", 77))),
+        tokenizer=tokenizer,
     )
 
 
@@ -277,7 +267,7 @@ CALIB_IMAGE_URLS = [
 ]
 
 
-def _calib_image_feeds(input_name: str):
+def _calib_image_feeds(input_name: str, input_size: int, mean: tuple, std: tuple):
     """Preprocessed image tensors for static calibration. Best-effort download;
     returns whatever succeeds (None if the network is unavailable)."""
     import tempfile
@@ -291,19 +281,17 @@ def _calib_image_feeds(input_name: str):
             tmp = os.path.join(tempfile.gettempdir(), os.path.basename(url))
             with open(tmp, "wb") as f:
                 f.write(data)
-            img = Image.open(tmp).convert("RGB").resize((INPUT_SIZE, INPUT_SIZE))
-            arr = (np.asarray(img, np.float32) / 255.0 - np.array([0.485, 0.456, 0.406], np.float32)) \
-                / np.array([0.229, 0.224, 0.225], np.float32)
+            img = Image.open(tmp).convert("RGB").resize((input_size, input_size))
+            arr = (np.asarray(img, np.float32) / 255.0 - np.array(mean, np.float32)) \
+                / np.array(std, np.float32)
             feeds.append({input_name: arr.transpose(2, 0, 1)[None]})
         except Exception as e:  # noqa: BLE001
             print(f"    [warn] calib image skipped ({e})")
     return feeds
 
 
-def _calib_text_feeds(input_name: str):
+def _calib_text_feeds(input_name: str, tokenizer):
     """Tokenised sample claims for static calibration (offline)."""
-    import clip
-
     phrases = [
         "orange and black stripes", "a large striped cat", "black and white fur",
         "a bear-like body", "green leafy plant", "bright red scales",
@@ -313,9 +301,30 @@ def _calib_text_feeds(input_name: str):
         "elongated serpentine body", "translucent fins", "furry and round",
         "dark facial markings", "a tall wading bird", "rough bark texture",
     ]
-    return [
-        {input_name: clip.tokenize([p]).numpy().astype(np.int32)} for p in phrases
-    ]
+    return [{input_name: tokenizer([p]).cpu().numpy().astype(np.int32)} for p in phrases]
+
+
+def _remove_onnx_with_external(path: str) -> None:
+    """Remove an .onnx file *and* the external-data sidecar files it spilled.
+    torch.onnx.export writes each weight as a loose file next to the .onnx when
+    the model exceeds the 2 GB protobuf limit (e.g. the ViT-H/14 fp32 image
+    tower). A bare os.remove(path) would orphan hundreds of those weight files
+    in the output dir, so read the references first and delete them too."""
+    if not os.path.exists(path):
+        return
+    try:
+        import onnx
+        model = onnx.load(path, load_external_data=False)
+        base = os.path.dirname(path)
+        for tensor in model.graph.initializer:
+            for d in tensor.external_data:
+                if d.key == "location":
+                    sidecar = os.path.join(base, d.value)
+                    if os.path.exists(sidecar):
+                        os.remove(sidecar)
+    except Exception:
+        pass
+    os.remove(path)
 
 
 def _quantize(fp32: str, final: str, quant: str, input_name: str, calib_feeds) -> None:
@@ -333,7 +342,7 @@ def _quantize(fp32: str, final: str, quant: str, input_name: str, calib_feeds) -
         om = OnnxModel(onnx.load(fp32))
         om.convert_float_to_float16(keep_io_types=True)
         om.save_model_to_file(final)
-        os.remove(fp32)
+        _remove_onnx_with_external(fp32)
         return
     if quant == "dynamic":
         # Exclude Conv (the single patch-embed) so we DON'T emit ConvInteger,
@@ -345,7 +354,7 @@ def _quantize(fp32: str, final: str, quant: str, input_name: str, calib_feeds) -
 
         quantize_dynamic(fp32, final, weight_type=QuantType.QInt8,
                          op_types_to_quantize=["MatMul"])
-        os.remove(fp32)
+        _remove_onnx_with_external(fp32)
         return
     # qdq — static int8, mobile-safe
     from onnxruntime.quantization import (CalibrationDataReader, QuantFormat,
@@ -377,23 +386,22 @@ def _quantize(fp32: str, final: str, quant: str, input_name: str, calib_feeds) -
         weight_type=QuantType.QInt8, activation_type=QuantType.QUInt8,
     )
     for p in (fp32, pre):
-        if os.path.exists(p):
-            os.remove(p)
+        _remove_onnx_with_external(p)
 
 
 def export_onnx(enc: VisionEncoder, out_dir: str, quant: str) -> str:
     import torch
 
-    fp32 = os.path.join(out_dir, "dino_image_encoder.fp32.onnx")
-    final = os.path.join(out_dir, "dino_image_encoder.onnx")
-    dummy = torch.randn(1, 3, INPUT_SIZE, INPUT_SIZE)
+    fp32 = os.path.join(out_dir, f"image_encoder_{SUFFIX}.fp32.onnx")
+    final = os.path.join(out_dir, f"image_encoder_{SUFFIX}.onnx")
+    dummy = torch.randn(1, 3, enc.input_size, enc.input_size)
     torch.onnx.export(
         enc.image_module, dummy, fp32,
         input_names=[enc.input_name], output_names=[enc.output_name],
         opset_version=17, do_constant_folding=True,
         dynamo=False,  # stable TorchScript exporter (dynamo path needs onnxscript)
     )
-    calib = _calib_image_feeds(enc.input_name) if quant == "qdq" else None
+    calib = _calib_image_feeds(enc.input_name, enc.input_size, enc.mean, enc.std) if quant == "qdq" else None
     _quantize(fp32, final, quant, enc.input_name, calib)
     print(f"  wrote {final}  ({os.path.getsize(final) / 1e6:.1f} MB, quant={quant})")
     return final
@@ -404,38 +412,60 @@ def export_text_onnx(enc: VisionEncoder, out_dir: str, quant: str) -> str:
     check_visual_evidence (arbitrary-claim scoring)."""
     import torch
 
-    fp32 = os.path.join(out_dir, "dino_text_encoder.fp32.onnx")
-    final = os.path.join(out_dir, "dino_text_encoder.onnx")
+    fp32 = os.path.join(out_dir, f"text_encoder_{SUFFIX}.fp32.onnx")
+    final = os.path.join(out_dir, f"text_encoder_{SUFFIX}.onnx")
     # int32 token IDs, fixed [1, context_length] — the runtime scores one claim
     # per run, and a static shape lets QDQ shape-inference/quantization succeed.
     dummy = torch.zeros(1, enc.context_length, dtype=torch.int32)
-    dummy[0, 0], dummy[0, 1] = 49406, 49407  # SOT, EOT
+    sot = int(getattr(enc.tokenizer, "sot_token_id", 49406))
+    eot = int(getattr(enc.tokenizer, "eot_token_id", 49407))
+    dummy[0, 0], dummy[0, 1] = sot, eot
     torch.onnx.export(
         enc.text_module, dummy, fp32,
         input_names=["token_ids"], output_names=["text_embeds"],
         opset_version=17, do_constant_folding=True, dynamo=False,
     )
-    calib = _calib_text_feeds("token_ids") if quant == "qdq" else None
+    calib = _calib_text_feeds("token_ids", enc.tokenizer) if quant == "qdq" else None
     _quantize(fp32, final, quant, "token_ids", calib)
     print(f"  wrote {final}  ({os.path.getsize(final) / 1e6:.1f} MB, quant={quant})")
     return final
 
 
 def dump_tokenizer(enc: VisionEncoder, out_dir: str) -> None:
-    """Dump the CLIP BPE vocab + merges so the Dart tokenizer can reproduce
-    `clip.tokenize` exactly. byte↔unicode is recomputed in Dart (deterministic)."""
+    """Persist tokenizer assets when the tokenizer exposes BPE tables.
+
+    CLIP-style tokenizers still get the vocab/merges pair used by the Dart
+    mirror. If the tokenizer is HuggingFace-based, we keep a small manifest and
+    try to save the tokenizer in its native format as a fallback.
+    """
     tk = enc.tokenizer
-    vocab_path = os.path.join(out_dir, "clip_vocab.json")
-    with open(vocab_path, "w", encoding="utf-8") as f:
-        json.dump(tk.encoder, f, ensure_ascii=False)  # token string -> id
-    # merges ordered by BPE rank, "tokenA tokenB" per line (no literal spaces
-    # inside tokens — space byte maps to a non-ASCII unicode char).
-    merges = sorted(tk.bpe_ranks, key=tk.bpe_ranks.get)
-    merges_path = os.path.join(out_dir, "clip_merges.txt")
-    with open(merges_path, "w", encoding="utf-8") as f:
-        f.write("\n".join(f"{a} {b}" for a, b in merges))
-    print(f"  wrote {vocab_path} ({os.path.getsize(vocab_path)/1e6:.1f} MB), "
-          f"{merges_path} ({os.path.getsize(merges_path)/1e6:.1f} MB)")
+    if hasattr(tk, "encoder") and hasattr(tk, "bpe_ranks"):
+        vocab_path = os.path.join(out_dir, f"clip_vocab_{SUFFIX}.json")
+        with open(vocab_path, "w", encoding="utf-8") as f:
+            json.dump(tk.encoder, f, ensure_ascii=False)
+        merges = sorted(tk.bpe_ranks, key=tk.bpe_ranks.get)
+        merges_path = os.path.join(out_dir, f"clip_merges_{SUFFIX}.txt")
+        with open(merges_path, "w", encoding="utf-8") as f:
+            f.write("\n".join(f"{a} {b}" for a, b in merges))
+        print(
+            f"  wrote {vocab_path} ({os.path.getsize(vocab_path)/1e6:.1f} MB), "
+            f"{merges_path} ({os.path.getsize(merges_path)/1e6:.1f} MB)"
+        )
+        return
+
+    manifest_path = os.path.join(out_dir, f"tokenizer_{SUFFIX}.json")
+    manifest = {
+        "model": DISPLAY_NAME,
+        "tokenizer_class": tk.__class__.__name__,
+        "context_length": enc.context_length,
+    }
+    with open(manifest_path, "w", encoding="utf-8") as f:
+        json.dump(manifest, f, indent=2)
+    if hasattr(tk, "save_pretrained"):
+        tok_dir = os.path.join(out_dir, f"tokenizer_{SUFFIX}")
+        os.makedirs(tok_dir, exist_ok=True)
+        tk.save_pretrained(tok_dir)
+    print(f"  wrote {manifest_path} ({os.path.getsize(manifest_path)/1e6:.1f} MB)")
 
 
 def export_embeddings(enc: VisionEncoder, vocab: dict, out_dir: str) -> str:
@@ -460,7 +490,7 @@ def export_embeddings(enc: VisionEncoder, vocab: dict, out_dir: str) -> str:
             {"label": lbl, "emb": [round(float(x), 6) for x in embs[i]]}
             for i, lbl in enumerate(labels)
         ]
-    path = os.path.join(out_dir, "dino_attribute_embeddings.json")
+    path = os.path.join(out_dir, f"attribute_embeddings_{SUFFIX}.json")
     with open(path, "w") as f:
         json.dump(table, f)
     print(f"  wrote {path}  ({os.path.getsize(path) / 1e6:.1f} MB)")
@@ -486,8 +516,8 @@ def main():
 
     os.makedirs(args.out, exist_ok=True)
 
-    print("[1/4] loading DINO (Talk2DINO: DINOv2 + text, CLS-saliency-pool) …")
-    enc = load_talk2dino(args.hf_model)
+    print(f"[1/4] loading {DISPLAY_NAME} via open_clip …")
+    enc = load_bioclip2(args.hf_model)
 
     print("[2/4] building attribute vocabularies from DB …")
     vocab = build_vocabularies(args.db)
@@ -505,10 +535,11 @@ def main():
     print("\nDONE. Update lib/services/vision_runtime.dart constants to match:")
     print(f"  _inputName  = '{enc.input_name}'")
     print(f"  _outputName = '{enc.output_name}'")
-    print(f"  _inputSize  = {INPUT_SIZE}")
+    print(f"  _inputSize  = {enc.input_size}")
     print(f"  _mean = {list(enc.mean)}")
     print(f"  _std  = {list(enc.std)}")
-    print(f"  text encoder: token_ids[1,{enc.context_length}] int32 → text_embeds[1,768]")
+    print(f"  _embedDim = {enc.embed_dim}")
+    print(f"  text encoder: token_ids[1,{enc.context_length}] int32 → text_embeds[1,{enc.embed_dim}]")
     print(f"  (model: {enc.name})")
 
 

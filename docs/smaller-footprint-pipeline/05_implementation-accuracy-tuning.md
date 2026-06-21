@@ -53,7 +53,7 @@ traits still come from text embeddings?**
 
 `eval_combined_vision.py` does that. It:
 - loads the same Talk2DINO image encoder;
-- uses `dino_attribute_embeddings.json` for `color`, `body_shape`,
+- uses `attribute_embeddings_talk2dino.json` for `color`, `body_shape`,
   `distinctive_marks`, `texture`, `size_class`, `pattern`;
 - uses `visual_group_prototypes.pb` for `visual_group`;
 - compares the combined output against the text-only `visual_group` baseline;
@@ -64,7 +64,7 @@ traits still come from text embeddings?**
 ```
 
 ## Prompt-fusion experiments on the exporter
-After the prototype work, we revisited the `dino_attribute_embeddings.json`
+After the prototype work, we revisited the `attribute_embeddings_talk2dino.json`
 export path to see whether the label-text side could recover more variation
 before the model ever reaches SQLite. We tried three fusion strategies over a
 small prompt ensemble:
@@ -119,7 +119,7 @@ but would **break descriptive** ones (`color: "yellow and black stripes"` →
 "a close-up photo of a yellow and black stripes"). So the exporter now applies a
 **per-attribute** prompt ensemble (`ATTR_PROMPT_ENSEMBLES` in `export_vision_model.py`):
 `visual_group` → `"a close-up photo of a {}"`; every other attribute stays raw
-(`"{}"`). Re-export regenerates `dino_attribute_embeddings.json` only — the image
+(`"{}"`). Re-export regenerates `attribute_embeddings_talk2dino.json` only — the image
 and text encoders are unchanged, and the Dart runtime needs no change.
 
 Still ~30% wrong on `visual_group` even after the fix → the durable improvement is

@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Evaluate Talk2DINO zero-shot `visual_group` accuracy across prompt templates.
+"""Evaluate BioCLIP (ViT-B/16) zero-shot `visual_group` accuracy across prompt templates.
 
 Uses the labeled image set in the **sibling** `sirkulab-mero-data` repo (resolved
-relative to this file — no absolute paths), runs the SAME shipped pipeline the app
-uses (saliency-pooled DINO image ↔ label text), and measures how often the
+relative to this file — no absolute paths), runs the comparison pipeline for this
+model (image embedding ↔ label text embeddings), and measures how often the
 predicted `visual_group` matches ground truth under each prompt template. This is
 how we decide whether templating (e.g. "a photo of a {}") fixes class-level
 mislabels like lizard→"Mollusk"/"Turtle".
@@ -16,13 +16,13 @@ Ground truth per image (best first):
   3. else "unknown" — recorded in the JSONL but excluded from accuracy.
 
 Outputs:
-  - per-image JSONL → `<data-repo>/data/processed/vision_eval_visual_group.jsonl`
-  - a note          → `<data-repo>/data/processed/README.md`
+  - per-image JSONL → `<data-repo>/data/processed/vision_eval_visual_group_bioclip.jsonl`
+  - a note          → `<data-repo>/data/processed/README_vision_visual_group_bioclip.md`
   - per-template accuracy printed to stdout.
 
 USAGE
 -----
-  .venv-export/bin/python scripts/eval_vision.py            # full run (~5-10 min CPU)
+  .venv-export/bin/python scripts/smaller-footprint-pipeline/comparison/eval_vision_bioclip.py
   #   --limit 40                                            # quick smoke test
   #   --data-repo ../sirkulab-mero-data  --attr visual_group
 """
@@ -37,12 +37,12 @@ from pathlib import Path
 import numpy as np
 from PIL import Image
 
-from export_vision_model import INPUT_SIZE, load_talk2dino  # noqa: E402
+from export_vision_model_bioclip import DISPLAY_NAME, HF_MODEL, SUFFIX, INPUT_SIZE, load_bioclip  # noqa: E402
 
 # Paths resolved relative to THIS file, so the two repos just need to be siblings.
 HERE = Path(__file__).resolve()
-APP_REPO = HERE.parents[1]                       # sirkulab-mero
-WORKDIR = HERE.parents[2]                         # common parent
+APP_REPO = HERE.parents[3]                       # sirkulab-mero
+WORKDIR = HERE.parents[4]                         # common parent
 DATA_REPO_DEFAULT = WORKDIR / "sirkulab-mero-data"
 
 MEAN = np.array([0.485, 0.456, 0.406], np.float32)
@@ -70,8 +70,11 @@ def l2(v):
 def image_embedding(enc, path: str) -> np.ndarray:
     import torch
 
-    img = Image.open(path).convert("RGB").resize((INPUT_SIZE, INPUT_SIZE), Image.BICUBIC)
-    arr = (np.asarray(img, np.float32) / 255.0 - MEAN) / STD
+    input_size = getattr(enc, "input_size", INPUT_SIZE)
+    mean = np.asarray(getattr(enc, "mean", MEAN), np.float32)
+    std = np.asarray(getattr(enc, "std", STD), np.float32)
+    img = Image.open(path).convert("RGB").resize((input_size, input_size), Image.BICUBIC)
+    arr = (np.asarray(img, np.float32) / 255.0 - mean) / std
     with torch.no_grad():
         emb = enc.image_module(torch.from_numpy(arr.transpose(2, 0, 1)[None])).cpu().numpy()[0]
     return l2(emb)
@@ -113,25 +116,25 @@ def main():
     ap.add_argument("--images-subdir", default="data/raw/species_data_img")
     ap.add_argument("--db", default=str(APP_REPO / "assets/data/species_data.sqlite"))
     ap.add_argument("--embeddings",
-                    default=str(APP_REPO / "assets/models/dino_attribute_embeddings.json"))
+                    default=str(APP_REPO / f"assets/models/attribute_embeddings_{SUFFIX}.json"))
     ap.add_argument("--attr", default="visual_group")
     ap.add_argument("--limit", type=int, default=0, help="cap images (quick test)")
-    ap.add_argument("--hf-model", default="lorebianchi98/Talk2DINO-ViTB")
+    ap.add_argument("--hf-model", default=HF_MODEL)
     args = ap.parse_args()
 
     data_repo = Path(args.data_repo)
     img_root = data_repo / args.images_subdir
     out_dir = data_repo / "data" / "processed"
     out_dir.mkdir(parents=True, exist_ok=True)
-    out_jsonl = out_dir / f"vision_eval_{args.attr}.jsonl"
+    out_jsonl = out_dir / f"vision_eval_{args.attr}_{SUFFIX}.jsonl"
 
     # Label set = exactly what the app ships (from the precomputed embeddings).
     vocab = json.load(open(args.embeddings))
     labels = [e["label"] for e in vocab[args.attr]]
     db_lut = load_db_lookup(Path(args.db))
 
-    print(f"[1/4] loading Talk2DINO …")
-    enc = load_talk2dino(args.hf_model)
+    print(f"[1/4] loading {DISPLAY_NAME} …")
+    enc = load_bioclip(args.hf_model)
 
     print(f"[2/4] encoding {len(labels)} '{args.attr}' labels × {len(TEMPLATES)} templates …")
     tmpl_embs = {t: l2(enc.encode_text([t.format(x) for x in labels])) for t in TEMPLATES}
@@ -194,10 +197,10 @@ def _write_note(out_dir, args, n_images, evaluated, by_source, ranked, correct):
     best = ranked[0]
     note = f"""# data/processed — vision template evaluation
 
-Generated by `scripts/eval_vision.py` in the **sirkulab-mero** app repo (run via
-its `.venv-export`). Not hand-authored — re-run the script to regenerate.
+Generated by `{Path(__file__).name}` in the **sirkulab-mero** app repo.
+Not hand-authored — re-run the script to regenerate.
 
-## `vision_eval_{args.attr}.jsonl`
+## `vision_eval_{args.attr}_{SUFFIX}.jsonl`
 One JSON object per image:
 - `image` — path relative to `{args.images_subdir}/`
 - `ground_truth` — expected `{args.attr}` (`null` if undeterminable)
@@ -219,8 +222,26 @@ One JSON object per image:
 - Pixel-identical duplicates across the nested `species_data_img/` folder are
   de-duplicated by (filename, size).
 """
-    (out_dir / "README.md").write_text(note)
-    print(f"   wrote {out_dir / 'README.md'}")
+    summary_path = out_dir / f"summary_vision_{args.attr}_{SUFFIX}.json"
+    summary = {
+        "display_name": DISPLAY_NAME,
+        "suffix": SUFFIX,
+        "attribute": args.attr,
+        "images_scored": n_images,
+        "ground_truthed": evaluated,
+        "source_counts": by_source,
+        "best_template": best,
+        "best_accuracy": correct[best] / evaluated if evaluated else 0.0,
+        "template_accuracy": {
+            template: correct[template] / evaluated if evaluated else 0.0
+            for template in ranked
+        },
+    }
+    readme_path = out_dir / f"README_vision_{args.attr}_{SUFFIX}.md"
+    readme_path.write_text(note)
+    summary_path.write_text(json.dumps(summary, indent=2))
+    print(f"   wrote {readme_path}")
+    print(f"   wrote {summary_path}")
 
 
 if __name__ == "__main__":

@@ -13,7 +13,7 @@ photos, so the winner is picked from evidence rather than intuition:
                 the subject, stays in the aligned space)
 
 Re-run this if you want to revisit the pooling (e.g. try Talk2DINO's true
-`avg_self_attn`). It needs the exported `dino_attribute_embeddings.json` and the
+`avg_self_attn`). It needs the exported `attribute_embeddings_talk2dino.json` and the
 same venv as the exporter.
 
 USAGE
@@ -88,7 +88,7 @@ def main():
     import torch
     from transformers import AutoModel
 
-    vocab = json.load(open(os.path.join(args.models_dir, "dino_attribute_embeddings.json")))
+    vocab = json.load(open(os.path.join(args.models_dir, "attribute_embeddings_talk2dino.json")))
     attrs = [a for a in args.attrs.split(",") if a in vocab]
     model = AutoModel.from_pretrained(args.hf_model, trust_remote_code=True).eval()
     backbone = model.model

@@ -28,7 +28,9 @@ a callable, scored tool.
 | [02 — verify tool](02_implementation-verify-tool.md) | ✅ done | v2 `check_visual_evidence`: runtime text encoder + Dart CLIP tokenizer |
 | [03 — quantization](03_implementation-quantization.md) | ✅ done | on-device int8/fp16 (ConvInteger → fp16 → MatMul-only int8) |
 | [04 — tool calling](04_implementation-tool-calling.md) | 🔧 in progress | agentic loop: native vs custom, thinking mode, tool ordering, runtime bugs |
-| [05 — accuracy tuning](05_implementation-accuracy-tuning.md) | 🔬 open | trait mislabels: prompt templates, prompt fusion, few-shot prototypes, Gemma-4 distillation |
+| [05 — accuracy tuning](05_implementation-accuracy-tuning.md) | 🔧 in progress | `visual_group`: prompt templates (+10) → image prototypes (+39, shipped) |
+| [05b — species retrieval & open-set](05b_implementation-species-retrieval.md) | 🔬 measured | species prototypes → **80.4% rank-1** (vs 19.6%); OOD router for "all species" |
+| [05c — model comparison cleanup](05c_implementation-model-consolidation.md) | ✅ done | Talk2DINO duplicates removed; model-specific scripts moved under `scripts/smaller-footprint-pipeline/`; compare scripts kept explicit |
 
 ## Current state (top of mind)
 
@@ -43,4 +45,6 @@ a callable, scored tool.
 - Runtime: `lib/services/vision_runtime.dart`, `clip_tokenizer.dart`,
   `model_runtime.dart`, `model_service.dart`; prompts in `lib/models/chat_prompts.dart`.
 - Offline tools: `scripts/` (`export_vision_model.py`, `validate_vision_model.py`,
-  `debug_vision.py`, `compare_pooling.py` — see `scripts/README.md`).
+  `debug_vision.py`, `compare_pooling.py`) and
+  `scripts/smaller-footprint-pipeline/` for the model-specific variants — see
+  `scripts/README.md`.
