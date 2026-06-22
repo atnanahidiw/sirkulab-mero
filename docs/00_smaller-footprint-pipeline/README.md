@@ -1,6 +1,6 @@
 # Smaller-footprint pipeline — versions & rejected alternatives
 
-On-device species ID under ~0.7 GB, fine-grained, with a generative LLM as the
+On-device species ID under 1 GB, fine-grained, with a generative LLM as the
 reasoning core. This folder tracks each architecture version and — importantly — the
 approaches we **explored and rejected**, so we don't re-investigate them.
 
