@@ -123,9 +123,9 @@ Because of those limits, the audit should be read as a useful screen for stale r
 
 ### Local artifacts
 
-- [scripts/candidate-rank-sensitivity/01n-analyze_explanation_faithfulness.py](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/scripts/candidate-rank-sensitivity/01n-analyze_explanation_faithfulness.py)
-- [outputs/candidate-rank-sensitivity/reverse_big/checkpointed_results.jsonl](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/outputs/candidate-rank-sensitivity/reverse_big/checkpointed_results.jsonl)
-- [outputs/candidate-rank-sensitivity/explanation_faithfulness_summary.json](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/outputs/candidate-rank-sensitivity/explanation_faithfulness_summary.json)
+- [scripts/candidate-rank-sensitivity/01n-analyze_explanation_faithfulness.py](../../scripts/candidate-rank-sensitivity/01n-analyze_explanation_faithfulness.py)
+- [outputs/candidate-rank-sensitivity/reverse_big/checkpointed_results.jsonl](../../outputs/candidate-rank-sensitivity/reverse_big/checkpointed_results.jsonl)
+- [outputs/candidate-rank-sensitivity/explanation_faithfulness_summary.json](../../outputs/candidate-rank-sensitivity/explanation_faithfulness_summary.json)
 
 ### Related work
 

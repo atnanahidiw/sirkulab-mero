@@ -1,24 +1,34 @@
-# LiteRT Score Analysis for Candidate Rank Bias in Gemma 4
+# LiteRT Rank Bias Analysis in Gemma 4 Species Identification
 
 ## Summary
 
-This report is the LiteRT-compatible Layer 2A follow-up to the candidate-rank-sensitivity work. The earlier behavioral experiment asked whether the final answer changes when the same candidate set is reordered. This score-level analysis asks a narrower question: when we keep the same frozen examples and the same confidence-perturbed trials, does the model’s output behavior still show a strong preference for earlier list positions?
+This is the follow-up to the candidate-rank-sensitivity work. It combines two related but distinct measurements:
 
-The short answer is yes. Even without hidden states or activation access, the output-level score surface is not neutral. The model selected the first-listed candidate in 53.9% of variant trials, the last-listed candidate in 21.8%, and either edge in 74.1%. Relative to the varying candidate-list sizes in the dataset, that is a large primacy bias plus a smaller but still visible recency effect.
+1. output-position bias from generated answers on confidence-perturbed trials
+2. true LiteRT token-score candidate likelihood from `run_text_scoring(...)`
 
-## Motivation
+The point of merging them is simple: they answer the same rank-bias question from two different angles, and the docs are easier to follow when those angles live in one place.
 
-This report stays inside the public LiteRT-LM surface. It does not try to claim hidden-state causality or internal circuit structure. Instead, it uses the already-collected confidence-sensitivity results to measure whether the model’s choice distribution is skewed toward earlier positions and whether the selected candidate tends to line up with the highest-confidence candidate shown in the prompt.
+The short version is:
 
-That is worth measuring because rank bias can exist even when the model is not wildly unstable. A model can be mostly correct, yet still show a strong default toward the first item in the list. For Mero, that matters because the candidate list itself is part of the product behavior, so a systematic preference for the front of the list is a real design risk even if the final accuracy stays acceptable.
+- generated answers show a clear output-position effect
+- LiteRT token scores expose a real candidate-likelihood signal
+- the two surfaces are related, but they are not the same measurement
 
-## Hypothesis
+## Why This Exists
 
-If candidate order is influencing the model’s output behavior, then the selected candidate rank should be skewed toward the edges in a structured way: primacy at the top, recency at the bottom, or both. The model should also often agree with the highest-confidence candidate when confidence and order coincide.
+Mero presents Gemma 4 with ranked candidates. That makes rank part of the product behavior, not just an implementation detail. We therefore want to know both:
 
-## Method
+- whether the final answer tends to favor early positions
+- whether LiteRT-LM's scoring surface assigns different likelihoods to the same candidate when its list position changes
 
-We analyze the current `outputs/candidate-rank-sensitivity/confidence_score_results.jsonl` file with the new LiteRT-compatible score summary script, `scripts/candidate-rank-sensitivity/01i-analyze_score_rank_bias.py`.
+This report stays inside LiteRT-LM's public surface. It does not claim hidden-state causality or internal circuit structure.
+
+## Part 1: Output-Position Bias
+
+### Method
+
+We analyze `outputs/candidate-rank-sensitivity/confidence_score_results.jsonl` with the output-position summary script, `scripts/candidate-rank-sensitivity/analyze_score_rank_bias.py`.
 
 The analysis is deliberately output-level:
 
@@ -27,15 +37,15 @@ The analysis is deliberately output-level:
 - it measures how often the selected candidate matches the highest-confidence candidate
 - it compares the observed rank-1 rate with a uniform baseline adjusted for candidate-list length
 
-Because the number of candidates varies across examples, a raw 20% or 50% rate is not enough by itself. The baseline has to account for the fact that some examples have only two candidates, while others have five. The script therefore computes the expected uniform rank-1 rate over the actual candidate-count distribution and compares the observed rate against that baseline.
+Because the number of candidates varies across examples, a raw percentage is not enough by itself. The script therefore computes the expected uniform rank-1 rate over the actual candidate-count distribution and compares the observed rate against that baseline.
 
-## Results
+### Results
 
-The score-level analysis covered 119 frozen examples and 595 confidence-perturbed variant rows. Across those variant rows, the model chose the first-listed candidate 53.9% of the time, the last-listed candidate 21.8% of the time, and either edge 74.1% of the time. The expected uniform rank-1 and rank-last rate for the actual dataset mix is 28.8%, so the top-slot preference is 25.2 percentage points higher than a uniform baseline, while the last-slot preference is 8.9 points above the same baseline.
+The output-position analysis covered 119 frozen examples and 595 confidence-perturbed variant rows. Across those variant rows, the model chose the first-listed candidate 53.9% of the time, the last-listed candidate 21.8% of the time, and either edge 74.1% of the time. The expected uniform rank-1 and rank-last rate for the actual dataset mix is 28.8%, so the top-slot preference is 25.2 percentage points higher than a uniform baseline, while the last-slot preference is 8.9 points above the same baseline.
 
 | Metric | Value | Why it matters |
 |---|---:|---|
-| Examples | 119 | This is the full frozen set used for the score analysis |
+| Examples | 119 | This is the full frozen set used for the output-position analysis |
 | Original rows | 119 | One baseline answer per example |
 | Variant rows | 595 | Five confidence permutations per example |
 | Answer-changed rate | 33.1% | Confidence perturbation still changes a meaningful share of outputs |
@@ -66,35 +76,87 @@ The most confidence-sensitive examples illustrate the spread in behavior:
 | `echinopora_lamellosa_b.jpg` | `Echinopora lamellosa` | changed in 3 of 5 trials | Mixed stability, but still sensitive to score reassignment |
 | `chelonia_mydas_b.jpg` | `Chelonia mydas` | never changed | A stable example, but still not enough to remove the aggregate bias |
 
-That combination is important. The score-level bias is not just a byproduct of a few pathological examples. It is a dataset-wide tendency that persists even though some examples are stable. The bottom candidate is not ignored completely, but the top slot is the stronger attractor.
+That combination is important. The output-position bias is not just a byproduct of a few pathological examples. It is a dataset-wide tendency that persists even though some examples are stable. The bottom candidate is not ignored completely, but the top slot is the stronger attractor.
 
-## Interpretation
+### Interpretation
 
 This analysis does not prove a hidden circuit or a causal internal mechanism. It does show that the model’s output behavior is strongly skewed toward earlier positions and that the selected candidate often lines up with the top displayed confidence. In other words, the output surface is rank-sensitive even before we ask where the computation lives internally.
 
-That is exactly why this report belongs in Layer 2A rather than Layer 1. Layer 1 tells us whether the answer changes under perturbation. Layer 2A tells us that the resulting output distribution itself is not position-neutral. The next step, if we want a mechanistic explanation, is a backend that exposes logits or activations.
+That is exactly why this report keeps the two measurements separate. The generated-answer analysis tells us whether the answer changes under perturbation. The token-score analysis tells us whether the underlying completion likelihood is position-neutral. They are related, but they answer different questions.
+
+## Part 2: LiteRT Token Scores
+
+### Motivation
+
+The output-position result is useful, but it still depends on generated answers. This second measurement asks a stricter question: if we score the same candidate name as a completion after the prompt, does the likelihood of that completion change when the candidate moves to different list positions?
+
+That distinction matters. Output-position bias and token-score bias are related, but they are not the same measurement. The first looks at what the model picked. The second looks at how the model scores the candidate string itself.
+
+### Method
+
+We used `scripts/candidate-rank-sensitivity/analyze_litert_candidate_likelihood.py` with the frozen confidence-sensitivity examples in `outputs/candidate-rank-sensitivity/confidence_score_examples.jsonl`.
+
+For each example:
+
+1. Take the original candidate list.
+2. Move each candidate to rank 1, rank 3, and rank 5 when those positions exist.
+3. Build a text-only prompt that lists the candidates in that order.
+4. Score the candidate's scientific name as the completion with `run_text_scoring(...)`.
+5. Compare the same candidate's mean token log-likelihood across positions.
+
+This gives a direct token-score comparison for the same candidate under different list positions.
+
+### Results
+
+The run covered 119 examples and produced 1,313 scored candidate-position rows. The observed pattern is not a simple primacy story. Rank 3 slightly outperformed rank 1 in pairwise comparisons, and rank 5 had the highest mean token score among the scored positions.
+
+| Metric | Value | Why it matters |
+|---|---:|---|
+| Examples | 119 | Full frozen set used for the token-score analysis |
+| Scored rows | 1,313 | Candidate-position pairs scored with LiteRT-LM |
+| Positions scored | 1, 3, 5 | The analysis targets the user-requested anchor positions |
+| Mean token score, rank 1 | -1.417 | Lower than rank 5, which means rank 1 is not the most likely completion here |
+| Mean token score, rank 3 | -1.506 | Slightly below rank 1 on average |
+| Mean token score, rank 5 | -0.892 | Highest average likelihood in this text-only setup |
+| Rank 1 beats rank 3 | 52.0% | Rank 1 is only a narrow winner over rank 3 |
+| Rank 1 beats rank 5 | 16.6% | Rank 1 loses strongly to rank 5 in this scoring setup |
+| Rank 1 best-candidate rate | 15.8% | For individual candidate trajectories, rank 1 is rarely the best position |
+| Rank 1 best-example rate | 4.2% | At the example level, rank 1 is the best of the scored positions only rarely |
+
+The main result is that the LiteRT token-score surface is not primacy-dominated. If anything, the text scorer shows a recency tilt on this prompt construction, with rank 5 receiving the strongest average token likelihood. That does not contradict the output-position analysis. It just means the generated answer behavior and the candidate-likelihood surface are measuring different things.
+
+The strongest interpretation is therefore modest: LiteRT-LM can expose a real candidate-likelihood signal, but that signal is prompt-sensitive and not identical to the model's final selection behavior.
+
+### Interpretation
+
+This result is useful for two reasons.
+
+1. It gives a direct token-score readout from LiteRT-LM, which is stronger evidence than inferring rank effects from generated answers alone.
+2. It shows that the token-score surface can behave differently from the output surface, so the two measurements should not be conflated.
+
+The recency tilt here may come from the prompt form, the candidate wording, or tokenization effects. The public text-scoring API does not let us isolate those causes further. So the correct claim is not "the model prefers the last option everywhere." The correct claim is "in this text-only candidate-likelihood setup, the last position had the highest average token likelihood."
+
+## Synthesis
+
+Taken together, the behavioral results point to two different rank-sensitive surfaces: candidate order has a small effect on the final answer, confidence display has a much larger effect, and LiteRT token scoring favors later positions rather than early ones. That tension is the reason the project needs a mechanistic backend rather than another behavioral pass.
+
+LiteRT can show us output behavior and token likelihood, but it cannot expose the hidden states or hooks needed to test how the bias is computed. The next step therefore uses the Hugging Face Gemma 4 backend in the Candidate Rank Mechanistic folder to ask three narrower questions:
+
+- Is the token-score mismatch real in Gemma 4 itself, or an artifact of the LiteRT scoring path?
+- Does candidate position appear in the hidden states?
+- Can rank-related activations be shifted causally with patching?
 
 ## Limitations
 
-This is still not mechanistic interpretability.
+- The output-position analysis uses final output ranks and selected answers, not hidden states.
+- The token-score analysis is text-only because LiteRT-LM's public scoring API does not take image inputs.
+- Neither part proves a causal mechanism.
+- The two measurements should be read together, but not merged conceptually.
 
-- It uses final output scores and selected ranks, not hidden states.
-- It cannot separate “the model prefers rank 1” from “the prompt format or dataset structure makes rank 1 easier to adopt.”
-- It does not explain why edge positions are preferred more often than middle positions.
-- It does not support activation patching, probing, or SAE inspection.
-
-So the correct claim is modest but useful: LiteRT-LM is enough to show score-level rank bias, but not enough to explain the internal mechanism behind it.
-
-## Sources
-
-### Local Artifacts
-
-- [scripts/candidate-rank-sensitivity/analyze_score_rank_bias.py](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/scripts/candidate-rank-sensitivity/analyze_score_rank_bias.py)
-- [outputs/candidate-rank-sensitivity/confidence_score_results.jsonl](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/outputs/candidate-rank-sensitivity/confidence_score_results.jsonl)
-- [outputs/candidate-rank-sensitivity/score_rank_bias_summary.json](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/outputs/candidate-rank-sensitivity/score_rank_bias_summary.json)
 
 ## Next Steps
 
-- Compare score-level rank bias against the rank-sensitivity summary on the same frozen examples
-- Move the mechanistic Layer 2B work to a backend that exposes logits and hidden states
-- Add a compact table that compares rank bias, confidence bias, and answer-change rate in one place
+- Compare the token-score surface with the output-position bias report in a single table
+- Test whether the recency tilt remains when the prompt template is simplified
+- Try a candidate-likelihood variant that scores only the scientific name versus the common+scientific display string
+- Replicate the token-score result with Hugging Face Gemma 4 logits to test whether the rank-5 advantage is a LiteRT scoring artifact or a model-level effect

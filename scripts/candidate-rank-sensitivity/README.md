@@ -2,7 +2,7 @@
 
 This package measures whether Gemma 4 changes its final species answer when the **same image** and the **same candidate species set** are shown in a different **candidate order**.
 
-The package is split into six scripts:
+The package is split into seven scripts:
 
 - `build_rank_sensitivity_dataset.py` — freezes a candidate set per example
 - `build_rank_sensitivity_dataset_more.py` — convenience wrapper with a larger default frozen set
@@ -10,6 +10,7 @@ The package is split into six scripts:
 - `run_reversed_rank_sensitivity.py` — runs the reverse-order experiment on a frozen set
 - `summarize_rank_sensitivity.py` — computes aggregate metrics and prints a terminal summary
 - `run_hightrial_rank_sensitivity.py` — samples a smaller balanced subset and runs a higher-shuffle robustness check
+- `analyze_litert_candidate_likelihood.py` — uses LiteRT-LM token scores to compare candidate likelihood by rank position
 
 ## Purpose
 
@@ -67,6 +68,10 @@ python scripts/candidate-rank-sensitivity/summarize_rank_sensitivity.py \
 - Confidence scores are removed before the candidate list is shown to the model.
 - Candidate order is preserved in the frozen dataset and shuffled deterministically during evaluation.
 
+## Mechanistic backend
+
+For Hugging Face-backed mechanistic analysis, see `scripts/03_candidate-rank-mechanistic/README.md`.
+
 ## Confidence-score sensitivity
 
 This sub-workflow analyzes whether candidate position and uncertainty are tied to the model’s confidence pattern.
@@ -79,6 +84,19 @@ This sub-workflow analyzes whether candidate position and uncertainty are tied t
 - `extract_confidence_sensitivity_scores.py` — companion extractor that collects logits / probabilities from a score-capable backend
 - `analyze_confidence_sensitivity_scores.py` — wrapper analysis step that reads extractor output and writes the summary JSON
 - `summarize_confidence_score_sensitivity.py` — legacy summary script for the earlier score-display sensitivity workflow
+
+## LiteRT token-score analysis
+
+This Layer 2A workflow compares the token likelihood of the same candidate name when it appears at different list positions.
+
+### Scripts
+
+- `analyze_litert_candidate_likelihood.py` — scores candidate names with LiteRT-LM's `run_text_scoring(...)`
+
+### Output files
+
+- `outputs/candidate-rank-sensitivity/litert_candidate_likelihood_results.jsonl`
+- `outputs/candidate-rank-sensitivity/litert_candidate_likelihood_summary.json`
 
 ### Pipeline
 

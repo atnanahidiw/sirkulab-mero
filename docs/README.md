@@ -29,14 +29,16 @@ That question matters because the project needed to understand where detection b
 
 This track collects the experiments around a simple question: does the order of the candidate list change what Gemma 4 picks?
 
-That question matters because Mero does not just show the model a set of candidates. It shows them in a ranked order, so rank is part of the product behavior. This track starts with the behavioral test, then follows up with confidence sensitivity, explanation faithfulness, and LiteRT-compatible score analysis.
+That question matters because Mero does not just show the model a set of candidates. It shows them in a ranked order, so rank is part of the product behavior. This track starts with the behavioral test, then follows up with confidence sensitivity, explanation faithfulness, and a merged LiteRT rank-bias analysis that covers both output-position behavior and token-score likelihood.
 
 #### What Each File Answers
 
 - [`01_candidate-rank-sensitivity.md`](./02_candidate-rank-sensitivity/01_candidate-rank-sensitivity.md) asks whether answer choice changes when the same candidates are reordered.
 - [`02_confidence-score-sensitivity.md`](./02_candidate-rank-sensitivity/02_confidence-score-sensitivity.md) asks whether the displayed confidence values influence the answer.
 - [`03_explanation-faithfulness.md`](./02_candidate-rank-sensitivity/03_explanation-faithfulness.md) checks whether the model’s short reason stays aligned with the answer under perturbation.
-- [`04_litert-score-analysis.md`](./02_candidate-rank-sensitivity/04_litert-score-analysis.md) summarizes the output-level rank bias that can be measured without hidden states or activations.
+- [`04_litert-score-analysis.md`](./02_candidate-rank-sensitivity/04_litert-score-analysis.md) combines output-position bias and LiteRT token-score likelihood into one report.
+
+The mechanistic backend plan is documented in the separate [Candidate Rank Mechanistic](./03_candidate-rank-mechanistic/) section below.
 
 #### Why It Is Split This Way
 
@@ -47,12 +49,23 @@ The project needs two kinds of evidence.
 
 The first three docs focus on behavior. The LiteRT score analysis stays within the available runtime and explains what can still be measured there.
 
+### Candidate Rank Mechanistic
+
+This folder holds the mechanistic backend plan for the candidate-rank work.
+
+It is separated from the behavioral track on purpose. The LiteRT-backed reports answer what changes in the output. The mechanistic notes explain how the same Gemma 4 family can be analyzed with Hugging Face safetensors when hidden states, logits, and hooks are required.
+
+#### File Guide
+
+- [`00_plan.md`](./03_candidate-rank-mechanistic/00_plan.md) explains why the mechanistic backend uses Hugging Face Gemma 4 instead of LiteRT-LM.
+
 ## Why This Structure Exists
 
 The goal is to make each research thread readable on its own.
 
 - The pipeline track explains what architecture decisions are already settled.
 - The detection track shows the baseline failure modes and the fixes that changed behavior.
-- The candidate-rank track starts with behavioral sensitivity tests and then moves into LiteRT-compatible score analysis.
+- The candidate-rank track starts with behavioral sensitivity tests and the merged rank-bias report.
+- The mechanistic backend plan lives in the separate `candidate-rank-mechanistic` folder.
 
 If you are new to the project, start with the relevant track section above, then read the numbered docs in order.

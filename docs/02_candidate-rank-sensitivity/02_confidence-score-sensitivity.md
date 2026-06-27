@@ -42,9 +42,9 @@ The completed sweep covered 119 frozen examples and produced 595 confidence-perm
 | Accuracy, permuted confidence display | 48.4% | Correctness drops materially when confidence is reshuffled |
 | Examples with any flip | 74 | Most examples show at least one changed answer |
 
-The main signal is straightforward: confidence is not passive. A 36.7% change rate is high enough that the displayed scores are clearly part of the prompt contract from the model’s perspective. The mean unique-answer count of 2.12 and the median of 2.00 show that this is not just a one-off artifact in a few rows. The model often shifts between at least two candidate answers for the same image when the score assignment changes.
+The main signal is straightforward: confidence is not passive. A 33.1% change rate is high enough that the displayed scores are clearly part of the prompt contract from the model’s perspective. The mean unique-answer count of 1.92 and the median of 2.00 show that this is not just a one-off artifact in a few rows. The model often shifts between at least two candidate answers for the same image when the score assignment changes.
 
-The accuracy change matters too. Original-order accuracy is 63.3%, while accuracy under permuted confidence drops to 44.1%. That means score permutation is not just moving the model between equally good options. It is often pushing it away from the correct species.
+The accuracy change matters too. Original-order accuracy is 67.2%, while accuracy under permuted confidence drops to 48.4%. That means score permutation is not just moving the model between equally good options. It is often pushing it away from the correct species.
 
 The directional counts point in the same direction. Most of the examples are either stable in both conditions or wrong in both conditions, but the important part is that confidence permutations almost never rescue a wrong answer and do frequently disturb a correct one.
 
