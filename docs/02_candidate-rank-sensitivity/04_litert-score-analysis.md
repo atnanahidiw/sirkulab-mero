@@ -18,7 +18,7 @@ If candidate order is influencing the model’s output behavior, then the select
 
 ## Method
 
-We analyze the current `outputs/candidate-rank-sensitivity/confidence_score_results.jsonl` file with the new LiteRT-compatible score summary script, `scripts/candidate-rank-sensitivity/analyze_score_rank_bias.py`.
+We analyze the current `outputs/candidate-rank-sensitivity/confidence_score_results.jsonl` file with the new LiteRT-compatible score summary script, `scripts/candidate-rank-sensitivity/01i-analyze_score_rank_bias.py`.
 
 The analysis is deliberately output-level:
 

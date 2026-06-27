@@ -20,7 +20,7 @@ The model's short explanation should change when the answer changes, and it shou
 
 ## Method
 
-We reused the frozen rank-sensitivity run from `outputs/candidate-rank-sensitivity/reverse_big/checkpointed_results.jsonl`. That file contains the original-order row plus the shuffled and reverse-order rows for each example. The new analyzer, `scripts/candidate-rank-sensitivity/analyze_explanation_faithfulness.py`, reads those rows and extracts the `short_reason` field from the model's JSON response.
+We reused the frozen rank-sensitivity run from `outputs/candidate-rank-sensitivity/reverse_big/checkpointed_results.jsonl`. That file contains the original-order row plus the shuffled and reverse-order rows for each example. The new analyzer, `scripts/candidate-rank-sensitivity/01n-analyze_explanation_faithfulness.py`, reads those rows and extracts the `short_reason` field from the model's JSON response.
 
 The audit is intentionally lightweight. It does not generate new counterfactual images, and it does not call a separate judge model. Instead, it treats the already-collected original and perturbed rows as paired observations and measures how the explanation changes under those paired perturbations.
 
@@ -123,7 +123,7 @@ Because of those limits, the audit should be read as a useful screen for stale r
 
 ### Local artifacts
 
-- [scripts/candidate-rank-sensitivity/analyze_explanation_faithfulness.py](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/scripts/candidate-rank-sensitivity/analyze_explanation_faithfulness.py)
+- [scripts/candidate-rank-sensitivity/01n-analyze_explanation_faithfulness.py](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/scripts/candidate-rank-sensitivity/01n-analyze_explanation_faithfulness.py)
 - [outputs/candidate-rank-sensitivity/reverse_big/checkpointed_results.jsonl](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/outputs/candidate-rank-sensitivity/reverse_big/checkpointed_results.jsonl)
 - [outputs/candidate-rank-sensitivity/explanation_faithfulness_summary.json](/Users/atnanahidiw/.openclaw/workspace/workdir/sirkulab-mero/outputs/candidate-rank-sensitivity/explanation_faithfulness_summary.json)
 

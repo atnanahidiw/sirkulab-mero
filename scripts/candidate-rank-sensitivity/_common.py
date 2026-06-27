@@ -12,7 +12,7 @@ from typing import Iterable
 HERE = Path(__file__).resolve()
 REPO_ROOT = next(p for p in HERE.parents if (p / "assets" / "data" / "species_data.sqlite").exists())
 BASELINE_SCRIPT = REPO_ROOT / "scripts" / "gemma-improve-detection" / "eval_gemma4_baseline.py"
-BASELINE_OUTPUT = REPO_ROOT / "scripts" / "gemma-improve-detection" / "outputs" / "gemma4_baseline.jsonl"
+BASELINE_OUTPUT = REPO_ROOT / "outputs" / "gemma-improve-detection" / "gemma4_baseline.jsonl"
 DB_PATH = REPO_ROOT / "assets" / "data" / "species_data.sqlite"
 DEFAULT_OUTPUT_DIR = REPO_ROOT / "outputs" / "candidate-rank-sensitivity"
 

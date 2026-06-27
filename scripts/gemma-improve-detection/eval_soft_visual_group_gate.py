@@ -15,9 +15,9 @@ Run:
   uv run --python .venv-export/bin/python scripts/smaller-footprint-pipeline-v1/eval_soft_visual_group_gate.py
 
 Writes:
-  scripts/smaller-footprint-pipeline-v1/outputs/gemma4_soft_visual_group_gate.json
-  scripts/smaller-footprint-pipeline-v1/outputs/gemma4_soft_visual_group_gate.jsonl
-  scripts/smaller-footprint-pipeline-v1/outputs/gemma4_soft_visual_group_gate.md
+  outputs/gemma-improve-detection/gemma4_soft_visual_group_gate.json
+  outputs/gemma-improve-detection/gemma4_soft_visual_group_gate.jsonl
+  outputs/gemma-improve-detection/gemma4_soft_visual_group_gate.md
 """
 from __future__ import annotations
 
@@ -31,7 +31,7 @@ from pathlib import Path
 
 HERE = Path(__file__).resolve()
 APP_REPO = next(p for p in HERE.parents if (p / "assets/data/species_data.sqlite").exists())
-OUT_DIR = HERE.parent / "outputs"
+OUT_DIR = APP_REPO / "outputs" / "gemma-improve-detection"
 
 SYNONYMS = {
     "stripes": "striped",

@@ -29,7 +29,7 @@ from collections import Counter, defaultdict
 from pathlib import Path
 
 HERE = Path(__file__).resolve()
-OUT_DIR = HERE.parent / "outputs"
+OUT_DIR = APP_REPO / "outputs" / "gemma-improve-detection"
 SOFT_GATE_PATH = HERE.parent / "eval_gemma4_soft_gate.py"
 APP_REPO = next(p for p in HERE.parents if (p / "assets/data/species_data.sqlite").exists())
 DB_PATH = APP_REPO / "assets/data/species_data.sqlite"

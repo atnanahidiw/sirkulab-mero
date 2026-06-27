@@ -25,8 +25,8 @@ Run with the LiteRT-LM environment:
       --model-path ~/Downloads/gemma-4-E2B-it.litertlm
 
 Writes:
-  scripts/smaller-footprint-pipeline-v1/outputs/gemma4_soft_gate.json   (summary)
-  scripts/smaller-footprint-pipeline-v1/outputs/gemma4_soft_gate.jsonl  (per image)
+  outputs/gemma-improve-detection/gemma4_soft_gate.json   (summary)
+  outputs/gemma-improve-detection/gemma4_soft_gate.jsonl  (per image)
 """
 from __future__ import annotations
 
@@ -42,7 +42,7 @@ HERE = Path(__file__).resolve()
 APP_REPO = next(p for p in HERE.parents if (p / "assets/data/species_data.sqlite").exists())
 WORKDIR = APP_REPO.parent
 DATA_REPO_DEFAULT = WORKDIR / "sirkulab-mero-data"
-OUT_DIR = HERE.parent / "outputs"
+OUT_DIR = APP_REPO / "outputs" / "gemma-improve-detection"
 BASELINE_PATH = HERE.parent / "eval_gemma4_baseline.py"
 MODEL_DEFAULT = Path.home() / "Downloads/gemma-4-E2B-it.litertlm"
 
@@ -175,7 +175,7 @@ def main():
         i, m = (int(x) for x in args.shard.split("/"))
         samples, tag = samples[i::m], f"_shard{i}of{m}"
 
-    OUT_DIR.mkdir(exist_ok=True)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     out_json = OUT_DIR / f"gemma4_soft_gate{tag}.json"
     out_jsonl = OUT_DIR / f"gemma4_soft_gate{tag}.jsonl"
 

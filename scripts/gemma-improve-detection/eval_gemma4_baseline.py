@@ -20,7 +20,8 @@ with the **sirkulab-mero-data** env (it has `litert_lm`); the SQLite search is s
       ../sirkulab-mero/scripts/smaller-footprint-pipeline-v1/eval_gemma4_baseline.py \\
       --model-path models/gemma-4-E2B-it.litertlm   # --limit 30 for a quick run
 
-Writes a summary JSON + per-image JSONL (incl. the tool transcript) to ./outputs/.
+Writes a summary JSON + per-image JSONL (incl. the tool transcript) to
+`outputs/gemma-improve-detection/`.
 """
 from __future__ import annotations
 
@@ -36,7 +37,7 @@ HERE = Path(__file__).resolve()
 APP_REPO = next(p for p in HERE.parents if (p / "assets/data/species_data.sqlite").exists())
 WORKDIR = APP_REPO.parent
 DATA_REPO_DEFAULT = WORKDIR / "sirkulab-mero-data"
-OUT_DIR = HERE.parent / "outputs"
+OUT_DIR = APP_REPO / "outputs" / "gemma-improve-detection"
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp"}
 MAX_PASSES = 4
 
@@ -321,7 +322,7 @@ def main():
     print(f"  genus acc     : {ge_ok/n:.1%}")
     print(f"  {dt/n:.1f}s/image · {dt/60:.1f} min total")
 
-    OUT_DIR.mkdir(exist_ok=True)
+    OUT_DIR.mkdir(parents=True, exist_ok=True)
     summary = {"date": str(date.today()), "model": "gemma-4-E2B", "flow": "original-sees-image+search",
                "tool_calling": "native", "images": n, "species_top1": sp_ok / n if n else 0.0,
                "genus_acc": ge_ok / n if n else 0.0, "sec_per_image": dt / n if n else 0.0}
