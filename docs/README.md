@@ -6,6 +6,7 @@ This folder is organized as a small set of narrative tracks. Each track keeps on
 
 - `01` is for Gemma 4 detection failures and the fixes we tried.
 - `02` is for candidate-rank sensitivity and the follow-on analyses around it.
+- `03` is for the mechanistic Hugging Face follow-up on candidate-rank bias.
 - Lower numbers are earlier or broader context.
 - Inside a track, numbered files are meant to be read in order.
 - Files with the same prefix but different suffixes usually compare variants of the same experiment.
@@ -49,15 +50,20 @@ The project needs two kinds of evidence.
 
 The first three docs focus on behavior. The LiteRT score analysis stays within the available runtime and explains what can still be measured there.
 
-### Candidate Rank Mechanistic
+### `03` Candidate Rank Mechanistic
 
-This folder holds the mechanistic backend plan for the candidate-rank work.
+This folder holds the mechanistic Hugging Face follow-up for the candidate-rank work.
 
 It is separated from the behavioral track on purpose. The LiteRT-backed reports answer what changes in the output. The mechanistic notes explain how the same Gemma 4 family can be analyzed with Hugging Face safetensors when hidden states, logits, and hooks are required.
 
 #### File Guide
 
 - [`00_plan.md`](./03_candidate-rank-mechanistic/00_plan.md) explains why the mechanistic backend uses Hugging Face Gemma 4 instead of LiteRT-LM.
+- [`01_hf-logit-rank-bias.md`](./03_candidate-rank-mechanistic/01_hf-logit-rank-bias.md) describes the Hugging Face logit-level replication.
+- [`02_prompt-format-controls.md`](./03_candidate-rank-mechanistic/02_prompt-format-controls.md) describes the prompt-format controls.
+- [`03a_candidate-position-probing.md`](./03_candidate-rank-mechanistic/03a_candidate-position-probing.md) describes the main hidden-state probing plan, and [`03b_prompt-template-probing-controls.md`](./03_candidate-rank-mechanistic/03b_prompt-template-probing-controls.md) describes the probing robustness control.
+- [`04_activation-patching-rank-bias.md`](./03_candidate-rank-mechanistic/04_activation-patching-rank-bias.md) describes the activation-patching plan.
+- [`05_sae-inspection-plan.md`](./03_candidate-rank-mechanistic/05_sae-inspection-plan.md) describes the SAE compatibility gate and skip behavior.
 
 ## Why This Structure Exists
 

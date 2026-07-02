@@ -15,6 +15,11 @@ from typing import Any, Iterable, Sequence
 import numpy as np
 import torch
 
+try:  # pragma: no cover - optional dependency
+    from nnsight import LanguageModel as NNSightLanguageModel
+except Exception:  # pragma: no cover - optional dependency
+    NNSightLanguageModel = None
+
 HERE = Path(__file__).resolve()
 REPO_ROOT = next(p for p in HERE.parents if (p / "assets" / "data" / "species_data.sqlite").exists())
 BASE_COMMON_PATH = REPO_ROOT / "scripts" / "candidate-rank-sensitivity" / "_common.py"
@@ -55,6 +60,7 @@ class HFBundle:
     device: str
     dtype: torch.dtype
     device_map: str | None
+    _nnsight_model_cache: Any | None = None
 
     def model_device(self) -> torch.device:
         return _model_device(self)
@@ -81,6 +87,28 @@ class HFBundle:
 
     def transformer_block_names(self) -> list[str]:
         return locate_transformer_block_names(self.model)
+
+    def nnsight_model(self) -> Any:
+        if NNSightLanguageModel is None:
+            raise ExperimentError("nnsight is not installed in this environment")
+        if self._nnsight_model_cache is None:
+            self._nnsight_model_cache = NNSightLanguageModel(self.model, tokenizer=self.tokenizer)
+        return self._nnsight_model_cache
+
+    def trace(self, prompt: str | None = None, **kwargs):
+        traced_model = self.nnsight_model()
+        if prompt is None:
+            return traced_model.trace(**kwargs)
+        return traced_model.trace(prompt, **kwargs)
+
+    def resolve_nnsight_module(self, module_name: str) -> Any:
+        module = self.nnsight_model()
+        try:
+            return _resolve_dotted_path(module, module_name)
+        except Exception:
+            if hasattr(module, "model"):
+                return _resolve_dotted_path(module.model, module_name)
+            raise
 
 
 @dataclass(frozen=True)
@@ -205,18 +233,11 @@ def render_candidate_list(
         display = candidate_display_name(cand)
         if list_style == "lettered":
             prefix = f"{chr(64 + idx)}."
-        elif list_style in {"bulleted", "bullet"}:
+        elif list_style == "bulleted":
             prefix = "*"
-        elif list_style == "distance_equalized":
-            prefix = f"{idx:02d}."
-        elif list_style == "plain_sentences":
-            prefix = "Candidate"
         else:
             prefix = f"{idx}."
-        if list_style == "plain_sentences":
-            item = f"{prefix} {idx}: {display}."
-        else:
-            item = f"{prefix} {display}"
+        item = f"{prefix} {display}"
         if list_style == "semicolon":
             item = display
         if include_confidence:
@@ -304,6 +325,18 @@ def find_subsequence(haystack: Sequence[int], needle: Sequence[int]) -> tuple[in
         if list(haystack[start : start + len(needle)]) == list(needle):
             return start, start + len(needle)
     return None
+
+
+def _resolve_dotted_path(root: Any, dotted: str) -> Any:
+    current = root
+    for part in str(dotted).split("."):
+        if not part:
+            continue
+        if part.isdigit():
+            current = current[int(part)]
+        else:
+            current = getattr(current, part)
+    return current
 
 
 def locate_text_span(tokenizer: Any, text: str, target: str) -> tuple[int, int] | None:
@@ -652,6 +685,25 @@ def full_sequence_logprob(bundle: HFBundle, prompt: str, completion: str) -> flo
 
 
 def extract_hidden_states(bundle: HFBundle, prompt: str, layer_indices: Sequence[int] | None = None) -> Any:
+    if NNSightLanguageModel is not None and layer_indices is not None:
+        traced_model = bundle.nnsight_model()
+        text_model = traced_model.model.language_model
+        inputs = encode_text(bundle.tokenizer, prompt)
+        selected: dict[int, torch.Tensor] = {}
+        requested = sorted({int(idx) for idx in layer_indices})
+        with traced_model.trace(
+            input_ids=inputs.get("input_ids"),
+            attention_mask=inputs.get("attention_mask"),
+        ):
+            for hidden_index in requested:
+                if hidden_index < 0:
+                    continue
+                if hidden_index == 0:
+                    tensor = text_model.embed_tokens.output[0].save()
+                else:
+                    tensor = text_model.layers[hidden_index - 1].output[0].save()
+                selected[hidden_index] = tensor
+        return selected
     inputs = encode_text(bundle.tokenizer, prompt)
     input_ids = inputs.get("input_ids")
     if input_ids is None:

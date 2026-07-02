@@ -21,7 +21,7 @@ The initial sequence is:
 1. Recreate the same text prompt format used in the behavioral experiments.
 2. Replicate the LiteRT token-score result with Hugging Face Gemma 4 logits.
 3. Run prompt-format controls to separate rank effects from formatting and recency effects.
-4. Move to hidden-state probing.
+4. Move to hidden-state probing, starting with the main probe and then robustness controls.
 5. Add activation patching with PyTorch hooks.
 6. Treat SAE or Gemma Scope-style inspection as optional, not required.
 
@@ -71,7 +71,7 @@ This matters because the recency-like effect may come from distance to the answe
 
 ### 3. Hidden-State Probing
 
-The probing script tests whether candidate position is linearly decodable from hidden states.
+The probing scripts test whether candidate position is linearly decodable from hidden states.
 
 Extract hidden states from:
 
@@ -87,7 +87,9 @@ Controls:
 - Majority baseline
 - Random-label baseline
 - Candidate-identity split
-- Prompt-template split
+- Example split
+- Condition transfer
+- Prompt-template robustness control
 
 Important guardrail:
 
@@ -129,14 +131,18 @@ Only claim Gemma 4 SAE analysis if Gemma 4-compatible SAE artifacts are availabl
 
 - `scripts/candidate-rank-mechanistic/README.md`
 - `scripts/candidate-rank-mechanistic/common_hf.py`
-- `scripts/candidate-rank-mechanistic/logit_rank_bias_hf.py`
-- `scripts/candidate-rank-mechanistic/prompt_format_controls_hf.py`
-- `scripts/candidate-rank-mechanistic/probe_candidate_position_hf.py`
-- `scripts/candidate-rank-mechanistic/activation_patching_rank_bias_hf.py`
+- `scripts/candidate-rank-mechanistic/01_hf_logit_rank_bias.py`
+- `scripts/candidate-rank-mechanistic/02_prompt_format_controls_hf.py`
+- `scripts/candidate-rank-mechanistic/03a_probe_candidate_position_hf.py`
+- `scripts/candidate-rank-mechanistic/03b_prompt_template_probe_controls_hf.py`
+- `scripts/candidate-rank-mechanistic/04_activation_patching_rank_bias_hf.py`
+- `scripts/candidate-rank-mechanistic/05_sae_inspection_plan.py`
 - `docs/03_candidate-rank-mechanistic/01_hf-logit-rank-bias.md`
 - `docs/03_candidate-rank-mechanistic/02_prompt-format-controls.md`
-- `docs/03_candidate-rank-mechanistic/03_candidate-position-probing.md`
+- `docs/03_candidate-rank-mechanistic/03a_candidate-position-probing.md`
+- `docs/03_candidate-rank-mechanistic/03b_prompt-template-probing-controls.md`
 - `docs/03_candidate-rank-mechanistic/04_activation-patching-rank-bias.md`
+- `docs/03_candidate-rank-mechanistic/05_sae-inspection-plan.md`
 
 ## Sources
 
