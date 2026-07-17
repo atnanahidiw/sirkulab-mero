@@ -1,0 +1,163 @@
+{{ define "main" }}
+  <article class="doc-content landing-page">
+    <section class="hero product-hero">
+      <span class="eyebrow">Android · On-device AI · Indonesia</span>
+      <p class="hero-quote">“We can’t protect what we don’t recognize.”</p>
+      <h1>Empowering the guardians of tomorrow.</h1>
+      <p class="lead">Mero turns an Android phone into an offline biodiversity guide. Students can photograph an endangered species, identify it with Gemma 4 running on the device, and learn why it matters—even where internet access cannot be assumed.</p>
+      <div class="hero-actions">
+        <a class="button primary" href="{{ "research/" | relURL }}">Read the research</a>
+        <a class="button" href="#features">Explore the features</a>
+        <a class="button quiet" href="{{ site.Params.repository }}/releases">Download the latest APK&nbsp; →</a>
+      </div>
+      <div class="hero-facts" aria-label="Mero platform summary">
+        <span><strong>01</strong> Gemma 4 E2B</span>
+        <span><strong>02</strong> Bahasa Indonesia + English</span>
+        <span><strong>03</strong> Private and offline</span>
+      </div>
+    </section>
+
+    <section class="mission-section" aria-labelledby="mission-title">
+      <div>
+        <span class="section-kicker">Why Mero exists</span>
+        <h2 id="mission-title">Conservation education should work where the species live.</h2>
+      </div>
+      <div class="mission-copy">
+        <p>Indonesia is home to extraordinary biodiversity, yet students living on the frontlines of endangered habitats may not have the connectivity or tools needed to recognize the species around them.</p>
+        <p>Mero closes that gap with image-based identification and practical conservation education that runs locally on a phone. Recognition becomes a first step toward understanding—and protecting—the surrounding ecosystem.</p>
+      </div>
+    </section>
+
+    <section id="features" class="home-section" aria-labelledby="features-title">
+      <span class="section-kicker">What students can do</span>
+      <h2 id="features-title">From one photograph to useful conservation knowledge.</h2>
+      <p class="section-intro">Mero combines identification, trusted species context, and concrete action in one offline learning experience.</p>
+
+      <div class="feature-grid">
+        <article class="feature-card">
+          <span class="feature-number">01</span>
+          <h3>Identify with the camera</h3>
+          <p>Take a photograph and let the on-device multimodal model identify the species without uploading the image.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">02</span>
+          <h3>Understand conservation status</h3>
+          <p>See a colour-coded IUCN status, from Least Concern through Critically Endangered, with supporting detail.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">03</span>
+          <h3>Learn threats and ecosystem roles</h3>
+          <p>Discover why a species matters, how it supports its ecosystem, and what is putting it at risk.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">04</span>
+          <h3>Turn knowledge into action</h3>
+          <p>Receive practical conservation suggestions tailored to the species instead of stopping at a name.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">05</span>
+          <h3>Learn in two languages</h3>
+          <p>Switch between full Bahasa Indonesia and English support inside the app.</p>
+        </article>
+        <article class="feature-card">
+          <span class="feature-number">06</span>
+          <h3>Keep learning offline</h3>
+          <p>After the one-time model download, species identification and learning continue without connectivity.</p>
+        </article>
+      </div>
+    </section>
+    
+    <section class="home-section system-flow" aria-labelledby="system-flow-title">
+      <span class="section-kicker">How identification works</span>
+      <h2 id="system-flow-title">A local reasoning loop, grounded in species data.</h2>
+      <p class="section-intro">The model observes the photograph, searches local candidates, evaluates the evidence, and revises its hypothesis for up to four passes before opening a grounded conversation.</p>
+
+      <pre class="raw-flow-diagram" role="img" aria-label="Mero identification flow from student photograph through on-device Gemma, local feature search, confidence gate, and species-record-grounded questions and answers."><code>Student takes photo
+         │
+         ▼
+┌───────────────────────────┐     ┌───────────────────────┐
+│  Gemma 4 E2B  (on-device) │────►│ search_similar_       │
+│                           │◄────│ features (local)      │
+│  Observe → Hypothesise    │     │                       │
+│  Evaluate → Revise        │     │ FTS5 + Sorensen-Dice  │
+│  (up to 4 passes)         │     │ returns top candidates│
+└───────────┬───────────────┘     └───────────────────────┘
+            │ final answer
+            ▼
+    Confidence Gate
+    high / medium  →  continue
+    low / empty    →  retry
+            │
+            ▼
+┌───────────────────────────┐
+│  Gemma 4 E2B  (on-device) │
+│                           │
+│  Q&amp;A grounded on          │
+│  species record           │
+└───────────────────────────┘</code></pre>
+    </section>
+
+    <section class="privacy-panel" aria-labelledby="privacy-title">
+      <div>
+        <span class="section-kicker light">Privacy by architecture</span>
+        <h2 id="privacy-title">The photograph stays on the phone.</h2>
+        <p>Gemma 4 performs image analysis locally. Mero does not upload photographs, collect personal data, or transmit identification requests to a server.</p>
+      </div>
+      <ul class="privacy-list">
+        <li>Local image analysis</li>
+        <li>No photo uploads</li>
+        <li>No personal-data collection</li>
+        <li>Fully offline after setup</li>
+      </ul>
+    </section>
+
+    <section class="home-section research-preview" aria-labelledby="research-title">
+      <span class="section-kicker">Open research notebook</span>
+      <h2 id="research-title">The experiments, failures, and pivots stay visible.</h2>
+      <p class="section-intro">Mero is a working research prototype. Its append-only notebook records the effort to improve accuracy, reduce model size, understand candidate-rank bias, and preserve reliable on-device tool use.</p>
+
+      <div class="card-grid track-grid compact-track-grid">
+        <a class="doc-card" href="{{ "00_smaller-footprint-pipeline/" | relURL }}">
+          <span class="card-icon">00</span><strong>Smaller-footprint pipeline</strong><span>Experiments in reducing the model, runtime, and storage footprint.</span>
+        </a>
+        <a class="doc-card" href="{{ "01_gemma-improve-detection/" | relURL }}">
+          <span class="card-icon">01</span><strong>Detection failures</strong><span>Failure analysis, confidence gates, and tool-use behavior.</span>
+        </a>
+        <a class="doc-card" href="{{ "02_candidate-rank-sensitivity/" | relURL }}">
+          <span class="card-icon">02</span><strong>Rank sensitivity</strong><span>Behavioral tests of ordering, confidence, and explanations.</span>
+        </a>
+        <a class="doc-card" href="{{ "03_candidate-rank-mechanistic/" | relURL }}">
+          <span class="card-icon">03</span><strong>Mechanistic analysis</strong><span>Logit, hidden-state, and causal investigations of rank bias.</span>
+        </a>
+      </div>
+      <a class="button" href="{{ "research/" | relURL }}">Open the complete notebook&nbsp; →</a>
+    </section>
+
+    <section class="limitations-section" aria-labelledby="limitations-title">
+      <div>
+        <span class="section-kicker">Current limitations</span>
+        <h2 id="limitations-title">Know the trade-offs before heading into the field.</h2>
+      </div>
+      <ul>
+        <li><strong>Large setup:</strong> the model requires a one-time download of approximately 2.4 GB.</li>
+        <li><strong>Variable accuracy:</strong> rare or visually similar species can still be misidentified.</li>
+        <li><strong>Device-dependent speed:</strong> newer hardware completes inference much faster.</li>
+        <li><strong>Battery use:</strong> local AI inference is compute-intensive during active identification.</li>
+      </ul>
+    </section>
+
+    <section class="contribute-panel">
+      <div>
+        <span class="section-kicker">Build with us</span>
+        <h2>Contributions are welcome.</h2>
+        <p>Fork the repository, create a focused branch, test the change, and open a pull request. For larger changes, begin with an issue so the approach can be discussed first.</p>
+      </div>
+      <div class="contribute-actions">
+        <a class="button primary" href="{{ site.Params.repository }}">View the source</a>
+        <a class="button" href="{{ site.Params.repository }}/issues">Open an issue</a>
+      </div>
+    </section>
+
+    <p class="acknowledgment">Built with <a href="https://pub.dev/packages/flutter_gemma">flutter_gemma</a> and <a href="https://ai.google.dev/gemma">Google Gemma</a>, with inspiration and conservation partnership from <a href="https://www.instagram.com/sirkulaindonesia/">Sirkula Indonesia</a>. Licensed under MIT.</p>
+  </article>
+{{ end }}

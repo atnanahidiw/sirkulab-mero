@@ -1,0 +1,30 @@
+baseURL = 'https://atnanahidiw.github.io/sirkulab-mero/'
+title = 'Mero Research'
+copyright = 'Mero · Empowering the Guardians of Tomorrow'
+contentDir = 'docs'
+layoutDir = 'site/layouts'
+assetDir = 'site/assets'
+staticDir = ['android/app/src/main/res/mipmap-xxxhdpi']
+publishDir = 'public'
+cleanDestinationDir = true
+disableKinds = ['taxonomy', 'term', 'rss']
+enableRobotsTXT = true
+titleCaseStyle = 'none'
+ignoreFiles = ['/AGENTS\.md$']
+
+[params]
+  description = 'On-device biodiversity identification and conservation education for Indonesian classrooms.'
+  repository = 'https://github.com/atnanahidiw/sirkulab-mero'
+  kaggle = 'https://www.kaggle.com/competitions/gemma-4-good-hackathon/writeups/new-writeup-1777451046200'
+
+[markup]
+  [markup.goldmark]
+    [markup.goldmark.renderer]
+      unsafe = true
+    [markup.goldmark.renderHooks]
+      [markup.goldmark.renderHooks.link]
+        useEmbedded = 'fallback'
+
+[caches]
+  [caches.images]
+    dir = ':cacheDir/images'

@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#12372d">
+    {{ $pageTitle := partial "page-title.html" . }}
+    <meta name="description" content="{{ .Description | default site.Params.description }}">
+    <link rel="icon" type="image/png" href="{{ "ic_launcher.png" | relURL }}">
+    <link rel="canonical" href="{{ .Permalink }}">
+    <meta property="og:title" content="{{ if .IsHome }}Mero Research{{ else }}{{ $pageTitle }} · Mero Research{{ end }}">
+    <meta property="og:description" content="{{ .Description | default site.Params.description }}">
+    <meta property="og:type" content="{{ if eq .Type "article" }}article{{ else }}website{{ end }}">
+    <meta property="og:url" content="{{ .Permalink }}">
+    <title>{{ if .IsHome }}Mero Research{{ else }}{{ $pageTitle }} · Mero Research{{ end }}</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Playfair+Display:wght@500;600&amp;display=swap" rel="stylesheet">
+    {{ with resources.Get "css/main.css" | minify | fingerprint }}
+      <link rel="stylesheet" href="{{ .RelPermalink }}" integrity="{{ .Data.Integrity }}">
+    {{ end }}
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <div class="site-shell">
+      {{ partial "sidebar.html" . }}
+
+      <header class="mobile-header">
+        <a class="mobile-brand" href="{{ "" | relURL }}"><img src="{{ "ic_launcher.png" | relURL }}" alt="" width="28" height="28"> Mero Research</a>
+        <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav">Menu</button>
+        <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" hidden>
+          <a href="{{ "" | relURL }}">Overview</a>
+          <a href="{{ "articles/on-device-model-migration-lessons/" | relURL }}">Featured article</a>
+          <a href="{{ "research/" | relURL }}">Research notebook</a>
+          <a href="{{ "00_smaller-footprint-pipeline/" | relURL }}">Smaller footprint</a>
+          <a href="{{ "01_gemma-improve-detection/" | relURL }}">Detection failures</a>
+          <a href="{{ "02_candidate-rank-sensitivity/" | relURL }}">Rank sensitivity</a>
+          <a href="{{ "03_candidate-rank-mechanistic/" | relURL }}">Mechanistic analysis</a>
+        </nav>
+      </header>
+
+      <main id="content" class="main-content">
+        {{ block "main" . }}{{ end }}
+        <footer class="content-footer">
+          <span>{{ site.Copyright }}</span>
+          <span><a href="{{ site.Params.repository }}">GitHub</a> · <a href="{{ site.Params.repository }}/issues">Report an issue</a></span>
+        </footer>
+      </main>
+    </div>
+
+    <script>
+      (() => {
+        const toggle = document.querySelector(".menu-toggle");
+        const navigation = document.querySelector(".mobile-nav");
+        if (!toggle || !navigation) return;
+        const close = ({ restoreFocus = false } = {}) => {
+          toggle.setAttribute("aria-expanded", "false");
+          navigation.hidden = true;
+          if (restoreFocus) toggle.focus();
+        };
+        const open = () => {
+          toggle.setAttribute("aria-expanded", "true");
+          navigation.hidden = false;
+          navigation.querySelector("a")?.focus();
+        };
+        toggle.addEventListener("click", () => {
+          const isOpen = toggle.getAttribute("aria-expanded") === "true";
+          if (isOpen) close(); else open();
+        });
+        navigation.addEventListener("click", (event) => { if (event.target.closest("a")) close(); });
+        document.addEventListener("keydown", (event) => {
+          if (event.key === "Escape" && !navigation.hidden) close({ restoreFocus: true });
+        });
+        document.addEventListener("pointerdown", (event) => {
+          if (!navigation.hidden && !event.target.closest(".mobile-header")) close();
+        });
+        window.addEventListener("resize", () => { if (window.innerWidth > 840) close(); });
+      })();
+    </script>
+  </body>
+</html>

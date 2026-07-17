@@ -1,0 +1,14 @@
+{{- $title := .Title -}}
+{{- if not $title -}}
+  {{- $headings := findRESubmatch `(?m)^#\s+(.+?)\s*$` .RawContent 1 -}}
+  {{- if $headings -}}
+    {{- $title = index (index $headings 0) 1 | markdownify | plainify -}}
+  {{- else -}}
+    {{- with .File -}}
+      {{- $title = .ContentBaseName | replaceRE `[-_]+` " " | humanize -}}
+    {{- else -}}
+      {{- $title = site.Title -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+{{- return $title -}}

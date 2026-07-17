@@ -1,0 +1,43 @@
+{{ define "main" }}
+  <article class="doc-content">
+    <span class="eyebrow">Research track</span>
+    <h1>{{ .Title }}</h1>
+    {{ with .Content }}<div class="section-intro">{{ . }}</div>{{ end }}
+
+    {{ if eq .Section "research" }}
+      <div class="card-grid track-grid">
+        {{ range where site.Sections "Section" "ne" "research" }}
+          {{ if findRE `^\d\d_` .Section }}
+            {{ $pageTitle := partial "page-title.html" . }}
+            <a class="doc-card" href="{{ .RelPermalink }}">
+              <span class="card-icon">{{ substr .Section 0 2 }}</span>
+              <strong>{{ $pageTitle }}</strong>
+              <span>{{ .Description }}</span>
+            </a>
+          {{ end }}
+        {{ end }}
+      </div>
+    {{ else }}
+      <div class="note-list">
+        {{ range .Pages.ByWeight }}
+          {{ $showInIndex := .IsSection }}
+          {{ with .File }}
+            {{ if findRE `^\d{2}[a-z]?_` .ContentBaseName }}
+              {{ $showInIndex = true }}
+            {{ end }}
+          {{ end }}
+          {{ if $showInIndex }}
+            {{ $pageTitle := partial "page-title.html" . }}
+            <a class="note-row" href="{{ .RelPermalink }}">
+              <span>
+                <strong>{{ $pageTitle }}</strong>
+                {{ with .Description }}<small>{{ . }}</small>{{ end }}
+              </span>
+              <span aria-hidden="true">→</span>
+            </a>
+          {{ end }}
+        {{ end }}
+      </div>
+    {{ end }}
+  </article>
+{{ end }}

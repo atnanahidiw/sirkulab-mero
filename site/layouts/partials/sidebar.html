@@ -1,0 +1,36 @@
+{{- $current := .RelPermalink -}}
+<aside class="sidebar" aria-label="Research navigation">
+  <a class="brand" href="{{ "" | relURL }}" aria-label="Mero research home">
+    <span class="brand-mark" aria-hidden="true">
+      <img src="{{ "ic_launcher.png" | relURL }}" alt="" width="40" height="40">
+    </span>
+    <span><strong>Mero</strong><small>Product &amp; Research Notes</small></span>
+  </a>
+
+  <nav class="nav-groups">
+    <div class="nav-group">
+      <p class="nav-label">Start here</p>
+      <a class="nav-link{{ if .IsHome }} is-active{{ end }}" href="{{ "" | relURL }}">Overview</a>
+      <a class="nav-link{{ if eq .Type "article" }} is-active{{ end }}" href="{{ "articles/on-device-model-migration-lessons/" | relURL }}">When Smaller Means Harder</a>
+    </div>
+
+    <div class="nav-group">
+      <p class="nav-label">Research tracks</p>
+      <a class="nav-link{{ if strings.Contains $current "/00_smaller-footprint-pipeline/" }} is-active{{ end }}" href="{{ "00_smaller-footprint-pipeline/" | relURL }}">00 · Smaller footprint</a>
+      <a class="nav-link{{ if strings.Contains $current "/01_gemma-improve-detection/" }} is-active{{ end }}" href="{{ "01_gemma-improve-detection/" | relURL }}">01 · Detection failures</a>
+      <a class="nav-link{{ if strings.Contains $current "/02_candidate-rank-sensitivity/" }} is-active{{ end }}" href="{{ "02_candidate-rank-sensitivity/" | relURL }}">02 · Rank sensitivity</a>
+      <a class="nav-link{{ if strings.Contains $current "/03_candidate-rank-mechanistic/" }} is-active{{ end }}" href="{{ "03_candidate-rank-mechanistic/" | relURL }}">03 · Mechanistic analysis</a>
+    </div>
+
+    <div class="nav-group">
+      <p class="nav-label">Project</p>
+      <a class="nav-link" href="{{ site.Params.repository }}">Source repository</a>
+      <a class="nav-link" href="{{ site.Params.kaggle }}">Kaggle write-up</a>
+    </div>
+  </nav>
+
+  <div class="sidebar-note">
+    <span class="status-dot" aria-hidden="true"></span>Offline by design<br>
+    <small>Photos stay on the device.</small>
+  </div>
+</aside>

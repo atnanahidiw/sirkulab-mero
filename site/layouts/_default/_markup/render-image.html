@@ -1,0 +1,5 @@
+{{- $alt := .Text -}}
+{{- if not $alt -}}
+  {{- $alt = printf "Illustration from %s" (partial "page-title.html" .Page) -}}
+{{- end -}}
+<img src="{{ .Destination | safeURL }}" alt="{{ $alt }}"{{ with .Title }} title="{{ . }}"{{ end }} loading="lazy" decoding="async">

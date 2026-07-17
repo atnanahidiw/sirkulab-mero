@@ -76,3 +76,9 @@ __pycache__/
 *.pyc
 
 outputs/
+
+# Hugo documentation site
+public/
+.hugo_build.lock
+
+.claude

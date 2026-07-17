@@ -1,0 +1,15 @@
+{{ define "main" }}
+  <article class="doc-content{{ if eq .Type "article" }} article{{ end }}">
+    {{ if eq .Type "article" }}
+      <div class="article-meta">
+        {{ with .Params.article_label }}<span><strong>{{ . }}</strong></span>{{ end }}
+        {{ with .Params.article_topic }}<span>{{ . }}</span>{{ end }}
+        {{ with .Date }}<span>{{ .Format "2006" }}</span>{{ end }}
+      </div>
+    {{ end }}
+    {{ if not (findRE `(?m)^#\s+.+$` .RawContent 1) }}
+      <h1>{{ partial "page-title.html" . }}</h1>
+    {{ end }}
+    {{ .Content }}
+  </article>
+{{ end }}

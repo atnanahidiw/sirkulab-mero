@@ -1,0 +1,32 @@
+{{- $destination := .Destination -}}
+{{- $url := urls.Parse $destination -}}
+{{- $link := $destination -}}
+{{- $target := false -}}
+
+{{- if not $url.IsAbs -}}
+  {{- $target = .PageInner.GetPage $url.Path -}}
+  {{- if not $target -}}
+    {{- $baseName := path.Base $url.Path -}}
+    {{- range .PageInner.Parent.Pages -}}
+      {{- $candidate := . -}}
+      {{- with .File -}}
+        {{- if strings.HasSuffix (strings.ToLower .LogicalName) (strings.ToLower $baseName) -}}
+          {{- $target = $candidate -}}
+        {{- end -}}
+      {{- end -}}
+    {{- end -}}
+  {{- end -}}
+
+  {{- with $target -}}
+    {{- $link = .RelPermalink -}}
+    {{- with $url.Fragment }}{{ $link = printf "%s#%s" $link . }}{{ end -}}
+  {{- else -}}
+    {{- if findRE `(?:^|/)(scripts|outputs|lib)/` $destination -}}
+      {{- $repoPath := replaceRE `^.*?((?:scripts|outputs|lib)/.*)$` `$1` $destination -}}
+      {{- $kind := cond (strings.HasSuffix $repoPath "/") "tree" "blob" -}}
+      {{- $link = printf "https://github.com/atnanahidiw/sirkulab-mero/%s/docs/%s" $kind $repoPath -}}
+    {{- end -}}
+  {{- end -}}
+{{- end -}}
+
+<a href="{{ $link | safeURL }}"{{ with .Title }} title="{{ . }}"{{ end }}{{ if $url.IsAbs }} rel="external"{{ end }}>{{ .Text }}</a>
