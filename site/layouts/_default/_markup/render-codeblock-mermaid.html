@@ -1,0 +1,5 @@
+{{- /* Render fenced ```mermaid blocks as diagrams; flag the page so the loader script is emitted only when needed. */ -}}
+<pre class="mermaid" role="img" aria-label="Diagram">
+{{- .Inner | htmlEscape | safeHTML -}}
+</pre>
+{{- .Page.Store.Set "hasMermaid" true -}}

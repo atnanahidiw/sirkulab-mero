@@ -11,7 +11,8 @@
     <div class="nav-group">
       <p class="nav-label">Start here</p>
       <a class="nav-link{{ if .IsHome }} is-active{{ end }}" href="{{ "" | relURL }}">Overview</a>
-      <a class="nav-link{{ if eq .Type "article" }} is-active{{ end }}" href="{{ "articles/on-device-model-migration-lessons/" | relURL }}">When Smaller Means Harder</a>
+      <a class="nav-link{{ if strings.Contains $current "/articles/agent-architecture-and-evaluation/" }} is-active{{ end }}" href="{{ "articles/agent-architecture-and-evaluation/" | relURL }}">Understand the agent</a>
+      <a class="nav-link{{ if strings.Contains $current "/articles/on-device-model-migration-lessons/" }} is-active{{ end }}" href="{{ "articles/on-device-model-migration-lessons/" | relURL }}">When Smaller Means Harder</a>
     </div>
 
     <div class="nav-group">

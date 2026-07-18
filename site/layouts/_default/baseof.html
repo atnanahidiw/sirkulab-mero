@@ -30,6 +30,7 @@
         <button class="menu-toggle" type="button" aria-expanded="false" aria-controls="mobile-nav">Menu</button>
         <nav id="mobile-nav" class="mobile-nav" aria-label="Mobile navigation" hidden>
           <a href="{{ "" | relURL }}">Overview</a>
+          <a href="{{ "articles/agent-architecture-and-evaluation/" | relURL }}">Understand the agent</a>
           <a href="{{ "articles/on-device-model-migration-lessons/" | relURL }}">Featured article</a>
           <a href="{{ "research/" | relURL }}">Research notebook</a>
           <a href="{{ "00_smaller-footprint-pipeline/" | relURL }}">Smaller footprint</a>
@@ -47,6 +48,13 @@
         </footer>
       </main>
     </div>
+
+    {{ if .Page.Store.Get "hasMermaid" }}
+    <script type="module">
+      import mermaid from "https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.esm.min.mjs";
+      mermaid.initialize({ startOnLoad: true, securityLevel: "strict", theme: "neutral" });
+    </script>
+    {{ end }}
 
     <script>
       (() => {

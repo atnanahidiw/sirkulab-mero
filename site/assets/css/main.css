@@ -131,6 +131,8 @@ a:hover { color: #105846; }
 .home-section > .section-intro { margin-bottom: 1.8rem; }
 .doc-content .raw-flow-diagram { margin: 2rem 0 0; padding: 2rem; overflow-x: auto; color: var(--nav); border: 1px solid #d8dedb; border-radius: 1.15rem; background: #f1f3f2; box-shadow: 0 12px 28px rgba(13,42,35,.07); }
 .doc-content .raw-flow-diagram code { display: block; width: max-content; min-width: min-content; margin: 0 auto; padding: 0; color: inherit; border: 0; background: transparent; font: 500 clamp(.72rem,1.2vw,.9rem)/1.45 "SFMono-Regular",Consolas,"Liberation Mono",monospace; }
+.doc-content .mermaid { width: 100%; margin: 2rem 0; padding: 8rem; overflow-x: auto; text-align: center; border: 1px solid #d8dedb; border-radius: 1.15rem; background: #f1f3f2; box-shadow: 0 12px 28px rgba(13,42,35,.07); }
+.doc-content .mermaid svg { display: block; width: 100%; max-width: 920px !important; height: auto; margin: 0 auto; }
 .feature-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 1rem; }
 .feature-card { min-height: 210px; padding: 1.35rem; border: 1px solid var(--line); border-radius: .85rem; background: rgba(255,255,255,.78); box-shadow: 0 3px 10px rgba(13,42,35,.035); }
 .feature-number { display: block; margin-bottom: 1.5rem; color: var(--gold); font-size: .7rem; font-weight: 750; letter-spacing: .08em; }
