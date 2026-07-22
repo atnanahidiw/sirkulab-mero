@@ -38,14 +38,14 @@ The app centers on **Gemma 4 E2B** (int4, `.litertlm`, ~2.4–2.58 GB) run on-de
   - `core/` — theme and navigation.
 - **`assets/`** — bundled `species_data.sqlite`, per-species JSON under `assets/data/species_data/<Class>/<Order>/…`, and ONNX models + embeddings/vocab under `assets/models/`.
 - **`test/`** — Dart unit/widget tests (model service, boot state/splash, download service, widget test).
-- **`scripts/`** — offline Python research/build tooling (not shipped in the app), grouped by research track: `build_species_db.py`, `candidate-rank-sensitivity/`, `candidate-rank-mechanistic/`, `gemma-improve-detection/`, `smaller-footprint-pipeline-v2/`, `smaller-footprint-pipeline-v3/`.
+- **`scripts/`** — offline Python research/build tooling (not shipped in the app), grouped by research track: `build_species_db.py`, `candidate-rank-sensitivity/`, `candidate-rank-mechanistic/`, `gemma-improve-detection/`, `smaller-footprint-pipeline-v2/`, `smaller-footprint-pipeline-v3/`, `agent-loop-evaluation/`.
 - **`outputs/`** — JSON result summaries from those experiments.
 - **`docs/`** — research narrative (see below).
 - Platform dirs (`android/`, `ios/`, `web/`), plus `.venv-export/` and `.uv-cache/` (large local Python env caches — ignore, not source).
 
 ## Research docs (`docs/`)
 
-`docs/README.md` is the index. Read it for the per-track descriptions, reading order, and the "Current Direction" note. Tracks: `00_smaller-footprint-pipeline/` (smaller on-device model search), `01_gemma-improve-detection/` (detection failures and fixes), `02_candidate-rank-sensitivity/` (behavioral rank-bias), `03_candidate-rank-mechanistic/` (mechanistic rank-bias). Also `docs/reports/` and `docs/logs/`.
+`docs/README.md` is the index. Read it for the per-track descriptions, reading order, and the "Current Direction" note. Tracks: `00_smaller-footprint-pipeline/` (smaller on-device model search), `01_gemma-improve-detection/` (detection failures and fixes), `02_candidate-rank-sensitivity/` (behavioral rank-bias), `03_candidate-rank-mechanistic/` (mechanistic rank-bias), `04_agent-loop-evaluation/` (adaptive loop vs. fixed retrieval results). Also `docs/reports/` and `docs/logs/`.
 
 ## Working notes for agents
 

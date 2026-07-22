@@ -26,7 +26,7 @@ Each step can fail independently. The model can misread the image, search the wr
 
 ## Research contribution
 
-> Mero contributes a deployment-grounded study of failure propagation in a small on-device multimodal agent. Its current results show that hard visual routing can discard recoverable evidence, retrieval scores influence final selection despite lacking calibration, and candidate-position information is linearly decodable from selected hidden states. The work does not yet establish that iterative tool use improves identification over a fixed retrieval pipeline.
+> Mero contributes a deployment-grounded study of failure propagation in a small on-device multimodal agent. Its current results show that hard visual routing can discard recoverable evidence, retrieval scores influence final selection despite lacking calibration, and candidate-position information is linearly decodable from selected hidden states. Two follow-up tests, letting the model make more adaptive search calls and adding a structured, database-grounded reflection step before a second search, have now both been run, and neither reliably beat a fixed retrieval pipeline in the runs completed so far.
 
 The table separates supported findings from causal claims and deployment questions that remain untested.
 
@@ -38,8 +38,9 @@ The table separates supported findings from causal claims and deployment questio
 | Displayed scores causally affect selections | Supported by controlled permutations |
 | Candidate rank affects likelihood | Supported in the HF text-only setting |
 | Candidate-rank representation causes selection bias | Unconfirmed |
-| Multiple tool calls improve identification | Untested |
-| Current stopping policy is reliable | Untested |
+| Multiple tool calls improve identification | Tested; not established (two-call best at 41.0% vs. 35.2% for fixed retrieval, `p = 0.065`) |
+| Structured, database-grounded reflection improves a second search | Tested in a CPU pilot; not established, and it removed more candidates than it recovered |
+| Current stopping policy is reliable | Tested; unresolved (the two-call cap outperformed the four-call cap on this run) |
 | The loop is worth its device cost | Untested |
 | Results generalize to unseen species or field conditions | Untested |
 
@@ -132,6 +133,8 @@ The third boundary lies between candidate presentation and the final decision. C
 
 The fourth boundary lies between representation and causal use. Track 03 finds that candidate position is strongly recoverable from hidden states, but the first activation-patching study does not show that candidate-local activations drive the final score. Information can be present inside the model without serving as the causal mechanism first expected.
 
+A fifth boundary showed up in a Track 04 follow-up pilot on a more structured revision step. Revising a search query does not only add candidates, it can also drop ones the first search already found. In a 64-image pilot, the true species was present after the first search for 38 images but only 29 after the required second search, a net loss of nine appearances. Keeping candidates from both searches recovered most of that loss, but the combined condition still finished behind a plain two-call baseline. See [Track 04](/sirkulab-mero/04_agent-loop-evaluation/04_reflective-iteration-implementation/) for the full pilot.
+
 ## What the experiments reveal
 
 | Finding | Measured result | Evidence |
@@ -157,33 +160,56 @@ Track 03 studies this effect through an inspectable Hugging Face backend. Moving
 
 ## What remains unknown
 
-The existing research has not established that Mero's iterative loop outperforms a one-pass retrieval pipeline.
+Track 04 did not establish that Mero's four-call prompt condition outperforms a one-pass
+retrieval pipeline. The two-call condition was best at 41.0% versus 35.2% for fixed
+retrieval, but the paired result was borderline (`p = 0.0648`). The four-call prompt
+condition reached 37.7% and was not reliably better than fixed retrieval (`p = 0.466`).
 
 In the 332-image native baseline, 260 cases used one tool call, 64 used two, 7 used three, and 1 used five. Observed accuracy was 38.8%, 34.4%, 28.6%, and 0% in those groups. These figures do not show that extra calls reduce accuracy. Harder examples are more likely to trigger revision, and only eight cases made more than two calls. A controlled pass-count comparison is needed to separate the effect of revision from the difficulty that caused the model to continue.
 
-Stopping also remains untested as a policy. The prompt tells Gemma to conclude when a retrieved candidate scores at least 45% and visually matches, or after four attempts. The runtime does not enforce that limit, and the model's final confidence label is not a calibrated stopping signal. High-confidence answers were correct in 51.9% of baseline cases. An explicit controller should be compared with alternatives such as stopping after an unchanged hypothesis or after retrieved evidence supports the current answer.
+Stopping remains unresolved as a counterfactual policy. Offline unchanged-hypothesis
+and evidence-threshold replays changed only a handful of traces, but LiteRT-LM did not
+expose the answers Gemma would have produced at those earlier stops. The prompt cap was
+also not runtime-enforced: one nominal four-call case made five searches. A hard
+controller with an answer recorded after every search is still needed.
+
+A first attempt at such a controller, the structured reflection step described above,
+did not clear its own promotion gates in a small pilot, and that pilot ran on CPU rather
+than the GPU the comparability contract requires: the GPU backend currently fails on
+this experiment's multi-turn manual tool calling in this environment. Resolving that
+backend gap is itself an open item before the reflection question can be tested properly.
 
 The full loop also needs direct robustness tests. Relevant cases include empty search results, malformed tool output, contradictory candidates, repeated calls, and confident synthesis after the correct species has been retrieved.
 
 Because Mero runs on a phone, accuracy is only one part of the comparison. Each policy should also report latency, tool calls, generated tokens, memory use, energy use, and device temperature.
 
-## Planned Track 04: Agent-loop evaluation
+## [Track 04: Agent-loop evaluation](/sirkulab-mero/04_agent-loop-evaluation/)
 
-Track 04 should begin with three controlled experiments:
+Track 04 ran the five planned conditions on the same 332 images. Fixed retrieval reached
+35.2%, one adaptive call 33.7%, two calls 41.0%, and the four-call prompt condition
+37.7%; direct identification without retrieval reached 3.6%. A second call recovered
+the true species into the actual top-five list on 39 cases and 26 of those ended
+correctly. More allowance did not improve the aggregate result.
 
-1. **Loop ablation against a deterministic baseline.** Compare five conditions on the same frozen examples, from no tool use to the full adaptive loop:
-   1. Direct VLM identification with no tool.
-   2. Fixed retrieval followed by one selection pass.
-   3. One model-selected tool call.
-   4. Up to two adaptive calls.
-   5. Up to four adaptive calls with explicit stopping.
+The experiment also narrowed what remains to be measured. Intermediate answers were
+not observable, so the run could measure candidate recovery but not literal
+wrong-to-correct transitions between calls. The stopping replays therefore report
+agreement with observed stops, not counterfactual accuracy. See the
+[loop ablation](/sirkulab-mero/04_agent-loop-evaluation/01_loop-ablation/),
+[revision analysis](/sirkulab-mero/04_agent-loop-evaluation/02_revision-analysis/), and
+[stopping comparison](/sirkulab-mero/04_agent-loop-evaluation/03_stopping-policy-comparison/).
 
-   > Condition 2 is the critical control. It hands the model a strong candidate list without letting it choose the query, so it isolates whether the agent's adaptive tool choice adds anything beyond good retrieval. Adaptive passes alone — zero, one, two, four — cannot answer that, because they never compare against a non-agentic pipeline.
-
-2. **Revision analysis.** Measure wrong-to-correct recovery, correct-to-wrong degradation, unchanged decisions, and the pass where the true species first becomes available.
-3. **Stopping-policy comparison.** Compare a fixed pass limit with unchanged-hypothesis and evidence-based stopping rules.
-
-Each pass should record the current hypothesis, tool arguments, returned candidates, displayed confidence, selected species, and stopping reason. These records would connect the behavioral findings in Tracks 01 and 02 with the full control loop.
+A follow-up experiment asked whether a more structured second search does better than
+the plain two-call condition: before revising its query, Gemma asks the database which
+visual traits separate its provisional species from a plausible challenger. A 64-image
+pilot found it does not. The fully structured condition scored 35.9% versus 39.1% for a
+fresh two-call run (`p = 0.845`), missed the schema-validity and latency promotion
+gates, and, as noted above, lost more true-species candidates from the first search than
+it recovered in the second. This pilot ran on CPU because the required GPU backend
+currently fails on this experiment's multi-turn tool calling in this environment, so a
+comparable GPU run is still needed before the result can be treated as final. See the
+[reflective-iteration implementation](/sirkulab-mero/04_agent-loop-evaluation/04_reflective-iteration-implementation/)
+for the full method and pilot.
 
 ## How the research fits together
 
@@ -193,6 +219,6 @@ Each pass should record the current hypothesis, tool arguments, returned candida
 | [Track 01: Detection failures](/sirkulab-mero/01_gemma-improve-detection/)       | Where do perception, routing, retrieval, and synthesis fail?                      |
 | [Track 02: Candidate sensitivity](/sirkulab-mero/02_candidate-rank-sensitivity/) | How do candidate order, confidence, and explanations affect behavior?             |
 | [Track 03: Mechanistic analysis](/sirkulab-mero/03_candidate-rank-mechanistic/)  | How is candidate position represented, and does it have a measurable causal role? |
-| Track 04: Agent-loop evaluation, planned                                         | Does iteration improve decisions enough to justify its cost?                      |
+| [Track 04: Agent-loop evaluation](/sirkulab-mero/04_agent-loop-evaluation/) | Does iteration improve decisions enough to justify its cost?                      |
 
-The current evidence supports a narrow conclusion. Mero is an on-device multimodal agent whose result depends on a chain of fallible interfaces. The experiments show where evidence is lost and how candidate presentation can influence the final choice. Whether the adaptive loop is better than a simpler pipeline remains a hypothesis, not a result.
+The current evidence supports a narrow conclusion. Mero is an on-device multimodal agent whose result depends on a chain of fallible interfaces. The experiments show where evidence is lost and how candidate presentation can influence the final choice. One revision opportunity is promising, but neither the four-call prompt condition nor a more structured, database-grounded reflection step reliably outperformed fixed retrieval in the runs completed so far.

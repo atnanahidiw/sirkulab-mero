@@ -7,6 +7,7 @@ This folder is organized as a small set of narrative tracks. Each track keeps on
 - `01` is for Gemma 4 detection failures and the fixes we tried.
 - `02` is for candidate-rank sensitivity and the follow-on analyses around it.
 - `03` is for the mechanistic Hugging Face follow-up on candidate-rank bias.
+- `04` is the agent-loop evaluation against a fixed-retrieval baseline.
 - Lower numbers are earlier or broader context.
 - Inside a track, numbered files are meant to be read in order.
 - Files with the same prefix but different suffixes usually compare variants of the same experiment.
@@ -25,7 +26,7 @@ First, the idea is still forming. The specific research questions are not settle
 
 Second, it changes how to read the earlier work. Now that agentic behavior is the point, native function calling is not just an implementation detail. It is part of what is being studied, because the loop itself is the thing of interest and not only a way to reach an accuracy score. A footprint-first project would treat the same loop as plumbing.
 
-The other tracks still stand on their own. Detection (`01`) is where the pivot came from. Candidate-rank sensitivity (`02`) and its mechanistic follow-up (`03`) look at how the model treats an ordered candidate list. The pipeline notes record which architecture choices are settled. Together they are the evidence behind the direction described here.
+The other tracks still stand on their own. Detection (`01`) is where the pivot came from. Candidate-rank sensitivity (`02`) and its mechanistic follow-up (`03`) look at how the model treats an ordered candidate list. The pipeline notes record which architecture choices are settled. Together they are the evidence behind the direction described here. The agent-loop evaluation (`04`) tests the adaptive loop itself: a second call helped descriptively, but the four-call prompt condition did not reliably beat fixed retrieval.
 
 ## Tracks
 
@@ -81,6 +82,22 @@ It is separated from the behavioral track on purpose. The LiteRT-backed reports 
 - [`04_activation-patching-rank-bias.md`](./03_candidate-rank-mechanistic/04_activation-patching-rank-bias.md) describes the activation-patching plan.
 - [`05_sae-inspection-plan.md`](./03_candidate-rank-mechanistic/05_sae-inspection-plan.md) describes the SAE compatibility gate and skip behavior.
 
+### `04` Agent Loop Evaluation
+
+This track ran on 332 images from 64 species. The two-call condition was best at 41.0%
+species accuracy versus 35.2% for fixed retrieval, but its paired advantage was not
+conclusive (`p = 0.0648`). The four-call prompt condition reached 37.7% (`p = 0.466`).
+
+It asks a question the other tracks do not answer on their own: does letting Gemma iterate, meaning call the search tool more than once and revise its hypothesis, actually identify species better than a fixed retrieval pipeline, once tool calls, latency, and other on-device costs are counted. Tracks `01` and `02` show where the loop's interfaces can fail; this track is meant to test the loop itself against a non-agentic control.
+
+#### File Guide
+
+- [`00_plan.md`](./04_agent-loop-evaluation/00_plan.md) holds the plan for both phases: the completed loop ablation and the reflective-iteration follow-up it motivated.
+- [`01_loop-ablation.md`](./04_agent-loop-evaluation/01_loop-ablation.md) compares all five conditions.
+- [`02_revision-analysis.md`](./04_agent-loop-evaluation/02_revision-analysis.md) traces candidate recovery and visual-group revision.
+- [`03_stopping-policy-comparison.md`](./04_agent-loop-evaluation/03_stopping-policy-comparison.md) evaluates the prompt caps and offline stopping-rule replays.
+- [`04_reflective-iteration-implementation.md`](./04_agent-loop-evaluation/04_reflective-iteration-implementation.md) specifies a comparable Gemma 4 E2B LiteRT-LM reflective follow-up grounded in database candidate differences; not run yet.
+
 ## Why This Structure Exists
 
 The goal is to make each research thread readable on its own.
@@ -89,5 +106,6 @@ The goal is to make each research thread readable on its own.
 - The detection track shows the baseline failure modes and the fixes that changed behavior.
 - The candidate-rank track starts with behavioral sensitivity tests and the merged rank-bias report.
 - The mechanistic backend plan lives in the separate `candidate-rank-mechanistic` folder.
+- The agent-loop evaluation found a promising but inconclusive two-call gain and no reliable advantage for the four-call prompt condition over fixed retrieval.
 
 If you are new to the project, start with the relevant track section above, then read the numbered docs in order.
