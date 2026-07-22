@@ -24,7 +24,11 @@ through Search 2 while adding a real execution cap afterward.
   writes a per-image JSONL and summary JSON per condition. Needs LiteRT-LM, the
   multimodal Gemma checkpoint, and the `sirkulab-mero-data` image set (see Runtime
   below). Also writes a combined `loop_ablation_summary.json` with a paired McNemar
-  test and bootstrap CI of each condition against the `fixed-retrieval` control.
+  test and bootstrap CI of each condition against the `fixed-retrieval` control. Each
+  row records `generated_tokens`, the final recorded turn's token count from
+  `Engine.tokenize()`. Run with `--recompute-tokens` to backfill that field into an
+  existing run's jsonl without re-scoring any image: it only needs the tokenizer, so
+  CPU is enough.
 - [`01_revision_analysis.py`](01_revision_analysis.py): offline analysis over
   `00_loop_ablation.py`'s multi-pass traces (one-call, two-call, four-call). No model
   needed. Replays each recorded search against the species DB to find the pass at which

@@ -30,6 +30,16 @@ with a paired McNemar test and bootstrap CI against the fixed-retrieval control,
 Per-image rows are resumable: re-running skips images already present in that
 condition's jsonl, matching `eval_gemma4_soft_gate.py`.
 
+Each row also records `generated_tokens`, the token count of the final recorded turn's
+text, computed with `Engine.tokenize()` after generation (a re-encode of the saved text,
+not a native usage counter, since litert_lm's Python API does not expose one). This is a
+device-agnostic cost metric: it does not depend on which hardware executes the calls.
+For multi-turn conditions it covers only the last recorded turn, since litert_lm's
+automatic_tool_calling loop does not expose intermediate turns' text (see the module
+docstring's note on `run_condition`). Use `--recompute-tokens` to backfill this field
+into an existing run's jsonl without re-running the model: it only needs the engine's
+tokenizer, so CPU is enough and no image ever gets re-scored.
+
 RUNTIME: LiteRT-LM + the multimodal Gemma checkpoint. Run with the sirkulab-mero-data
 env (it has `litert_lm`); the SQLite search is stdlib:
 
@@ -298,6 +308,31 @@ def load_done(out_jsonl):
     return done
 
 
+def recompute_tokens(engine, conditions, tag):
+    """Backfill generated_tokens into an existing run's jsonl and summary using only the
+    engine's tokenizer. No image is re-scored, so this works on CPU and is fast even
+    though it needs the full model loaded (litert_lm exposes no lighter tokenizer-only
+    entry point)."""
+    for condition in conditions:
+        out_json = OUT_DIR / f"loop_ablation_{condition}{tag}.json"
+        out_jsonl = OUT_DIR / f"loop_ablation_{condition}{tag}.jsonl"
+        rows = list(load_done(out_jsonl).values())
+        if not rows:
+            print(f"[{condition}] no trace at {out_jsonl}, skipping")
+            continue
+        for row in rows:
+            row["generated_tokens"] = len(engine.tokenize(row.get("final_text", "")))
+        with out_jsonl.open("w") as jf:
+            for row in rows:
+                jf.write(json.dumps(row) + "\n")
+        token_counts = [r["generated_tokens"] for r in rows]
+        mean_tokens = sum(token_counts) / len(token_counts) if token_counts else None
+        summary = json.loads(out_json.read_text()) if out_json.exists() else {}
+        summary["mean_generated_tokens"] = mean_tokens
+        out_json.write_text(json.dumps(summary, indent=2))
+        print(f"[{condition}] n={len(rows)}  mean_generated_tokens={mean_tokens:.1f}")
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--model-path", default=str(MODEL_DEFAULT))
@@ -310,6 +345,9 @@ def main():
                      help="Comma-separated subset of: " + ", ".join(CONDITIONS))
     ap.add_argument("--seed", type=int, default=7, help="Bootstrap CI seed")
     ap.add_argument("--bootstrap-samples", type=int, default=DEFAULT_BOOTSTRAP_SAMPLES)
+    ap.add_argument("--recompute-tokens", action="store_true",
+                     help="Backfill generated_tokens into an existing run's jsonl using "
+                          "the engine's tokenizer only; no image is re-scored")
     args = ap.parse_args()
 
     conditions = [c.strip() for c in args.conditions.split(",") if c.strip()]
@@ -320,15 +358,25 @@ def main():
     from litert_lm import Backend, Engine
     from litert_lm.interfaces import SamplerConfig
 
+    tag = ""
+    if args.shard:
+        i, m = (int(x) for x in args.shard.split("/"))
+        tag = f"_shard{i}of{m}"
+
+    if args.recompute_tokens:
+        print("Loading Gemma 4 E2B for tokenization only (CPU) …", flush=True)
+        engine = Engine(args.model_path, backend=Backend.CPU, vision_backend=Backend.CPU)
+        recompute_tokens(engine, conditions, tag)
+        return 0
+
     name2latin, gt = baseline.load_db(Path(args.db))
     baseline._DB_PATH = str(args.db)  # the deterministic search and the native tools read this
     samples = baseline.collect_images(Path(args.data_repo) / args.images_subdir, name2latin)
     if args.limit:
         samples = samples[: args.limit]
-    tag = ""
     if args.shard:
         i, m = (int(x) for x in args.shard.split("/"))
-        samples, tag = samples[i::m], f"_shard{i}of{m}"
+        samples = samples[i::m]
 
     OUT_DIR.mkdir(parents=True, exist_ok=True)
     print(f"{len({s['sp'] for s in samples})} species · {len(samples)} images{' · ' + tag if tag else ''} "
@@ -368,6 +416,7 @@ def main():
                 sp_ok += species_ok
                 ge_ok += genus_ok
                 tool_call_args = info.get("tool_calls", [])
+                final_text = info.get("final_text", "")
                 row = {
                     "condition": condition,
                     "image": str(sample["path"].relative_to(Path(args.data_repo))),
@@ -376,7 +425,8 @@ def main():
                     # (reused unmodified for the four-call condition) has no "passes" key.
                     "tool_calls": len(tool_call_args), "passes": info.get("passes", len(tool_call_args)),
                     "species_ok": species_ok, "genus_ok": genus_ok,
-                    "final_text": info.get("final_text", ""), "tool_call_args": tool_call_args,
+                    "final_text": final_text, "tool_call_args": tool_call_args,
+                    "generated_tokens": len(engine.tokenize(final_text)) if final_text else 0,
                 }
                 rows.append(row)
                 jf.write(json.dumps(row) + "\n")
@@ -389,10 +439,12 @@ def main():
             print(f"\n[{condition}] {n} images  species {sp_ok/n:.1%}  genus {ge_ok/n:.1%}")
         else:
             print(f"\n[{condition}] no images")
+        token_counts = [r["generated_tokens"] for r in rows if "generated_tokens" in r]
         summary = {
             "date": str(date.today()), "model": "gemma-4-E2B", "condition": condition,
             "images": n, "species_top1": sp_ok / n if n else 0.0, "genus_acc": ge_ok / n if n else 0.0,
             "sec_per_image_this_session": dt / len(todo) if todo else None,
+            "mean_generated_tokens": sum(token_counts) / len(token_counts) if token_counts else None,
         }
         out_json.write_text(json.dumps(summary, indent=2))
         all_rows[condition] = rows

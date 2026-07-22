@@ -27,13 +27,22 @@ The fixed-retrieval control used one model observation pass, one app-driven data
 search, and one model selection pass. The adaptive conditions let Gemma choose the
 search arguments through native function calling.
 
-| Condition | Species top-1 | Genus accuracy | Mean search calls | Recorded timing |
-| --- | ---: | ---: | ---: | ---: |
-| Direct VLM, no database | 3.6% (12/332) | 7.5% (25/332) | 0.00 | not retained |
-| Fixed retrieval + one selection | 35.2% (117/332) | 38.0% (126/332) | 1.00 | not retained |
-| One-call adaptive | 33.7% (112/332) | 35.8% (119/332) | 1.00 | not retained |
-| Two-call adaptive | **41.0% (136/332)** | **43.7% (145/332)** | 1.24 | 10.08 s/image, session mean |
-| Four-call prompt condition | 37.7% (125/332) | 41.3% (137/332) | 1.25 | 11.71 s/image, session mean |
+| Condition | Species top-1 | Genus accuracy | Mean search calls | Mean final-turn tokens | Recorded timing |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| Direct VLM, no database | 3.6% (12/332) | 7.5% (25/332) | 0.00 | 82.3 | not retained |
+| Fixed retrieval + one selection | 35.2% (117/332) | 38.0% (126/332) | 1.00 | 91.5 | not retained |
+| One-call adaptive | 33.7% (112/332) | 35.8% (119/332) | 1.00 | 98.9 | not retained |
+| Two-call adaptive | **41.0% (136/332)** | **43.7% (145/332)** | 1.24 | 119.9 | 10.08 s/image, session mean |
+| Four-call prompt condition | 37.7% (125/332) | 41.3% (137/332) | 1.25 | 118.6 | 11.71 s/image, session mean |
+
+Search calls and token counts are both device-agnostic, so both were backfilled from the
+existing traces with `00_loop_ablation.py --recompute-tokens`: it re-encodes each row's
+saved final-turn text with the model's own tokenizer, since litert_lm's Python API
+exposes no native usage counter. The token column is a lower bound for every condition
+except direct: it counts only the last recorded turn, and litert_lm's
+`automatic_tool_calling` loop never exposes the text of the search-time turns that came
+before it. Direct is the only row where the final turn is the whole conversation, so its
+82.3 is a true total rather than an undercount.
 
 Direct identification is a deliberately weak open-label control: without the database,
 Gemma is not constrained to Mero's 64 evaluated species. Its 3.6% result shows the
@@ -97,7 +106,10 @@ iteration itself.
 - Conditions change their cap instructions and run separately. The test is paired by
   image, but it is not a replay of one identical stochastic trajectory at successive
   cutoffs.
-- Only the two-call and four-call sessions retained coarse timing. Generated tokens,
-  per-image latency, memory, energy, and temperature were not recorded.
+- Only the two-call and four-call sessions retained coarse session-level timing, and no
+  condition recorded per-image latency, memory, energy, or temperature. Mean search
+  calls and mean final-turn token counts are recorded for every condition and are
+  device-agnostic, but the token counts undercount total generation for every condition
+  except direct (see above).
 - Two direct responses and three four-call responses failed JSON parsing; these count
   as incorrect under the common scorer.
