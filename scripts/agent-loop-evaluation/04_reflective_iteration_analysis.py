@@ -40,6 +40,19 @@ RUNNER_PATH = HERE.parent / "03_reflective_iteration.py"
 PRIMARY_CONDITION = "structured-reflection-retained-pool"
 CONTROL_CONDITION = "plain-two-call"
 SECONDARY_CONDITIONS = ["instrumented-two-call", "prompt-only-reflection", "structured-reflection"]
+# prompt-only-reflection and instrumented-two-call both receive the enveloped tool
+# response (envelope=True in 03_reflective_iteration.py); plain-two-call does not.
+# Reading prompt-only against plain therefore mixes the reflection instruction with the
+# response-representation change, so instrumented-two-call is its protocol-matched
+# control. Secondary and exploratory: the pre-registered primary stays
+# PRIMARY_CONDITION versus CONTROL_CONDITION.
+PROTOCOL_MATCHED_PAIRS = [("prompt-only-reflection", "instrumented-two-call")]
+# The article frames the pilot against a single fixed retrieval pass, so the pilot's own
+# fixed-retrieval arm is the baseline that framing needs. Reported within this sample only:
+# these percentages are not comparable to the 332-image loop ablation.
+FIXED_RETRIEVAL_BASELINE = "fixed-retrieval"
+FIXED_RETRIEVAL_COMPARISONS = ["plain-two-call", "structured-reflection",
+                               "structured-reflection-retained-pool"]
 DEFAULT_BOOTSTRAP_SAMPLES = 10000
 
 
@@ -207,7 +220,7 @@ def paired_comparison(control_rows, condition_rows):
         if control_latency and condition_latency is not None:
             latency_ratios.append(condition_latency / control_latency)
     return {
-        "n": n, f"{CONTROL_CONDITION}_accuracy": control_acc, "condition_accuracy": condition_acc,
+        "n": n, "control_accuracy": control_acc, "condition_accuracy": condition_acc,
         "accuracy_diff_pp": (condition_acc - control_acc) * 100,
         "mcnemar": mcnemar_exact([r["control_correct"] for r in paired_rows],
                                  [r["condition_correct"] for r in paired_rows]),
@@ -462,12 +475,46 @@ def main():
                 r["mcnemar"]["holm_adjusted_p_value"] = holm_adjusted.get(name)
         payload["secondary_comparisons"] = secondary
 
+        matched = {}
+        for condition, matched_control in PROTOCOL_MATCHED_PAIRS:
+            if condition in rows_by_condition and matched_control in rows_by_condition:
+                matched[condition] = {
+                    "control": matched_control,
+                    "result": paired_comparison(rows_by_condition[matched_control],
+                                                rows_by_condition[condition]),
+                    "note": ("Protocol-matched: both conditions share the enveloped tool response, "
+                             "so this isolates the reflection instruction from the response "
+                             "representation. Exploratory, not pre-registered, not Holm-corrected."),
+                }
+        if matched:
+            payload["protocol_matched_comparisons"] = matched
+
+        if FIXED_RETRIEVAL_BASELINE in rows_by_condition:
+            baseline_rows = rows_by_condition[FIXED_RETRIEVAL_BASELINE]
+            against_fixed = {}
+            for condition in FIXED_RETRIEVAL_COMPARISONS:
+                if condition in rows_by_condition:
+                    against_fixed[condition] = paired_comparison(baseline_rows,
+                                                                 rows_by_condition[condition])
+            if against_fixed:
+                payload["fixed_retrieval_comparisons"] = {
+                    "control": FIXED_RETRIEVAL_BASELINE,
+                    "note": ("Within-pilot comparisons against a single fixed retrieval pass, on this "
+                             "run's 64-image sample only; not comparable to the 332-image loop "
+                             "ablation. Exploratory, not pre-registered, not Holm-corrected."),
+                    "results": against_fixed,
+                }
+
         if "instrumented-two-call" in secondary and secondary["instrumented-two-call"]:
             diff_pp = secondary["instrumented-two-call"]["accuracy_diff_pp"]
             payload["condition_3_parity_gate"] = {
                 "accuracy_diff_pp": diff_pp,
-                "note": ("Condition 3 changes only the tool's wire format relative to Condition 2; "
-                         "this should be close to zero. Investigate before trusting conditions 4-6 if not."),
+                "note": ("Condition 3 changes the tool's response representation relative to "
+                         "Condition 2, including explicit stable species IDs alongside JSON "
+                         "serialization, while keeping the prompt and retrieval implementation. "
+                         "It is not a pure formatting control; a nonzero value means the "
+                         "representation itself carries signal. Investigate before trusting "
+                         "conditions 4-6 if it is large."),
             }
 
     reflection_conditions = ["instrumented-two-call", "prompt-only-reflection",
@@ -560,7 +607,7 @@ def main():
 
     if payload.get("primary_comparison", {}).get("result"):
         r = payload["primary_comparison"]["result"]
-        print(f"\nprimary: {CONTROL_CONDITION} {r[f'{CONTROL_CONDITION}_accuracy']:.1%} -> "
+        print(f"\nprimary: {CONTROL_CONDITION} {r['control_accuracy']:.1%} -> "
               f"{PRIMARY_CONDITION} {r['condition_accuracy']:.1%}  "
               f"({r['accuracy_diff_pp']:+.1f}pp, exact McNemar p={r['mcnemar']['p_value']:.4f})")
     else:
@@ -570,6 +617,22 @@ def main():
         if r:
             print(f"secondary {name}: {r['accuracy_diff_pp']:+.1f}pp  "
                   f"p={r['mcnemar']['p_value']:.4f}  holm-adjusted={r['mcnemar']['holm_adjusted_p_value']:.4f}")
+
+    fixed_block = payload.get("fixed_retrieval_comparisons") or {}
+    for name, r in (fixed_block.get("results") or {}).items():
+        if r:
+            ci = r["species_clustered_bootstrap"]
+            print(f"vs fixed-retrieval {name}: {r['accuracy_diff_pp']:+.1f}pp  "
+                  f"p={r['mcnemar']['p_value']:.4f}  "
+                  f"95% CI [{100 * ci['ci_lower']:+.1f}, {100 * ci['ci_upper']:+.1f}]pp")
+
+    for name, entry in payload.get("protocol_matched_comparisons", {}).items():
+        r = entry.get("result")
+        if r:
+            ci = r["species_clustered_bootstrap"]
+            print(f"protocol-matched {name} vs {entry['control']}: {r['accuracy_diff_pp']:+.1f}pp  "
+                  f"p={r['mcnemar']['p_value']:.4f}  "
+                  f"95% CI [{100 * ci['ci_lower']:+.1f}, {100 * ci['ci_upper']:+.1f}]pp")
 
     print(f"\nwrote {summary_path}")
     return 0

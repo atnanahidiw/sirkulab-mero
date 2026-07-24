@@ -602,7 +602,7 @@ and retries selection once if the first final answer falls outside the pool.
 Not run yet. Nothing above the "Status" section at the top of this document is a
 result. This section is where the six conditions' accuracy, the primary and secondary
 comparisons, the promotion-gate outcome, and the reflection-specific analysis get
-recorded once `03_reflective_iteration.py` and `old/04_reflective_iteration_analysis.py`
+recorded once `03_reflective_iteration.py` and `04_reflective_iteration_analysis.py`
 actually run against the deployed model on the full 332-image set.
 
 ### Aborted v1 pilot and staged v2 runner
@@ -712,6 +712,31 @@ two-call exceeded plain two-call by two images, or 3.1 percentage points. The pa
 difference was not significant (`p=0.7539`, Holm-adjusted `p=1.0`), and both conditions
 were schema- and protocol-clean. This does not look like a gross plumbing failure, but
 the nonzero wire-format effect is another reason not to overinterpret a small pilot.
+
+#### Erratum: Condition 3 is not a pure formatting control
+
+The pre-run design above describes Condition 3 as changing "only the tool's wire format
+relative to Condition 2: same prompt, same search behavior." That description is
+incomplete, and the preceding paragraph inherits the error by calling the result a
+"wire-format effect." Both statements are left as written, because they record what was
+believed before the run.
+
+Reading the two serializers side by side shows the difference is not only formatting.
+`compact_candidate` in `03_reflective_iteration.py` emits an explicit `species_id` for
+every candidate, while the Phase 1 serializer `format_tool_result` in
+`eval_gemma4_baseline.py` emits a numbered list carrying common name, latin name,
+confidence, and visual features, with no identifier. Condition 3 therefore changes the
+tool-response representation in two ways at once: it reformats the response as JSON, and
+it introduces stable species IDs that Condition 2 never had.
+
+That matters for how the +3.1-point gap should be read. Stable IDs give the model an
+unambiguous handle for referring to a candidate, which is a different kind of change
+from reformatting the same text, so the gap is not evidence of a plumbing bug and is not
+attributable to serialization alone. The parity gate remains useful as a plumbing check,
+but it cannot serve as the pure formatting control the design intended, and the two
+ingredients are not separable in this run. Separating them requires a further condition
+that adds IDs without changing serialization, or changes serialization without adding
+IDs. Neither was run.
 
 #### Primary and secondary comparisons
 

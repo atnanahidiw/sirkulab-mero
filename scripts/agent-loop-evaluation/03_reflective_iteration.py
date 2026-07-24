@@ -44,7 +44,7 @@ WORKDIR = APP_REPO.parent
 DATA_REPO_DEFAULT = WORKDIR / "sirkulab-mero-data"
 OUT_DIR = APP_REPO / "outputs" / "agent-loop-evaluation"
 BASELINE_PATH = APP_REPO / "scripts" / "gemma-improve-detection" / "eval_gemma4_baseline.py"
-ANALYSIS_PATH = HERE.parent / "old" / "04_reflective_iteration_analysis.py"
+ANALYSIS_PATH = HERE.parent / "04_reflective_iteration_analysis.py"
 MODEL_DEFAULT = Path.home() / "Downloads/gemma-4-E2B-it.litertlm"
 
 
